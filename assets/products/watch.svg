@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 600" fill="none">
+  <!-- Band top -->
+  <rect x="130" y="30" width="140" height="150" rx="20" fill="#3A3A3C"/>
+  <!-- Band bottom -->
+  <rect x="130" y="420" width="140" height="150" rx="20" fill="#3A3A3C"/>
+  <!-- Case -->
+  <rect x="100" y="160" width="200" height="280" rx="50" fill="#1D1D1F" stroke="#555" stroke-width="3"/>
+  <!-- Screen -->
+  <rect x="120" y="185" width="160" height="230" rx="35" fill="#2C2C2E"/>
+  <rect x="120" y="185" width="160" height="230" rx="35" fill="url(#wscreen)"/>
+  <!-- Crown -->
+  <rect x="300" y="270" width="20" height="40" rx="5" fill="#555"/>
+  <!-- Button -->
+  <circle cx="310" cy="340" r="8" fill="#555"/>
+  <defs>
+    <linearGradient id="wscreen" x1="120" y1="185" x2="280" y2="415">
+      <stop offset="0%" stop-color="#0f3460"/>
+      <stop offset="100%" stop-color="#1a1a2e"/>
+    </linearGradient>
+  </defs>
+</svg>

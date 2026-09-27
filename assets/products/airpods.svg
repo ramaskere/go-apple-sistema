@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500" fill="none">
+  <!-- Case -->
+  <rect x="125" y="200" width="250" height="220" rx="40" fill="#E8E8ED" stroke="#D1D1D6" stroke-width="2"/>
+  <rect x="125" y="200" width="250" height="110" rx="40" fill="#F2F2F7" stroke="#D1D1D6" stroke-width="2"/>
+  <ellipse cx="250" cy="200" rx="12" ry="4" fill="#D1D1D6"/>
+  <!-- Led -->
+  <circle cx="250" cy="320" r="6" fill="#34C759"/>
+  <!-- Left bud -->
+  <ellipse cx="190" cy="130" rx="30" ry="40" fill="#F2F2F7" stroke="#D1D1D6" stroke-width="2"/>
+  <rect x="182" y="160" width="16" height="70" rx="8" fill="#F2F2F7" stroke="#D1D1D6" stroke-width="2"/>
+  <!-- Right bud -->
+  <ellipse cx="310" cy="130" rx="30" ry="40" fill="#F2F2F7" stroke="#D1D1D6" stroke-width="2"/>
+  <rect x="302" y="160" width="16" height="70" rx="8" fill="#F2F2F7" stroke="#D1D1D6" stroke-width="2"/>
+</svg>

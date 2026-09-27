@@ -1,0 +1,2784 @@
+<!doctype html>
+<html lang="es" data-theme="oceano">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta
+      name="description"
+      content="GO APPLE — panel de ventas, caja, inventario y garantías. Tienda iPhone."
+    />
+    <meta name="theme-color" content="#1e3a5f" id="meta-theme-color" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <title>GO APPLE · CRM</title>
+    <!-- ?v= rompe caché del navegador al cambiar estilos; subí el número si no ves cambios -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+      <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="./themes.css?v=18" />
+    <link rel="stylesheet" href="./styles.css?v=75" />
+    <script>
+      (function () {
+        var map = {
+          oceano: "#1e3a5f",
+          bosque: "#134e4a",
+          magma: "#7c2d12",
+          uva: "#4c1d95",
+          grafito: "#1e293b",
+        };
+        var allowed = ["oceano", "bosque", "magma", "uva", "grafito"];
+        var stored = null;
+        try {
+          stored = localStorage.getItem("go_apple_ui_theme");
+        } catch (e) {}
+        var t =
+          allowed.indexOf(stored) >= 0
+            ? stored
+            : document.documentElement.getAttribute("data-theme") || "oceano";
+        if (allowed.indexOf(t) < 0) t = "oceano";
+        document.documentElement.setAttribute("data-theme", t);
+        var m = document.getElementById("meta-theme-color");
+        if (m) m.setAttribute("content", map[t] || map.oceano);
+        var path = (location.pathname || "").replace(/\/+$/, "") || "/";
+        var q = new URLSearchParams(location.search);
+        var staff =
+          /\/empleados(\.html)?$/.test(path) ||
+          q.get("modo") === "empleado" ||
+          q.get("staff") === "1";
+        if (!staff) return;
+        document.documentElement.classList.add("app-staff-boot");
+        document.title = "GO APPLE · Empleados";
+        document.documentElement.classList.add("app-staff-ready");
+      })();
+    </script>
+  </head>
+  <body>
+    <div id="auth-overlay" class="auth-overlay" hidden>
+      <div class="auth-card card glass-panel">
+        <p class="auth-brand">GO APPLE</p>
+        <h1 class="auth-title">Iniciar sesión</h1>
+        <p class="auth-lead muted">Mismo usuario que en Supabase → Authentication → Users.</p>
+        <p id="auth-status" class="auth-status muted" aria-live="polite"></p>
+        <form id="auth-login-form" class="auth-form" autocomplete="on">
+          <label class="auth-field">
+            Email
+            <input id="auth-email" type="email" name="email" autocomplete="username" required placeholder="tu@email.com" />
+          </label>
+          <label class="auth-field">
+            Contraseña
+            <input id="auth-password" type="password" name="password" autocomplete="current-password" required />
+          </label>
+          <p id="auth-error" class="auth-error" role="alert" hidden></p>
+          <button type="submit" class="auth-submit">Entrar</button>
+        </form>
+        <p class="auth-alt muted">¿Sin cuenta de email en este proyecto?</p>
+        <button type="button" id="auth-anon-btn" class="secondary auth-anon-btn">Entrar como invitado (anónimo)</button>
+        <p class="auth-alt muted">¿Solo probás sin nube?</p>
+        <button type="button" id="auth-local-btn" class="secondary auth-local-btn">Usar solo este navegador</button>
+        <div class="auth-theme-row">
+          <label class="auth-theme-label" for="theme-select-auth">Colores de la app</label>
+          <select
+            id="theme-select-auth"
+            class="theme-select theme-select--auth dashboard-month-select--minimal dashboard-month-select--on-light"
+            data-theme-select
+            autocomplete="off"
+          >
+            <option value="oceano">Océano (azul)</option>
+            <option value="bosque">Bosque (verde)</option>
+            <option value="magma">Magma (cálido)</option>
+            <option value="uva">Uva (violeta)</option>
+            <option value="grafito">Grafito (neutro)</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div id="staff-overlay" class="auth-overlay staff-overlay" hidden>
+      <div class="auth-card card glass-panel">
+        <p class="auth-brand">GO APPLE</p>
+        <h1 class="auth-title">Acceso empleados</h1>
+        <p class="auth-lead muted">Ingresá el PIN para ver stock y calcular cuotas.</p>
+        <form id="staff-pin-form" class="auth-form" autocomplete="off">
+          <label class="auth-field">
+            PIN
+            <input
+              id="staff-pin"
+              type="password"
+              name="staff-pin"
+              inputmode="numeric"
+              maxlength="12"
+              autocomplete="off"
+              required
+              placeholder="••••"
+            />
+          </label>
+          <p id="staff-pin-error" class="auth-error" role="alert" hidden></p>
+          <button type="submit" class="auth-submit">Entrar</button>
+        </form>
+      </div>
+    </div>
+
+    <div id="app-shell" class="app-layout">
+      <aside class="sidebar" aria-label="Navegación principal">
+        <div class="sidebar-brand">
+          <span class="sidebar-brand-title">GO APPLE</span>
+          <span class="sidebar-brand-sub">CRM · tienda</span>
+        </div>
+        <nav class="sidebar-nav" aria-label="Secciones principales">
+          <button type="button" class="tab-btn active" data-tab="resumen">Resumen</button>
+          <button type="button" class="tab-btn" data-tab="inventario">Inventario</button>
+          <button type="button" class="tab-btn" data-tab="simulador-cuotas">Simulador de cuotas</button>
+          <button type="button" class="tab-btn" data-tab="caja">Caja</button>
+          <button type="button" class="tab-btn" data-tab="ventas">Ventas</button>
+          <button type="button" class="tab-btn" data-tab="pipeline">Pipeline</button>
+          <button type="button" class="tab-btn" data-tab="garantias">Garantías</button>
+          <button type="button" class="tab-btn" data-tab="servicio-tecnico">Servicio técnico</button>
+          <button type="button" class="tab-btn" data-tab="deudores">Deudores</button>
+          <button type="button" class="tab-btn" data-tab="facturacion">Facturación</button>
+          <button type="button" class="tab-btn" data-tab="creativos">Creativos</button>
+          <button type="button" class="tab-btn" data-tab="configuraciones">Configuraciones</button>
+          <div class="sidebar-nav-spacer" aria-hidden="true"></div>
+          <button type="button" class="tab-btn tab-btn--support" data-tab="ayuda">Ayuda</button>
+          <button type="button" id="btn-staff-exit" class="staff-exit-btn" hidden>Salir</button>
+        </nav>
+      </aside>
+
+      <div class="main-column">
+        <header class="main-header">
+          <div class="main-header-top">
+            <div class="main-header-left">
+              <h1 id="main-page-title" class="page-title">Resumen</h1>
+              <p id="main-page-subtitle" class="page-subtitle">
+                Ventas, canjes, inventario y garantías 30 días
+              </p>
+            </div>
+            <div class="main-header-toolbar header-toolbar-icons" role="toolbar" aria-label="Acciones rápidas">
+              <button type="button" id="btn-header-refresh" class="header-icon-btn" title="Actualizar" aria-label="Actualizar datos">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16" />
+                  <path d="M3 21v-5h5" />
+                  <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8" />
+                  <path d="M21 3v5h-5" />
+                </svg>
+              </button>
+              <div
+                id="connection-status"
+                class="header-icon-btn header-icon-btn--status connection-pill--local"
+                role="status"
+                aria-live="polite"
+                aria-atomic="true"
+                title=""
+              >
+                <span class="header-icon-btn__dot" aria-hidden="true"></span>
+                <span id="connection-status-lead" class="sr-only"></span>
+                <span id="connection-status-detail" class="sr-only"></span>
+              </div>
+              <button type="button" id="btn-user-meta" class="header-icon-btn" hidden title="" aria-label="Usuario / copiar ID">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                  <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
+                  <circle cx="12" cy="7" r="4" />
+                </svg>
+              </button>
+              <label class="header-icon-btn header-icon-btn--theme" title="Tema">
+                <span class="sr-only">Tema de color</span>
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                  <circle cx="13.5" cy="6.5" r=".5" fill="currentColor" />
+                  <circle cx="17.5" cy="10.5" r=".5" fill="currentColor" />
+                  <circle cx="8.5" cy="7.5" r=".5" fill="currentColor" />
+                  <circle cx="6.5" cy="12.5" r=".5" fill="currentColor" />
+                  <path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z" />
+                </svg>
+                <select
+                  id="theme-select"
+                  class="header-theme-select-overlay dashboard-month-select--minimal"
+                  data-theme-select
+                  autocomplete="off"
+                >
+                  <option value="oceano">Océano</option>
+                  <option value="bosque">Bosque</option>
+                  <option value="magma">Magma</option>
+                  <option value="uva">Uva</option>
+                  <option value="grafito">Grafito</option>
+                </select>
+              </label>
+              <button type="button" id="btn-logout-supabase" class="header-icon-btn" hidden title="Cerrar sesión" aria-label="Cerrar sesión nube">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                  <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                  <polyline points="16 17 21 12 16 7" />
+                  <line x1="21" y1="12" x2="9" y2="12" />
+                </svg>
+              </button>
+              <div class="header-toolbar-clock" title="Hora local" aria-live="polite">
+                <span class="header-clock-dot" aria-hidden="true"></span>
+                <span id="header-clock" class="header-clock"></span>
+              </div>
+            </div>
+          </div>
+        </header>
+
+        <div id="app-period-bar" class="app-period-bar app-period-bar--under-header">
+          <div class="app-period-bar-inner">
+            <span class="app-period-bar-kicker">Período</span>
+            <label class="app-period-bar-label" for="dashboard-month">
+              <select
+                id="dashboard-month"
+                class="dashboard-month-select--minimal dashboard-month-select--on-light app-period-select"
+                aria-describedby="dashboard-period-hint"
+              ></select>
+            </label>
+            <p id="app-period-bar-note" class="app-period-bar-note muted" aria-live="polite"></p>
+          </div>
+        </div>
+
+        <!-- Resumen -->
+        <section class="tab-panel active" id="tab-resumen" aria-label="Resumen del negocio">
+          <section class="card glass-panel resumen-alerts-card resumen-alerts-card--collapsed" id="resumen-alerts-panel" aria-labelledby="resumen-alerts-title">
+            <button type="button" id="resumen-alerts-toggle" class="resumen-alerts-toggle" aria-expanded="false" aria-controls="resumen-alerts-body" hidden>
+              <div class="resumen-alerts-toggle__main">
+                <h2 id="resumen-alerts-title" class="resumen-alerts-title">Alertas</h2>
+                <p id="resumen-alerts-summary" class="resumen-alerts-summary muted"></p>
+              </div>
+              <span id="resumen-alerts-count" class="resumen-alerts-count" hidden aria-live="polite">0</span>
+              <span class="resumen-alerts-chevron" aria-hidden="true"></span>
+            </button>
+            <div id="resumen-alerts-body" class="resumen-alerts-body" hidden>
+              <p class="section-hint muted resumen-alerts-hint">Desplegá cada tipo para ver casos. Tocá un caso para ir directo, o <strong>Ver todos</strong> para la sección completa.</p>
+              <div id="resumen-alerts-empty" class="resumen-alerts-empty">
+                <span class="resumen-alerts-empty__icon" aria-hidden="true">✓</span>
+                <p>Todo en orden — sin alertas por ahora.</p>
+              </div>
+              <div id="resumen-alerts-list" class="resumen-alerts-list" role="list"></div>
+            </div>
+          </section>
+          <div class="kpi-dashboard">
+            <p id="dashboard-period-hint" class="sr-only">
+              El período elegido arriba filtra listas, KPIs y reparto en todas las secciones del CRM (salvo que actives «Ver todos los meses» en cada vista).
+            </p>
+            <div class="dashboard-board-panel kpi-quad-board totals--dashboard">
+              <div class="metrics-header">
+                <h2 class="metrics-title">Métricas del negocio</h2>
+              </div>
+
+              <section class="kpi-quad-section" aria-label="Flujo del mes">
+                <h3 class="kpi-quad-heading kpi-quad-heading--flujo">Flujo del mes</h3>
+                <div class="kpi-quad-body kpi-quad-body--stack">
+                  <div class="kpi-quad-tiles kpi-quad-tiles--stack-4">
+                    <article class="card stat glass-stat stat--kpi">
+                      <h3 class="stat-title">Ingresos</h3>
+                      <p id="kpi-entra" class="stat-num">$0.00</p>
+                    </article>
+                    <article class="card stat glass-stat stat--kpi">
+                      <h3 class="stat-title">Egresos</h3>
+                      <p id="kpi-sale" class="stat-num">$0.00</p>
+                    </article>
+                    <article class="card stat glass-stat stat--kpi">
+                      <h3 class="stat-title">Ganancias</h3>
+                      <p id="kpi-ganancia" class="stat-num">$0.00</p>
+                    </article>
+                    <article class="card stat glass-stat stat--kpi">
+                      <h3 class="stat-title">Ventas</h3>
+                      <p id="kpi-ventas" class="stat-num">$0.00</p>
+                    </article>
+                  </div>
+                </div>
+              </section>
+
+              <section class="kpi-quad-section" aria-label="Reparto de la ganancia">
+                <h3 class="kpi-quad-heading kpi-quad-heading--reparto">Reparto de la ganancia</h3>
+                <p class="section-hint muted kpi-quad-hint">
+                  Sobre entradas del mes, <strong>después de restar comisiones de vendedores</strong>. En Caja elegís el destino de cada movimiento; «Reparto general» se divide según los %, el resto va directo al bucket.
+                </p>
+                <div class="kpi-quad-body kpi-quad-body--stack">
+                  <div class="kpi-quad-tiles kpi-quad-tiles--stack-3">
+                    <article
+                      class="card stat glass-stat stat--kpi stat--split"
+                      title="Mismo % que Restock (%) en Metas — Reserva + Restock + Socios = 100%."
+                    >
+                      <h3 class="stat-title">Restock <span class="stat-pct" id="kpi-pct-restock">0%</span></h3>
+                      <p id="kpi-restock" class="stat-num">$0.00</p>
+                    </article>
+                    <article class="card stat glass-stat stat--kpi stat--split" title="Mismo % que Reserva (%) en Metas del negocio.">
+                      <h3 class="stat-title">Reserva <span class="stat-pct" id="kpi-pct-reserva">30%</span></h3>
+                      <p id="kpi-reserva" class="stat-num">$0.00</p>
+                    </article>
+                    <article class="card stat glass-stat stat--kpi stat--split" title="Mismo % que Socios (%) en Metas del negocio.">
+                      <h3 class="stat-title">Socios <span class="stat-pct" id="kpi-pct-socios">20%</span></h3>
+                      <p id="kpi-socios" class="stat-num">$0.00</p>
+                    </article>
+                  </div>
+                </div>
+              </section>
+
+              <section class="kpi-quad-section" aria-label="Inventario actual">
+                <h3 class="kpi-quad-heading kpi-quad-heading--inventario">Inventario</h3>
+                <div class="kpi-quad-body kpi-quad-body--stack">
+                  <div class="kpi-quad-tiles kpi-quad-tiles--stack-2">
+                    <article class="card stat glass-stat stat--kpi" title="Stock actual (no filtra por mes)">
+                      <h3 class="stat-title">Stock total</h3>
+                      <p id="kpi-stock" class="stat-num">0</p>
+                    </article>
+                    <article class="card stat glass-stat stat--kpi" title="Valor del inventario actual (no filtra por mes)">
+                      <h3 class="stat-title">Valor de stock total</h3>
+                      <p id="kpi-stock-value" class="stat-num">$0.00</p>
+                    </article>
+                  </div>
+                </div>
+              </section>
+
+              <section class="kpi-quad-section" aria-label="Seguimiento">
+                <h3 class="kpi-quad-heading kpi-quad-heading--seguimiento">Seguimiento</h3>
+                <div class="kpi-quad-body kpi-quad-body--stack">
+                  <div class="kpi-quad-tiles kpi-quad-tiles--stack-2">
+                    <article class="card stat glass-stat stat--kpi">
+                      <h3 class="stat-title">Garantías</h3>
+                      <p id="kpi-warranty-active" class="stat-num">0</p>
+                    </article>
+                    <article class="card stat glass-stat stat--kpi" title="Suma de pendientes de la lista en la pestaña Deudores">
+                      <h3 class="stat-title">Cuotas por cobrar</h3>
+                      <p id="kpi-cuotas-cobrar" class="stat-num">$0.00</p>
+                    </article>
+                  </div>
+                </div>
+              </section>
+            </div>
+          </div>
+
+          <section class="card stats-visual-card glass-panel">
+            <div class="stats-visual-head">
+              <h2 class="stats-visual-title">Estadísticas</h2>
+            </div>
+            <p class="section-hint">
+              Comparación del <strong>mes del período</strong> vs el mes anterior. El gráfico y el top modelos son del mismo mes elegido en el selector Período (debajo de los iconos).
+            </p>
+
+            <div class="stats-compare-grid">
+              <div class="stats-compare-block">
+                <h3 class="stats-subtitle">Dinero que entró (USD)</h3>
+                <p class="stats-compare-hint muted">Facturación de ventas + ingresos de caja del mes.</p>
+                <div class="compare-two">
+                  <div class="compare-pill">
+                    <span class="compare-label" id="stat-label-current">Mes actual</span>
+                    <strong id="stat-sales-current">$0.00</strong>
+                  </div>
+                  <div class="compare-pill compare-pill--muted">
+                    <span class="compare-label" id="stat-label-prev">Mes pasado</span>
+                    <strong id="stat-sales-prev">$0.00</strong>
+                  </div>
+                </div>
+                <div class="compare-bar-wrap" aria-hidden="true">
+                  <div class="compare-bar-track">
+                    <div class="compare-bar-fill compare-bar-fill--now" id="stat-sales-bar-current"></div>
+                  </div>
+                  <div class="compare-bar-track">
+                    <div class="compare-bar-fill compare-bar-fill--past" id="stat-sales-bar-prev"></div>
+                  </div>
+                </div>
+                <p class="stats-delta" id="stat-sales-delta"></p>
+              </div>
+              <div class="stats-compare-block">
+                <h3 class="stats-subtitle">Resultado del mes (USD)</h3>
+                <p class="stats-compare-hint muted">Ingresos del mes (ventas + caja) − egresos de caja del mismo mes.</p>
+                <div class="compare-two">
+                  <div class="compare-pill">
+                    <span class="compare-label" id="stat-label-profit-focus">—</span>
+                    <strong id="stat-profit-current">$0.00</strong>
+                  </div>
+                  <div class="compare-pill compare-pill--muted">
+                    <span class="compare-label" id="stat-label-profit-prev">—</span>
+                    <strong id="stat-profit-prev">$0.00</strong>
+                  </div>
+                </div>
+                <p class="stats-delta" id="stat-profit-delta"></p>
+              </div>
+            </div>
+
+            <div class="stats-chart-block">
+              <div class="stats-chart-toolbar">
+                <div>
+                  <h3 class="stats-subtitle">Entradas por día</h3>
+                  <p class="stats-chart-hint muted">
+                    Mismo mes que <strong>Período</strong> (selector debajo de los iconos). Suma del día: <strong>ventas</strong> + <strong>ingresos de caja</strong>.
+                    <strong>Pasá el mouse</strong> sobre cada barra para ver cuánto entró ese día.
+                  </p>
+                </div>
+              </div>
+              <div id="stats-daily-chart" class="stats-daily-chart" role="img" aria-label="Gráfico de ventas por día"></div>
+              <p class="stats-chart-caption muted" id="stats-chart-caption"></p>
+            </div>
+
+            <div class="stats-top-block">
+              <h3 class="stats-subtitle">
+                Top modelos vendidos <span class="muted">(unidades en el mes; solo ventas con equipo, no cuotas sueltas en caja)</span>
+              </h3>
+              <div id="stats-top-models" class="stats-top-models"></div>
+            </div>
+          </section>
+
+          <section class="card glass-panel resumen-best-sellers-card" aria-labelledby="resumen-best-sellers-title">
+            <div class="stats-visual-head">
+              <h2 id="resumen-best-sellers-title" class="stats-visual-title">Mejores vendedores</h2>
+            </div>
+            <p class="section-hint">
+              Mismo <strong>mes que Período</strong>. Orden por <strong>ganancia</strong> (margen de ventas con vendedor asignado). Hasta 15 posiciones.
+            </p>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Vendedor</th>
+                    <th>Ventas</th>
+                    <th>Total vendido</th>
+                    <th>Ganancia</th>
+                    <th>Comisiones</th>
+                  </tr>
+                </thead>
+                <tbody id="resumen-best-sellers-body"></tbody>
+              </table>
+            </div>
+          </section>
+        </section>
+
+        <!-- Ayuda y soporte -->
+        <section class="tab-panel" id="tab-ayuda" aria-label="Ayuda y soporte">
+          <section class="card glass-panel help-card">
+            <h2 class="help-title">Cómo usar GO APPLE</h2>
+            <p class="section-hint help-lead">
+              Guía rápida del panel. Con <code>config.js</code> (URL y anon key) al abrir ves el <strong>inicio de sesión</strong>; después, ventas, caja e inventario van a <strong>Supabase</strong> con actualización en vivo (Realtime). <strong>Cerrar sesión nube</strong> vuelve a mostrar el login.
+            </p>
+            <ul class="intro-list">
+              <li>
+                <strong>Ventas</strong>: elegí cliente (o nuevo), <strong>vendedor</strong> si corresponde, armá el <strong>carrito</strong> con uno o más productos, revisá el total con el plan canje y registrá cómo pagó el cliente (efectivo, transferencia, etc.).
+              </li>
+              <li>
+                <strong>Configuraciones</strong>: usá las pestañas superiores para ver solo <strong>Metas del negocio</strong> (reparto Reserva / Restock / Socios) o solo <strong>Vendedores</strong> (comisiones, listado y resultados). El mismo <strong>Período</strong> que en Resumen aplica a las metas.
+              </li>
+              <li>
+                <strong>Pipeline</strong>: tablero por <strong>columnas</strong> (Kanban); los leads entran por webhooks/ManyChat; podés <strong>arrastrar</strong> tarjetas entre etapas o usar «+ Lead manual» si hace falta.
+              </li>
+              <li><strong>Garantías</strong>: cada venta tiene 30 días de garantía desde la fecha de venta; consultá el estado en la pestaña Garantías.</li>
+              <li><strong>Inventario</strong>: stock por modelo, color, almacenamiento y batería.</li>
+              <li>
+                <strong>Empleados</strong>: compartí <code>/empleados.html</code> o <code>?modo=empleado</code> para que el equipo vea stock y el simulador de cuotas. El CRM completo queda en la URL de siempre.
+              </li>
+              <li>
+                <strong>Caja</strong>: <strong>ingresos</strong> y <strong>egresos</strong> que no pasan por una venta de equipo — alquiler, envíos, cuotas, etc. Al cargar cada movimiento elegís el <strong>destino</strong> (reparto general, Reserva, Restock o Socios) y se ve en el historial.
+              </li>
+              <li>
+                <strong>Cuotas</strong>: cada cobro es un <strong>ingreso de caja</strong> con fecha y concepto (ej. «Cuota Sapo — iPhone 16»). El resumen y el gráfico de entradas por día reflejan el dinero que entró; la venta del equipo podés registrarla en
+                <strong>Ventas</strong> cuando cerrás la operación.
+              </li>
+              <li>
+                <strong>Deudores</strong>: pendientes que aún no entraron a caja (cuotas futuras, tarjeta que liquida después, etc.). El KPI «Cuotas por cobrar» en Resumen suma esa lista.
+              </li>
+            </ul>
+            <div class="support-box">
+              <h3 class="support-title">Soporte y datos</h3>
+              <p>
+                Si importás datos con SQL en Supabase, el <strong>user_id</strong> debe ser el mismo que muestra la app en el encabezado (botón Copiar). Si ves $0 en la app pero sí hay filas en la tabla, revisá que coincidan los usuarios.
+              </p>
+              <p>
+                Si el indicador dice que no hay conexión a la base, completá <code>APP_SUPABASE_EMAIL</code> y <code>APP_SUPABASE_PASSWORD</code> en <code>config.js</code> (usuario de Authentication) y recargá. Si ves listas vacías pero en el Table Editor hay filas, revisá que el <code>user_id</code> de esas filas sea el UUID que muestra la app (Copiar).
+              </p>
+              <p>
+                El selector <strong>Período</strong> (arriba) filtra en <strong>Resumen</strong> los KPIs y gráficos, y en <strong>Configuraciones → Metas</strong> la comparación con tus metas. Si elegís un mes sin movimientos, vas a ver ceros aunque la nube esté bien.
+              </p>
+              <p class="muted support-foot">
+                GO APPLE · lectura en vivo con Realtime (activá las tablas en Supabase → Database → Publications).
+              </p>
+            </div>
+          </section>
+        </section>
+
+        <!-- Ventas -->
+        <section class="tab-panel" id="tab-ventas" aria-label="Ventas">
+          <header class="section-hero card glass-panel">
+            <div class="section-hero__head">
+              <div>
+                <h2 class="section-hero__title">Ventas</h2>
+                <p class="section-hero__subtitle muted">Registrá y controlá tus operaciones</p>
+              </div>
+              <button type="button" id="btn-open-sale-modal" class="ventas-btn-nueva">Nueva venta</button>
+            </div>
+            <div class="ventas-kpi-board" aria-live="polite">
+              <div class="section-kpi-row section-kpi-row--ventas-basic">
+                <article class="section-kpi">
+                  <span class="section-kpi__label">Ventas del mes</span>
+                  <strong id="ventas-kpi-total" class="section-kpi__value">0</strong>
+                  <span class="section-kpi__hint muted">operaciones</span>
+                </article>
+                <article class="section-kpi">
+                  <span class="section-kpi__label">Cobrado</span>
+                  <strong id="ventas-kpi-revenue" class="section-kpi__value">$0.00</strong>
+                  <span class="section-kpi__hint muted">US$ neto del mes</span>
+                </article>
+                <article class="section-kpi">
+                  <span class="section-kpi__label">Unidades</span>
+                  <strong id="ventas-kpi-units" class="section-kpi__value">0</strong>
+                  <span class="section-kpi__hint muted">equipos vendidos</span>
+                </article>
+              </div>
+              <article class="ventas-resultado-card" id="ventas-resultado-card">
+                <div class="ventas-resultado-card__main">
+                  <div class="ventas-resultado-card__head">
+                    <span class="ventas-resultado-card__label">Resultado del mes</span>
+                    <span id="ventas-kpi-profit-hint" class="ventas-resultado-card__hint muted">cobrado − costo</span>
+                  </div>
+                  <strong id="ventas-kpi-profit" class="ventas-resultado-card__value">$0.00</strong>
+                </div>
+                <div class="ventas-resultado-breakdown" id="ventas-resultado-breakdown" hidden>
+                  <div class="ventas-formula" role="img" aria-label="Desglose resultado con canje">
+                    <div class="ventas-formula__part">
+                      <span class="ventas-formula__k">Cobrado − costo</span>
+                      <strong id="ventas-kpi-cash-margin" class="ventas-formula__v">$0.00</strong>
+                    </div>
+                    <span class="ventas-formula__op" aria-hidden="true">+</span>
+                    <div class="ventas-formula__part ventas-formula__part--canje">
+                      <span class="ventas-formula__k">Canje a stock</span>
+                      <strong id="ventas-kpi-canje" class="ventas-formula__v">$0.00</strong>
+                    </div>
+                    <span class="ventas-formula__op" aria-hidden="true">=</span>
+                    <div class="ventas-formula__part ventas-formula__part--total">
+                      <span class="ventas-formula__k">Resultado</span>
+                      <strong id="ventas-kpi-profit-inline" class="ventas-formula__v">$0.00</strong>
+                    </div>
+                  </div>
+                  <p class="ventas-resultado-note muted">
+                    Con plan canje es normal que «cobrado − costo» sea negativo: parte del pago fue un equipo que revendés.
+                  </p>
+                </div>
+              </article>
+            </div>
+          </header>
+
+          <div
+            id="sale-modal"
+            class="sale-modal"
+            hidden
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="sale-modal-title"
+            aria-hidden="true"
+          >
+            <div class="sale-modal__backdrop" id="sale-modal-backdrop" aria-hidden="true"></div>
+            <div class="sale-modal__panel card glass-panel" role="document">
+              <div class="sale-modal__header">
+                <h2 id="sale-modal-title">Nueva venta</h2>
+                <button type="button" class="sale-modal__close" id="sale-modal-close" aria-label="Cerrar">×</button>
+              </div>
+              <div class="sale-modal__scroll">
+                <p id="sale-edit-hint" class="fieldset-hint muted" hidden>
+                  Editando esta venta: al guardar se actualiza también <strong>Serie o IMEI</strong>. El stock no se recalcula solo si cambiás cantidad o equipo.
+                </p>
+            <form id="sale-form" class="sale-form" novalidate>
+              <fieldset class="form-fieldset">
+                <legend>Cliente y fecha</legend>
+                <div class="grid">
+                  <label>
+                    Fecha
+                    <input id="sale-date" type="date" required />
+                  </label>
+                  <label class="label-span-2">
+                    Cliente
+                    <select id="sale-client-select" aria-label="Elegir cliente o nuevo">
+                      <option value="__new__">Nuevo cliente…</option>
+                    </select>
+                  </label>
+                  <label>
+                    Nombre
+                    <input id="sale-client" type="text" placeholder="Nombre y apellido" required autocomplete="name" />
+                  </label>
+                  <label>
+                    Teléfono
+                    <input id="sale-phone" type="tel" placeholder="Opcional" autocomplete="tel" />
+                  </label>
+                  <label>
+                    Instagram
+                    <input id="sale-ig" type="text" placeholder="@usuario (para vincular lead IG)" autocomplete="off" />
+                  </label>
+                  <label class="label-span-2">
+                    Vendedor
+                    <select id="sale-seller" aria-label="Vendedor de la venta">
+                      <option value="">Sin vendedor</option>
+                    </select>
+                  </label>
+                </div>
+                <p class="fieldset-hint muted">
+                  La comisión se calcula sobre el <strong>monto que entró</strong> de cada línea (neto, después de canje) según el % definido en
+                  <strong>Configuraciones → Vendedores</strong>.
+                </p>
+              </fieldset>
+
+              <fieldset class="form-fieldset">
+                <legend>Agregar producto al carrito</legend>
+                <p class="fieldset-hint">
+                  Completá el equipo y tocá <strong>Agregar al carrito</strong>. Podés sumar varias líneas (accesorios, más de un iPhone, etc.).
+                </p>
+                <div class="grid">
+                  <label class="label-span-2">
+                    Elegir del inventario (opcional)
+                    <select id="sale-pick-inventory" aria-label="Elegir producto del inventario">
+                      <option value="">— Manual / sin elegir fila —</option>
+                    </select>
+                  </label>
+                  <label>
+                    Modelo iPhone
+                    <input id="sale-model" type="text" placeholder="Ej: iPhone 15 Pro" />
+                  </label>
+                  <label>
+                    Color
+                    <input id="sale-color" type="text" />
+                  </label>
+                  <label>
+                    Almacenamiento
+                    <input id="sale-storage" type="text" placeholder="256GB" />
+                  </label>
+                  <label>
+                    Batería (%)
+                    <input id="sale-battery" type="number" min="0" max="100" step="1" placeholder="100" />
+                  </label>
+                  <label>
+                    Serie o IMEI
+                    <input id="sale-imei" type="text" placeholder="Serie o 15 dígitos IMEI" autocomplete="off" />
+                  </label>
+                  <label>
+                    Cantidad
+                    <input id="sale-quantity" type="number" min="1" step="1" value="1" />
+                  </label>
+                  <label>
+                    Precio unitario de venta
+                    <input id="sale-price" type="number" min="0" step="0.01" />
+                  </label>
+                  <label>
+                    Costo unitario (compra)
+                    <input id="sale-cost" type="number" min="0" step="0.01" placeholder="Si vacío, usa inventario" />
+                  </label>
+                </div>
+                <div class="sale-cart-actions">
+                  <button type="button" id="sale-add-cart-btn" class="secondary">Agregar al carrito</button>
+                </div>
+              </fieldset>
+
+              <fieldset class="form-fieldset sale-cart-fieldset">
+                <legend>Carrito</legend>
+                <div id="sale-cart-empty" class="sale-cart-empty muted">
+                  Todavía no hay productos. Configurá un equipo arriba y tocá «Agregar al carrito».
+                </div>
+                <div class="table-wrap sale-cart-table-wrap" hidden id="sale-cart-table-wrap">
+                  <table class="sale-cart-table">
+                    <thead>
+                      <tr>
+                        <th>Producto</th>
+                        <th>Cant.</th>
+                        <th>P. unit.</th>
+                        <th>Subtotal</th>
+                        <th></th>
+                      </tr>
+                    </thead>
+                    <tbody id="sale-cart-body"></tbody>
+                  </table>
+                </div>
+                <p class="sale-cart-toolbar">
+                  <button type="button" id="sale-cart-clear-btn" class="secondary sale-cart-clear" hidden>
+                    Vaciar carrito
+                  </button>
+                </p>
+              </fieldset>
+
+              <fieldset class="form-fieldset">
+                <legend>Canje (plan canje)</legend>
+                <p class="fieldset-hint">
+                  El <strong>valor del canje</strong> se resta del total del carrito para totales y ganancia. Si completás modelo, color y almacenamiento del equipo
+                  recibido, se <strong>suma 1 unidad</strong> al inventario con ese dato (costo = valor del canje; precio de lista opcional).
+                </p>
+                <div class="grid">
+                  <label class="label-span-2">
+                    Equipo recibido en canje (notas)
+                    <textarea id="sale-trade-in-desc" rows="2" placeholder="Ej: iPhone 11 64GB, pantalla buena, batería 82%"></textarea>
+                  </label>
+                  <label>
+                    Valor del canje (USD)
+                    <input id="sale-trade-in-value" type="number" min="0" step="0.01" value="0" />
+                  </label>
+                </div>
+                <p class="fieldset-hint">Entrada a inventario del equipo recibido (opcional — los tres primeros campos juntos)</p>
+                <div class="grid">
+                  <label>
+                    Modelo (canje)
+                    <input id="sale-trade-in-model" type="text" placeholder="Ej: iPhone 11" autocomplete="off" />
+                  </label>
+                  <label>
+                    Color (canje)
+                    <input id="sale-trade-in-color" type="text" placeholder="Negro" autocomplete="off" />
+                  </label>
+                  <label>
+                    Almacenamiento (canje)
+                    <input id="sale-trade-in-storage" type="text" placeholder="64GB" autocomplete="off" />
+                  </label>
+                  <label>
+                    Batería % (canje)
+                    <input id="sale-trade-in-battery" type="number" min="0" max="100" step="1" placeholder="Opcional" />
+                  </label>
+                  <label>
+                    Precio lista inventario (USD)
+                    <input id="sale-trade-in-inv-price" type="number" min="0" step="0.01" placeholder="Si vacío, = valor canje" />
+                  </label>
+                </div>
+              </fieldset>
+
+              <div class="sale-checkout-summary card glass-panel" id="sale-checkout-summary">
+                <h3 class="sale-checkout-title">Resumen para el cliente</h3>
+                <div class="sale-checkout-rows">
+                  <div class="sale-checkout-row">
+                    <span>Subtotal ítems</span>
+                    <span id="sale-summary-gross">$0.00</span>
+                  </div>
+                  <div class="sale-checkout-row sale-checkout-row--deduct">
+                    <span>Plan canje (descuento)</span>
+                    <span id="sale-summary-trade">−$0.00</span>
+                  </div>
+                  <div class="sale-checkout-row sale-checkout-row--total">
+                    <span>Total a pagar</span>
+                    <strong id="sale-summary-net">$0.00</strong>
+                  </div>
+                </div>
+              </div>
+
+              <fieldset class="form-fieldset">
+                <legend>Formas de pago (USD)</legend>
+                <p class="fieldset-hint">Completá lo que corresponda; puede ser varios medios a la vez.</p>
+                <div class="grid">
+                  <label>
+                    Efectivo
+                    <input id="sale-pay-cash" type="number" min="0" step="0.01" value="0" />
+                  </label>
+                  <label>
+                    Transferencia
+                    <input id="sale-pay-transfer" type="number" min="0" step="0.01" value="0" />
+                  </label>
+                  <label>
+                    Tarjeta (débito/crédito)
+                    <input id="sale-pay-card" type="number" min="0" step="0.01" value="0" />
+                  </label>
+                  <label>
+                    Otro (Mercado Pago, etc.)
+                    <input id="sale-pay-other" type="number" min="0" step="0.01" value="0" />
+                  </label>
+                  <label class="label-span-2">
+                    Notas de pago / detalle
+                    <input id="sale-payment" type="text" placeholder="Ej: 3 cuotas sin interés, referencia transferencia…" />
+                  </label>
+                </div>
+              </fieldset>
+
+              <div class="form-actions sale-modal__form-actions">
+                <button type="button" class="secondary" id="sale-modal-cancel">Cancelar</button>
+                <button type="submit" id="sale-form-submit-btn">Guardar venta</button>
+              </div>
+            </form>
+              </div>
+            </div>
+          </div>
+
+          <section class="card">
+            <div class="table-head table-head--filters">
+              <h2>Historial de ventas</h2>
+              <button type="button" class="secondary" id="btn-export-sales-csv">Exportar CSV</button>
+            </div>
+            <div class="view-filter-bar" data-view-filter="sales">
+              <span class="view-filter-period view-filter-period--month">Mes: <strong data-view-period-label></strong></span>
+              <label class="view-filter-label">
+                Buscar
+                <input id="sales-filter-q" type="search" placeholder="Cliente, modelo, teléfono…" autocomplete="off" />
+              </label>
+              <label class="view-filter-check">
+                <input id="sales-filter-all-months" type="checkbox" />
+                Ver todos los meses
+              </label>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Fecha</th>
+                    <th>Cliente</th>
+                    <th>Vendedor</th>
+                    <th>Equipo</th>
+                    <th>Cant.</th>
+                    <th>Venta</th>
+                    <th>Pago / canje</th>
+                    <th>Resultado</th>
+                    <th>Acción</th>
+                  </tr>
+                </thead>
+                <tbody id="sales-body"></tbody>
+              </table>
+            </div>
+          </section>
+        </section>
+
+        <!-- Pipeline (ManyChat / ads / manual) — tablero Kanban -->
+        <section class="tab-panel" id="tab-pipeline" aria-label="Pipeline de leads">
+          <header class="section-hero card glass-panel">
+            <div class="section-hero__head">
+              <div>
+                <h2 class="section-hero__title">Pipeline</h2>
+                <p class="section-hero__subtitle muted">Seguimiento de leads y conversiones</p>
+              </div>
+              <div class="section-hero__actions">
+                <label class="view-filter-label pipeline-filter-label--inline">
+                  Origen
+                  <select id="pipeline-filter-source" aria-label="Filtrar por origen">
+                    <option value="">Todos</option>
+                    <option value="manual">Manual</option>
+                    <option value="manychat">ManyChat</option>
+                    <option value="meta_ads">Meta / Ads</option>
+                    <option value="organic">Orgánico</option>
+                    <option value="otro">Otro</option>
+                  </select>
+                </label>
+                <button type="button" class="secondary pipeline-btn-manual" id="btn-open-pipeline-modal">
+                  + Lead manual
+                </button>
+              </div>
+            </div>
+            <div class="section-kpi-row" aria-live="polite">
+              <article class="section-kpi">
+                <span class="section-kpi__label">Total leads</span>
+                <strong id="pipeline-kpi-total" class="section-kpi__value">0</strong>
+                <span class="section-kpi__hint muted">en pipeline</span>
+              </article>
+              <article class="section-kpi">
+                <span class="section-kpi__label">Activos</span>
+                <strong id="pipeline-kpi-active" class="section-kpi__value">0</strong>
+                <span class="section-kpi__hint muted">en proceso</span>
+              </article>
+              <article class="section-kpi">
+                <span class="section-kpi__label">Convertidos</span>
+                <strong id="pipeline-kpi-won" class="section-kpi__value">0</strong>
+                <span class="section-kpi__hint muted">ventas cerradas</span>
+              </article>
+              <article class="section-kpi">
+                <span class="section-kpi__label">Perdidos</span>
+                <strong id="pipeline-kpi-lost" class="section-kpi__value">0</strong>
+                <span class="section-kpi__hint muted">no avanzaron</span>
+              </article>
+            </div>
+          </header>
+          <div class="view-filter-bar view-filter-bar--pipeline" data-view-filter="pipeline">
+            <label class="view-filter-label">
+              Buscar
+              <input id="pipeline-filter-q" type="search" placeholder="Nombre, teléfono, IG…" autocomplete="off" />
+            </label>
+          </div>
+          <section class="card pipeline-intro-card">
+            <div id="pipeline-board" class="pipeline-board" aria-label="Tablero Kanban de leads"></div>
+          </section>
+
+          <div
+            id="pipeline-modal"
+            class="sale-modal pipeline-modal"
+            hidden
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="pipeline-modal-title"
+            aria-hidden="true"
+          >
+            <div class="sale-modal__backdrop" id="pipeline-modal-backdrop" aria-hidden="true"></div>
+            <div class="sale-modal__panel card glass-panel" role="document">
+              <div class="sale-modal__header">
+                <h2 id="pipeline-modal-title">Agregar lead manual</h2>
+                <button type="button" class="sale-modal__close" id="pipeline-modal-close" aria-label="Cerrar">×</button>
+              </div>
+              <div class="sale-modal__scroll">
+                <p class="fieldset-hint pipeline-modal-lead">
+                  Opcional: usalo si necesitás cargar alguien a mano. El flujo automático va por Supabase / ManyChat.
+                </p>
+                <form id="pipeline-lead-form" class="grid pipeline-lead-form">
+                  <label>
+                    Nombre
+                    <input id="pipeline-name" type="text" required placeholder="Nombre del lead" autocomplete="name" />
+                  </label>
+                  <label>
+                    Teléfono
+                    <input id="pipeline-phone" type="tel" placeholder="+54…" autocomplete="tel" />
+                  </label>
+                  <label>
+                    Email
+                    <input id="pipeline-email" type="email" placeholder="Opcional" autocomplete="email" />
+                  </label>
+                  <label>
+                    Instagram
+                    <input id="pipeline-ig" type="text" placeholder="@usuario u opcional" autocomplete="off" />
+                  </label>
+                  <label>
+                    Etapa inicial
+                    <select id="pipeline-stage" required>
+                      <option value="nuevo">Nuevo</option>
+                      <option value="contactado">Contactado</option>
+                      <option value="interesado">Interesado</option>
+                      <option value="plan_canje">Plan canje</option>
+                      <option value="cita">Cita / visita</option>
+                      <option value="venta">Venta</option>
+                      <option value="perdido">Perdido</option>
+                    </select>
+                  </label>
+                  <label>
+                    Origen
+                    <select id="pipeline-source" required>
+                      <option value="manual">Manual (CRM)</option>
+                      <option value="manychat">ManyChat</option>
+                      <option value="meta_ads">Meta / Ads</option>
+                      <option value="organic">Orgánico</option>
+                      <option value="otro">Otro</option>
+                    </select>
+                  </label>
+                  <label class="label-span-2">
+                    ID ManyChat (subscriber)
+                    <input id="pipeline-manychat-id" type="text" placeholder="Opcional" autocomplete="off" />
+                  </label>
+                  <label class="label-span-2">
+                    Notas
+                    <input id="pipeline-notes" type="text" placeholder="Contexto interno" />
+                  </label>
+                  <div class="form-actions label-span-2 sale-modal__form-actions">
+                    <button type="button" class="secondary" id="pipeline-modal-cancel">Cancelar</button>
+                    <button type="submit">Guardar lead</button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Garantías -->
+        <section class="tab-panel" id="tab-garantias" aria-label="Garantías">
+          <header class="section-hero card glass-panel">
+            <div class="section-hero__head">
+              <h2 class="section-hero__title">Garantías</h2>
+              <p class="section-hero__subtitle muted">Control de garantías de 30 días</p>
+            </div>
+            <div class="section-kpi-row" aria-live="polite">
+              <article class="section-kpi">
+                <span class="section-kpi__label">Vigentes</span>
+                <strong id="garantias-kpi-active" class="section-kpi__value">0</strong>
+                <span class="section-kpi__hint muted">activas ahora</span>
+              </article>
+              <article class="section-kpi">
+                <span class="section-kpi__label">Vencidas</span>
+                <strong id="garantias-kpi-expired" class="section-kpi__value">0</strong>
+                <span class="section-kpi__hint muted">fuera de plazo</span>
+              </article>
+              <article class="section-kpi">
+                <span class="section-kpi__label">Total ventas</span>
+                <strong id="garantias-kpi-total" class="section-kpi__value">0</strong>
+                <span class="section-kpi__hint muted">con garantía</span>
+              </article>
+              <article class="section-kpi">
+                <span class="section-kpi__label">En taller</span>
+                <strong id="garantias-kpi-tech" class="section-kpi__value">0</strong>
+                <span class="section-kpi__hint muted">por garantía</span>
+              </article>
+            </div>
+          </header>
+          <section class="card glass-panel warranty-board-card">
+            <div class="table-head">
+              <h2>Garantías (30 días)</h2>
+              <span id="warranty-count-badge" class="warranty-count-badge muted" aria-live="polite"></span>
+            </div>
+            <p class="section-hint muted inv-stock-hint">
+              Cada tarjeta es una venta con garantía. Tocá <strong>Ver venta</strong> o <strong>Historial</strong> para el equipo exacto (serie / IMEI).
+            </p>
+            <div class="view-filter-bar warranty-toolbar" data-view-filter="warranty">
+              <label class="view-filter-label">
+                Buscar
+                <input
+                  id="warranty-search"
+                  type="search"
+                  placeholder="Cliente, modelo, serie, IMEI…"
+                  autocomplete="off"
+                />
+              </label>
+              <label class="view-filter-label">
+                Mostrar
+                <select id="warranty-filter">
+                  <option value="active">Solo vigentes</option>
+                  <option value="all">Todas</option>
+                  <option value="expired">Solo vencidas</option>
+                </select>
+              </label>
+            </div>
+            <p id="warranty-empty" class="warranty-empty muted" hidden>No hay garantías para este filtro.</p>
+            <div id="warranty-body" class="warranty-grid" aria-live="polite"></div>
+          </section>
+        </section>
+
+        <!-- Servicio técnico -->
+        <section class="tab-panel tech-panel" id="tab-servicio-tecnico" aria-label="Servicio técnico">
+          <header class="tech-hero card glass-panel">
+            <div class="tech-hero__intro">
+              <h2 class="tech-hero__title">Servicio técnico</h2>
+              <p class="tech-hero__subtitle muted">Taller, garantías y egresos de reparación</p>
+            </div>
+            <div class="tech-kpi-row" aria-live="polite">
+              <article class="tech-kpi">
+                <span class="tech-kpi__label">En taller</span>
+                <strong id="tech-kpi-units" class="tech-kpi__value">0</strong>
+                <span class="tech-kpi__hint muted">equipos</span>
+              </article>
+              <article class="tech-kpi">
+                <span class="tech-kpi__label">Gasto reparaciones</span>
+                <strong id="tech-kpi-repair-cost" class="tech-kpi__value">$0.00</strong>
+                <span class="tech-kpi__hint muted">acumulado US$</span>
+              </article>
+              <article class="tech-kpi">
+                <span class="tech-kpi__label">Egresos caja</span>
+                <strong id="tech-kpi-cash-out" class="tech-kpi__value">$0.00</strong>
+                <span class="tech-kpi__hint muted">tipo técnico</span>
+              </article>
+              <article class="tech-kpi tech-kpi--warranty">
+                <span class="tech-kpi__label">Gasto garantía</span>
+                <strong id="tech-kpi-warranty-cost" class="tech-kpi__value">$0.00</strong>
+                <span class="tech-kpi__hint muted">a nuestro cargo</span>
+              </article>
+            </div>
+            <div class="tech-hero__actions" role="toolbar" aria-label="Acciones de taller">
+              <button type="button" id="btn-tech-warranty" class="tech-hero-btn tech-hero-btn--primary">
+                Ingreso garantía
+              </button>
+              <button type="button" id="btn-tech-stock" class="tech-hero-btn">Desde stock</button>
+              <button type="button" id="btn-tech-expense" class="tech-hero-btn">Registrar gasto</button>
+            </div>
+          </header>
+
+          <section class="tech-board" aria-labelledby="tech-board-title">
+            <div class="tech-board__head">
+              <h3 id="tech-board-title">Equipos en taller</h3>
+              <button type="button" id="btn-tech-toggle-cash" class="tech-board__link secondary">Egresos de caja</button>
+            </div>
+            <div id="tech-units-empty" class="tech-empty" hidden>
+              <p class="tech-empty__title">No hay equipos en taller</p>
+              <p class="tech-empty__hint muted">Ingresá uno por garantía o desde tu stock.</p>
+              <div class="tech-empty__actions">
+                <button type="button" class="tech-hero-btn tech-hero-btn--primary" data-tech-open="warranty">Ingreso garantía</button>
+                <button type="button" class="tech-hero-btn" data-tech-open="stock">Desde stock</button>
+              </div>
+            </div>
+            <div id="tech-units-list" class="tech-units-grid" aria-live="polite"></div>
+            <details id="tech-cash-details" class="tech-cash-details">
+              <summary class="tech-cash-details__summary">Últimos egresos en caja (técnico)</summary>
+              <ul id="tech-cash-list" class="tech-cash-list"></ul>
+              <p id="tech-cash-empty" class="muted tech-cash-empty" hidden>Sin egresos registrados.</p>
+            </details>
+          </section>
+        </section>
+
+        <!-- Caja -->
+        <section class="tab-panel" id="tab-caja" aria-label="Caja">
+          <header class="section-hero card glass-panel">
+            <div class="section-hero__head">
+              <div>
+                <h2 class="section-hero__title">Caja</h2>
+                <p class="section-hero__subtitle muted">Ingresos, egresos y balance mensual</p>
+              </div>
+              <button type="button" id="btn-open-cash-modal" class="ventas-btn-nueva">+ Movimiento</button>
+            </div>
+            <div class="section-kpi-row" aria-live="polite">
+              <article class="section-kpi">
+                <span class="section-kpi__label">Ingresos mes</span>
+                <strong id="caja-kpi-ingresos" class="section-kpi__value">$0.00</strong>
+                <span class="section-kpi__hint muted">ventas + caja US$</span>
+              </article>
+              <article class="section-kpi">
+                <span class="section-kpi__label">Egresos mes</span>
+                <strong id="caja-kpi-egresos" class="section-kpi__value">$0.00</strong>
+                <span class="section-kpi__hint muted">US$ egresados</span>
+              </article>
+              <article class="section-kpi">
+                <span class="section-kpi__label">Movimientos</span>
+                <strong id="caja-kpi-count" class="section-kpi__value">0</strong>
+                <span class="section-kpi__hint muted">ventas + caja del mes</span>
+              </article>
+              <article class="section-kpi">
+                <span class="section-kpi__label">Balance</span>
+                <strong id="caja-kpi-balance" class="section-kpi__value">$0.00</strong>
+                <span class="section-kpi__hint muted">todo lo que entró − egresos</span>
+              </article>
+            </div>
+          </header>
+          <section class="week-close-compact card glass-panel" id="cash-week-close-panel">
+            <div class="week-close-compact__inner">
+              <div class="week-close-compact__main">
+                <h2 class="week-close-compact__title">Cierre semanal</h2>
+                <p id="week-close-summary" class="week-close-compact__summary muted">
+                  Semana domingo → sábado
+                </p>
+              </div>
+              <span id="week-close-status" class="week-close-status week-close-status--open">Pendiente</span>
+              <button type="button" id="btn-open-week-close-modal" class="ventas-btn-nueva week-close-compact__btn">
+                Abrir cierre
+              </button>
+            </div>
+          </section>
+
+          <section class="card">
+            <div class="table-head table-head--filters">
+              <h2>Historial de caja</h2>
+              <button type="button" class="secondary" id="btn-export-cash-csv">Exportar CSV</button>
+            </div>
+            <div class="view-filter-bar" data-view-filter="cash">
+              <span class="view-filter-period view-filter-period--month">Mes: <strong data-view-period-label></strong></span>
+              <label class="view-filter-label">
+                Buscar
+                <input id="cash-filter-q" type="search" placeholder="Concepto…" autocomplete="off" />
+              </label>
+              <label class="view-filter-label">
+                Tipo
+                <select id="cash-filter-type" aria-label="Filtrar por tipo de movimiento">
+                  <option value="">Todos</option>
+                  <option value="ingreso">Ingreso</option>
+                  <option value="egreso">Egreso</option>
+                  <option value="venta">Venta (desde Ventas)</option>
+                </select>
+              </label>
+              <label class="view-filter-label">
+                Destino
+                <select id="cash-filter-dest" aria-label="Filtrar por destino">
+                  <option value="">Todos</option>
+                  <option value="reparto">Reparto general</option>
+                  <option value="reserva">Reserva</option>
+                  <option value="restock">Restock</option>
+                  <option value="socios">Socios</option>
+                  <option value="tecnico">Técnico</option>
+                </select>
+              </label>
+              <label class="view-filter-check">
+                <input id="cash-filter-all-months" type="checkbox" />
+                Ver todos los meses
+              </label>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Fecha</th>
+                    <th>Tipo</th>
+                    <th>Destino</th>
+                    <th>Concepto</th>
+                    <th>Monto</th>
+                    <th>Acción</th>
+                  </tr>
+                </thead>
+                <tbody id="cash-body"></tbody>
+              </table>
+            </div>
+          </section>
+        </section>
+
+        <!-- Facturación -->
+        <section class="tab-panel" id="tab-facturacion" aria-label="Facturación">
+          <header class="section-hero card glass-panel">
+            <div class="section-hero__head">
+              <div>
+                <h2 class="section-hero__title">Facturación</h2>
+                <p class="section-hero__subtitle muted">Comprobantes y trazabilidad</p>
+              </div>
+              <button type="button" id="btn-open-invoice-modal" class="ventas-btn-nueva">Emitir comprobante</button>
+            </div>
+            <div class="section-kpi-row" aria-live="polite">
+              <article class="section-kpi">
+                <span class="section-kpi__label">Comprobantes</span>
+                <strong id="fact-kpi-count" class="section-kpi__value">0</strong>
+                <span class="section-kpi__hint muted">emitidos total</span>
+              </article>
+              <article class="section-kpi">
+                <span class="section-kpi__label">Del mes</span>
+                <strong id="fact-kpi-month" class="section-kpi__value">0</strong>
+                <span class="section-kpi__hint muted">emitidos este mes</span>
+              </article>
+              <article class="section-kpi">
+                <span class="section-kpi__label">Facturado mes</span>
+                <strong id="fact-kpi-revenue" class="section-kpi__value">$0.00</strong>
+                <span class="section-kpi__hint muted">US$ en comprobantes</span>
+              </article>
+              <article class="section-kpi">
+                <span class="section-kpi__label">Anulados</span>
+                <strong id="fact-kpi-voided" class="section-kpi__value">0</strong>
+                <span class="section-kpi__hint muted">notas de crédito / anulados</span>
+              </article>
+            </div>
+          </header>
+
+          <section class="card">
+            <div class="table-head table-head--filters">
+              <h2>Comprobantes emitidos</h2>
+              <button type="button" id="btn-invoice-export" class="secondary">Exportar CSV</button>
+            </div>
+            <div class="view-filter-bar" data-view-filter="invoices">
+              <label class="view-filter-label">
+                Buscar
+                <input id="invoices-filter-q" type="search" placeholder="Cliente, número…" autocomplete="off" />
+              </label>
+              <label class="view-filter-label">
+                Estado
+                <select id="invoices-filter-status" aria-label="Filtrar por estado">
+                  <option value="">Todos</option>
+                  <option value="emitido">Emitido</option>
+                  <option value="anulado">Anulado</option>
+                </select>
+              </label>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Fecha</th>
+                    <th>Número</th>
+                    <th>Tipo</th>
+                    <th>Cliente</th>
+                    <th>Venta</th>
+                    <th>Impuesto</th>
+                    <th>Total</th>
+                    <th>Estado</th>
+                    <th>Acción</th>
+                  </tr>
+                </thead>
+                <tbody id="invoices-body"></tbody>
+              </table>
+            </div>
+          </section>
+        </section>
+
+        <!-- Deudores · cuotas por cobrar -->
+        <section class="tab-panel" id="tab-deudores" aria-label="Deudores y cuotas por cobrar">
+          <header class="section-hero card glass-panel">
+            <div class="section-hero__head">
+              <div>
+                <h2 class="section-hero__title">Deudores</h2>
+                <p class="section-hero__subtitle muted">Cuotas, tarjetas y pendientes por cobrar</p>
+              </div>
+              <button type="button" id="btn-open-receivable-modal" class="ventas-btn-nueva">+ Pendiente</button>
+            </div>
+            <div class="section-kpi-row" aria-live="polite">
+              <article class="section-kpi">
+                <span class="section-kpi__label">Total pendiente</span>
+                <strong id="deudores-kpi-total" class="section-kpi__value">$0.00</strong>
+                <span class="section-kpi__hint muted">US$ por cobrar</span>
+              </article>
+              <article class="section-kpi">
+                <span class="section-kpi__label">Deudores</span>
+                <strong id="deudores-kpi-count" class="section-kpi__value">0</strong>
+                <span class="section-kpi__hint muted">registros activos</span>
+              </article>
+              <article class="section-kpi">
+                <span class="section-kpi__label">Vencidos</span>
+                <strong id="deudores-kpi-overdue" class="section-kpi__value">0</strong>
+                <span class="section-kpi__hint muted">ya pasó la fecha</span>
+              </article>
+              <article class="section-kpi">
+                <span class="section-kpi__label">Próximo cobro</span>
+                <strong id="deudores-kpi-next" class="section-kpi__value">—</strong>
+                <span class="section-kpi__hint muted">más cercano</span>
+              </article>
+            </div>
+          </header>
+          <section class="card">
+            <div class="table-head table-head--filters">
+              <h2>Pendientes por cobrar</h2>
+            </div>
+            <div class="view-filter-bar" data-view-filter="receivables">
+              <label class="view-filter-label">
+                Buscar
+                <input id="receivables-filter-q" type="search" placeholder="Cliente, concepto…" autocomplete="off" />
+              </label>
+              <label class="view-filter-label">
+                Tipo
+                <select id="receivables-filter-kind" aria-label="Filtrar por tipo">
+                  <option value="">Todos</option>
+                  <option value="cuotas">Cuotas / plan</option>
+                  <option value="tarjeta">Tarjeta</option>
+                  <option value="otro">Otro</option>
+                </select>
+              </label>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Cliente</th>
+                    <th>Concepto</th>
+                    <th>Tipo</th>
+                    <th>Vence</th>
+                    <th>Pendiente</th>
+                    <th>Notas</th>
+                    <th>Acción</th>
+                  </tr>
+                </thead>
+                <tbody id="receivables-body"></tbody>
+              </table>
+            </div>
+          </section>
+        </section>
+
+        <!-- Inventario -->
+        <section class="tab-panel" id="tab-inventario" aria-label="Inventario">
+          <header class="section-hero card glass-panel">
+            <div class="section-hero__head">
+              <div>
+                <h2 class="section-hero__title">Inventario</h2>
+                <p class="section-hero__subtitle muted">Stock actual y valor del inventario</p>
+              </div>
+              <button type="button" id="btn-open-inventory-modal" class="ventas-btn-nueva staff-owner-only">Agregar equipo</button>
+            </div>
+            <div class="section-kpi-row" aria-live="polite">
+              <article class="section-kpi">
+                <span class="section-kpi__label">Unidades</span>
+                <strong id="inv-kpi-units" class="section-kpi__value">0</strong>
+                <span class="section-kpi__hint muted">en stock total</span>
+              </article>
+              <article class="section-kpi">
+                <span class="section-kpi__label">Modelos</span>
+                <strong id="inv-kpi-models" class="section-kpi__value">0</strong>
+                <span class="section-kpi__hint muted">distintos</span>
+              </article>
+              <article class="section-kpi">
+                <span class="section-kpi__label">Valor stock</span>
+                <strong id="inv-kpi-value" class="section-kpi__value">$0.00</strong>
+                <span class="section-kpi__hint muted">US$ a precio venta</span>
+              </article>
+              <article class="section-kpi staff-owner-only">
+                <span class="section-kpi__label">Costo stock</span>
+                <strong id="inv-kpi-cost" class="section-kpi__value">$0.00</strong>
+                <span class="section-kpi__hint muted">US$ inversión</span>
+              </article>
+            </div>
+          </header>
+
+          <section class="card">
+            <div class="table-head">
+              <h2>Stock actual</h2>
+              <div class="table-head-actions">
+                <button type="button" id="btn-inv-wa-list" class="secondary">
+                  Lista WhatsApp
+                </button>
+                <button type="button" id="btn-open-device-history-modal" class="secondary staff-owner-only">
+                  Historial serie/IMEI
+                </button>
+                <button type="button" id="btn-open-inv-bulk-modal" class="ventas-btn-nueva staff-owner-only">
+                  Carga masiva
+                </button>
+              </div>
+            </div>
+            <p class="section-hint muted inv-stock-hint">
+              Tocá el <strong>modelo</strong> para ver equipos. <strong>Tocá una tarjeta</strong> para ver detalle.
+              Usá <strong>Lista WhatsApp</strong> para elegir varios y copiar una lista lista para vender.
+            </p>
+            <div id="inv-wa-select-bar" class="inv-wa-select-bar" hidden>
+              <div class="inv-wa-select-bar__main">
+                <strong id="inv-wa-select-count">0 seleccionados</strong>
+                <span class="muted">Tocá las tarjetas para sumar o quitar</span>
+              </div>
+              <div class="inv-wa-select-bar__actions">
+                <button type="button" class="secondary" id="btn-inv-wa-select-visible">Todos visibles</button>
+                <button type="button" class="secondary" id="btn-inv-wa-select-clear">Limpiar</button>
+                <button type="button" class="secondary" id="btn-inv-wa-select-cancel">Cancelar</button>
+                <button type="button" id="btn-inv-wa-select-continue" class="ventas-btn-nueva" disabled>Armar lista</button>
+              </div>
+            </div>
+            <div class="view-filter-bar inv-stock-toolbar" data-view-filter="inventory">
+              <label class="view-filter-label">
+                Buscar
+                <input
+                  id="inv-stock-search"
+                  type="search"
+                  placeholder="Modelo, serie, IMEI, color…"
+                  autocomplete="off"
+                />
+              </label>
+              <label class="view-filter-label">
+                Filtro
+                <select id="inv-stock-filter">
+                  <option value="all">Todos con stock</option>
+                  <option value="sin_precio">Sin precio (US$ 0)</option>
+                  <option value="sin_id">Sin serie ni IMEI</option>
+                  <option value="sin_costo">Sin costo</option>
+                  <option value="en_tecnico">En técnico</option>
+                  <option value="antiguo">+45 días en stock</option>
+                </select>
+              </label>
+            </div>
+            <div id="inventory-stock" class="inv-stock-list" aria-live="polite"></div>
+          </section>
+
+          <div
+            id="inv-wa-list-modal"
+            class="sale-modal crud-form-modal crud-form-modal--wide inv-wa-list-modal"
+            hidden
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="inv-wa-list-modal-title"
+            aria-hidden="true"
+          >
+            <div class="sale-modal__backdrop" id="inv-wa-list-modal-backdrop" aria-hidden="true"></div>
+            <div class="sale-modal__panel card glass-panel" role="document">
+              <div class="sale-modal__header">
+                <div>
+                  <h2 id="inv-wa-list-modal-title">Lista WhatsApp</h2>
+                  <p id="inv-wa-list-modal-sub" class="muted inv-wa-list-modal__sub">Elegí qué mostrar y copiá</p>
+                </div>
+                <button type="button" class="sale-modal__close" id="inv-wa-list-modal-close" aria-label="Cerrar">×</button>
+              </div>
+              <div class="sale-modal__scroll">
+                <section class="inv-wa-fields">
+                  <h3 class="inv-wa-fields__title">Qué incluir en cada equipo</h3>
+                  <div class="inv-wa-fields__grid" id="inv-wa-fields-grid">
+                    <label class="inv-wa-field"><input type="checkbox" data-wa-field="color" checked /> Color</label>
+                    <label class="inv-wa-field"><input type="checkbox" data-wa-field="storage" checked /> Almacenamiento</label>
+                    <label class="inv-wa-field"><input type="checkbox" data-wa-field="battery" checked /> Batería</label>
+                    <label class="inv-wa-field"><input type="checkbox" data-wa-field="usd" /> Precio USD</label>
+                    <label class="inv-wa-field"><input type="checkbox" data-wa-field="contado" checked /> Contado ARS</label>
+                    <label class="inv-wa-field"><input type="checkbox" data-wa-field="lista" checked /> Lista / tarjeta</label>
+                    <label class="inv-wa-field"><input type="checkbox" data-wa-field="cuotas12" /> Cuota 12x</label>
+                    <label class="inv-wa-field"><input type="checkbox" data-wa-field="cuotasAll" /> Todas las cuotas</label>
+                  </div>
+                </section>
+                <section class="inv-wa-preview-wrap">
+                  <div class="inv-wa-preview-head">
+                    <h3 class="inv-wa-fields__title">Vista previa</h3>
+                    <span id="inv-wa-preview-meta" class="muted"></span>
+                  </div>
+                  <pre id="inv-wa-preview" class="inv-wa-preview" aria-live="polite"></pre>
+                </section>
+              </div>
+              <div class="form-actions sale-modal__form-actions">
+                <button type="button" class="secondary" id="inv-wa-list-modal-cancel">Volver</button>
+                <button type="button" id="btn-inv-wa-copy" class="inv-wa-copy-btn">Copiar lista</button>
+              </div>
+            </div>
+          </div>
+
+          <div
+            id="inv-bulk-modal"
+            class="sale-modal inv-bulk-modal"
+            hidden
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="inv-bulk-modal-title"
+          >
+            <div class="sale-modal__backdrop" id="inv-bulk-modal-backdrop" aria-hidden="true"></div>
+            <div class="sale-modal__panel card glass-panel" role="document">
+              <div class="sale-modal__header">
+                <h2 id="inv-bulk-modal-title">Carga masiva desde reporte</h2>
+                <button type="button" class="sale-modal__close" id="inv-bulk-modal-close" aria-label="Cerrar">×</button>
+              </div>
+              <div class="sale-modal__scroll">
+                <p class="section-hint">
+                  Pegá el texto del reporte o subí archivos <strong>.txt</strong> (3uTools, iDevice, etc.). Se guardan por separado la <strong>serie</strong> (Serial Number) y el <strong>IMEI</strong> (15 dígitos), si el reporte lo trae. Cada reporte suma <strong>1 unidad</strong>; el precio en US$ queda en 0 hasta completarlo en la tabla.
+                </p>
+                <div class="inv-bulk-upload-row">
+                  <button type="button" class="secondary" id="inv-bulk-file-trigger">Elegir archivos (.txt)</button>
+                  <input
+                    id="inv-bulk-file"
+                    type="file"
+                    accept=".txt,text/plain"
+                    multiple
+                    hidden
+                  />
+                  <span id="inv-bulk-file-names" class="muted inv-bulk-file-names">O pegá el reporte abajo</span>
+                </div>
+                <label class="inv-bulk-paste-label">
+                  Reporte(s)
+                  <textarea
+                    id="inv-bulk-paste"
+                    rows="12"
+                    placeholder="Pegá aquí el reporte o cargá archivos arriba…"
+                    spellcheck="false"
+                  ></textarea>
+                </label>
+                <p id="inv-bulk-status" class="muted inv-bulk-status" hidden></p>
+                <div id="inv-bulk-preview-wrap" class="table-wrap inv-bulk-preview-wrap" hidden>
+                  <table class="inv-bulk-preview-table">
+                    <thead>
+                      <tr>
+                        <th>Modelo</th>
+                        <th>Color</th>
+                        <th>Almac.</th>
+                        <th>Bat.</th>
+                        <th>Serie</th>
+                        <th>IMEI</th>
+                        <th>Notas</th>
+                        <th>Estado</th>
+                      </tr>
+                    </thead>
+                    <tbody id="inv-bulk-preview-body"></tbody>
+                  </table>
+                </div>
+              </div>
+              <div class="form-actions sale-modal__form-actions inv-bulk-modal-actions">
+                <button type="button" class="secondary" id="inv-bulk-modal-cancel">Cancelar</button>
+                <button type="button" class="secondary" id="inv-bulk-parse-btn">Analizar</button>
+                <button type="button" id="inv-bulk-import-btn" hidden>Agregar al inventario</button>
+              </div>
+            </div>
+          </div>
+
+          <div
+            id="inv-unit-modal"
+            class="sale-modal inv-unit-modal"
+            hidden
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="inv-unit-modal-title"
+          >
+            <div class="sale-modal__backdrop" id="inv-unit-modal-backdrop" aria-hidden="true"></div>
+            <div class="sale-modal__panel card glass-panel inv-unit-modal__panel" role="document">
+              <div class="sale-modal__header">
+                <h2 id="inv-unit-modal-title">Equipo</h2>
+                <button type="button" class="sale-modal__close" id="inv-unit-modal-close" aria-label="Cerrar">×</button>
+              </div>
+              <div class="sale-modal__scroll" id="inv-unit-modal-body"></div>
+              <div class="form-actions sale-modal__form-actions inv-unit-modal__actions">
+                <button type="button" class="secondary staff-owner-only" id="inv-unit-modal-edit">Editar</button>
+                <button type="button" class="secondary inv-unit-modal__del staff-owner-only" id="inv-unit-modal-delete">Eliminar</button>
+                <button type="button" class="inv-unit-modal__copy-msg" id="inv-unit-modal-copy-msg" title="Copia un mensaje listo para WhatsApp">
+                  Copiar mensaje
+                </button>
+                <button type="button" id="inv-unit-modal-done">Cerrar</button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Creativos -->
+        <section class="tab-panel" id="tab-creativos" aria-label="Creativos">
+          <header class="section-hero card glass-panel">
+            <div class="section-hero__head">
+              <div>
+                <h2 class="section-hero__title">Creativos</h2>
+                <p class="section-hero__subtitle muted">Investigá, adaptá y publicá contenido para la tienda</p>
+              </div>
+              <div class="section-hero__actions">
+                <button type="button" class="secondary" id="btn-creativos-sync-notion">Sincronizar Notion</button>
+                <button type="button" class="secondary" id="btn-creativos-sync-instagram">Buscar virales (Instagram)</button>
+                <button type="button" class="secondary" id="btn-creativos-import-claude">Importar de Claude</button>
+                <button type="button" class="secondary" id="btn-creativos-download-previews">Descargar previews</button>
+                <button type="button" id="btn-creativos-new" class="ventas-btn-nueva">+ Nuevo creativo</button>
+              </div>
+            </div>
+            <div class="section-kpi-row" aria-live="polite">
+              <article class="section-kpi">
+                <span class="section-kpi__label">Referencias</span>
+                <strong id="creativos-kpi-total" class="section-kpi__value">0</strong>
+                <span class="section-kpi__hint muted">de otras tiendas</span>
+              </article>
+              <article class="section-kpi">
+                <span class="section-kpi__label">Pendientes</span>
+                <strong id="creativos-kpi-pending" class="section-kpi__value">0</strong>
+                <span class="section-kpi__hint muted">por procesar</span>
+              </article>
+              <article class="section-kpi">
+                <span class="section-kpi__label">Generados</span>
+                <strong id="creativos-kpi-ready" class="section-kpi__value">0</strong>
+                <span class="section-kpi__hint muted">listos para usar</span>
+              </article>
+              <article class="section-kpi">
+                <span class="section-kpi__label">Publicados</span>
+                <strong id="creativos-kpi-published" class="section-kpi__value">0</strong>
+                <span class="section-kpi__hint muted">ya en redes</span>
+              </article>
+            </div>
+          </header>
+
+          <!-- Pestañas: Competidores | Espacio de trabajo -->
+          <nav class="creativos-subtabs" aria-label="Secciones de creativos">
+            <button type="button" class="creativos-subtab active" data-subtab="competidores">Competidores</button>
+            <button type="button" class="creativos-subtab" data-subtab="workspace">Espacio de trabajo</button>
+          </nav>
+
+          <!-- Barra de progreso global Creativos -->
+          <p id="creativos-progress" class="creativos-progress card glass-panel" hidden></p>
+
+          <!-- Panel Competidores -->
+          <div id="creativos-panel-competidores" class="creativos-panel">
+            <p class="creativos-panel-intro muted">Base de referencias de otras tiendas. Sincronizá desde Notion y explorá por competidor.</p>
+            <section class="card creativos-toolbar-card">
+              <div class="creativos-toolbar view-filter-bar" data-view-filter="creativos">
+                <label class="view-filter-label">
+                  Buscar
+                  <input id="creativos-filter-q" type="search" placeholder="Tienda, contenido…" autocomplete="off" />
+                </label>
+              </div>
+            </section>
+            <div id="creativos-board-ref" class="creativos-competitors" aria-live="polite"></div>
+            <p id="creativos-empty-ref" class="muted creativos-empty" hidden>No hay referencias. <strong>Sincronizá Notion</strong> para traer posts de otras tiendas.</p>
+          </div>
+
+          <!-- Panel Espacio de trabajo (Kanban) -->
+          <div id="creativos-panel-workspace" class="creativos-panel" hidden>
+            <p class="creativos-panel-intro muted">Arrastrá de <strong>Ideas</strong> a <strong>Copy</strong> para generar el copy. Las imágenes las hacés vos en <strong>Diseño</strong> y movés a <strong>Publicación</strong> cuando esté listo.</p>
+
+            <section class="card creativos-ideas-gen card glass-panel">
+              <h3 class="creativos-ideas-gen__title">Generar ideas con IA</h3>
+              <p class="creativos-ideas-gen__hint muted">Describí el tema o objetivo. La IA crea tarjetas en la columna Ideas para que las trabajes.</p>
+              <label class="creativos-ideas-gen__label">
+                Contexto / brief
+                <textarea id="creativos-ideas-context" rows="3" placeholder="Ej: Quiero contenido sobre compras por encargo — que los clientes puedan pedir productos que no tenemos en stock…"></textarea>
+              </label>
+              <div class="creativos-ideas-gen__row">
+                <label class="creativos-ideas-gen__count-label">
+                  Cantidad
+                  <select id="creativos-ideas-count">
+                    <option value="3">3 ideas</option>
+                    <option value="5" selected>5 ideas</option>
+                    <option value="8">8 ideas</option>
+                  </select>
+                </label>
+                <button type="button" class="creativos-ideas-gen__btn" id="btn-generate-ideas">✨ Generar ideas</button>
+              </div>
+              <p id="creativos-openai-status" class="creativos-openai-status muted" aria-live="polite"></p>
+            </section>
+
+            <main class="creativos-workspace" id="creativos-workspace">
+              <div class="creativos-kanban creativos-kanban--4">
+                <div class="creativos-kanban__col" data-stage="ideas">
+                  <div class="creativos-kanban__header">
+                    <span class="creativos-kanban__dot" style="background:#94a3b8"></span>
+                    <h3>Ideas</h3>
+                    <span class="creativos-kanban__count" id="kanban-count-ideas">0</span>
+                  </div>
+                  <div class="creativos-kanban__cards" id="kanban-ideas" data-stage="ideas" aria-live="polite"></div>
+                </div>
+                <div class="creativos-kanban__col" data-stage="copy">
+                  <div class="creativos-kanban__header">
+                    <span class="creativos-kanban__dot" style="background:#3b82f6"></span>
+                    <h3>Copy</h3>
+                    <span class="creativos-kanban__count" id="kanban-count-copy">0</span>
+                  </div>
+                  <div class="creativos-kanban__cards" id="kanban-copy" data-stage="copy" aria-live="polite"></div>
+                </div>
+                <div class="creativos-kanban__col" data-stage="edicion">
+                  <div class="creativos-kanban__header">
+                    <span class="creativos-kanban__dot" style="background:#8b5cf6"></span>
+                    <h3>Diseño</h3>
+                    <span class="creativos-kanban__count" id="kanban-count-edicion">0</span>
+                  </div>
+                  <div class="creativos-kanban__cards" id="kanban-edicion" data-stage="edicion" aria-live="polite"></div>
+                </div>
+                <div class="creativos-kanban__col" data-stage="publicacion">
+                  <div class="creativos-kanban__header">
+                    <span class="creativos-kanban__dot" style="background:#22c55e"></span>
+                    <h3>Publicación</h3>
+                    <span class="creativos-kanban__count" id="kanban-count-publicacion">0</span>
+                  </div>
+                  <div class="creativos-kanban__cards" id="kanban-publicacion" data-stage="publicacion" aria-live="polite"></div>
+                </div>
+              </div>
+            </main>
+          </div>
+
+          <!-- Modal nuevo/editar creativo -->
+          <div id="creativos-modal" class="sale-modal creativos-modal" hidden role="dialog" aria-modal="true" aria-labelledby="creativos-modal-title">
+            <div class="sale-modal__backdrop" id="creativos-modal-backdrop" aria-hidden="true"></div>
+            <div class="sale-modal__panel card glass-panel creativos-modal__panel" role="document">
+              <div class="sale-modal__header">
+                <h2 id="creativos-modal-title">Nuevo creativo</h2>
+                <button type="button" class="sale-modal__close" id="creativos-modal-close" aria-label="Cerrar">×</button>
+              </div>
+              <div class="sale-modal__scroll">
+                <form id="creativos-form" class="grid creativos-form" novalidate>
+                  <fieldset class="form-fieldset grid-span-2">
+                    <legend>Referencia</legend>
+                    <div class="grid">
+                      <label class="label-span-2">
+                        Título / producto
+                        <input id="creativo-title" type="text" required placeholder="Ej: iPhone 15 Pro Max — oferta verano" />
+                      </label>
+                      <label class="label-span-2">
+                        URL imagen de referencia
+                        <input id="creativo-ref-url" type="url" placeholder="https://… o pegá una imagen" />
+                      </label>
+                      <label class="label-span-2">
+                        Subir imagen de referencia
+                        <input id="creativo-ref-file" type="file" accept="image/*" />
+                      </label>
+                      <div class="label-span-2">
+                        <div id="creativo-ref-preview" class="creativos-ref-preview" hidden>
+                          <img id="creativo-ref-preview-img" alt="Vista previa referencia" />
+                        </div>
+                      </div>
+                      <label>
+                        Fuente / tienda original
+                        <input id="creativo-source" type="text" placeholder="Ej: @ipoint.ar, Notion" />
+                      </label>
+                      <label>
+                        Notion page ID
+                        <input id="creativo-notion-id" type="text" placeholder="Opcional — se llena al sincronizar" />
+                      </label>
+                    </div>
+                  </fieldset>
+
+                  <fieldset class="form-fieldset grid-span-2">
+                    <legend>Adaptación GO APPLE</legend>
+                    <div class="grid">
+                      <label class="label-span-2">
+                        Copy / texto para publicar
+                        <textarea id="creativo-copy" rows="4" placeholder="El texto que va en la publicación de Instagram/redes…"></textarea>
+                      </label>
+                      <label class="label-span-2">
+                        Prompt para generar imagen IA
+                        <textarea id="creativo-img-prompt" rows="3" placeholder="Ej: Foto de producto iPhone 15 Pro Max en fondo verde con logo GO APPLE…"></textarea>
+                      </label>
+                      <div class="label-span-2 creativos-ai-actions">
+                        <button type="button" id="btn-creativo-gen-copy" class="secondary">Generar copy con IA</button>
+                        <button type="button" id="btn-creativo-gen-image" class="secondary" hidden disabled>Generar imagen (desactivado)</button>
+                      </div>
+                      <div id="creativo-ai-status" class="muted creativos-ai-status label-span-2" hidden></div>
+                      <div id="creativo-result-preview" class="creativos-result-preview label-span-2" hidden>
+                        <img id="creativo-result-img" alt="Imagen generada" />
+                      </div>
+                      <label>
+                        Estado
+                        <select id="creativo-status" required>
+                          <option value="referencia">Referencia</option>
+                          <option value="pendiente">Pendiente</option>
+                          <option value="copy_listo">Copy listo</option>
+                          <option value="imagen_lista">Imagen lista</option>
+                          <option value="listo">Listo para publicar</option>
+                          <option value="publicado">Publicado</option>
+                        </select>
+                      </label>
+                      <label>
+                        Fecha de publicación
+                        <input id="creativo-pub-date" type="date" />
+                      </label>
+                      <label class="label-span-2">
+                        Notas internas
+                        <input id="creativo-notes" type="text" placeholder="Opcional" />
+                      </label>
+                    </div>
+                  </fieldset>
+
+                  <div class="form-actions label-span-2 sale-modal__form-actions">
+                    <button type="button" class="secondary" id="creativos-modal-cancel">Cancelar</button>
+                    <button type="submit" id="creativos-form-submit">Guardar creativo</button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div>
+
+          <!-- Modal importar desde Claude -->
+          <div id="creativos-import-modal" class="sale-modal creativos-modal" hidden role="dialog" aria-modal="true" aria-labelledby="creativos-import-modal-title">
+            <div class="sale-modal__backdrop" id="creativos-import-modal-backdrop" aria-hidden="true"></div>
+            <div class="sale-modal__panel card glass-panel creativos-modal__panel" role="document">
+              <div class="sale-modal__header">
+                <h2 id="creativos-import-modal-title">Importar de Claude</h2>
+                <button type="button" class="sale-modal__close" id="creativos-import-modal-close" aria-label="Cerrar">×</button>
+              </div>
+              <div class="sale-modal__scroll">
+                <p class="section-hint muted">
+                  Pegá acá el bloque JSON que te pasa Claude en el chat cuando le pedís ideas de contenido o reels virales. Se agregan a <strong>Competidores</strong> sin duplicar los que ya tenés.
+                </p>
+                <label class="label-span-2" style="display:block">
+                  JSON de Claude
+                  <textarea id="creativos-import-textarea" rows="10" placeholder='[{"owner":"cuenta","views":500000,"likes":1000,"comments":50,"postUrl":"https://www.instagram.com/p/XXX/","title":"Idea de contenido..."}]'></textarea>
+                </label>
+                <p id="creativos-import-status" class="muted creativos-ai-status" hidden></p>
+                <div class="form-actions label-span-2 sale-modal__form-actions">
+                  <button type="button" class="secondary" id="creativos-import-cancel">Cancelar</button>
+                  <button type="button" id="btn-creativos-import-run">Importar</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Simulador de cuotas -->
+        <section class="tab-panel" id="tab-simulador-cuotas" aria-label="Simulador de cuotas">
+          <section class="card">
+            <h2>Simulador de cuotas</h2>
+            <p class="section-hint">
+              Ingresá el <strong>contado en ARS</strong>. El simulador le suma <strong>+10% (lista / tarjeta)</strong>
+              y recién ahí calcula <strong>3, 6, 12 y 18 cuotas</strong>, igual que el inventario.
+            </p>
+            <div class="cuotas-sim-input-row">
+              <label class="cuotas-sim-amount-label" for="cuotas-sim-amount">
+                Contado (ARS)
+                <input
+                  id="cuotas-sim-amount"
+                  type="text"
+                  inputmode="decimal"
+                  autocomplete="off"
+                  placeholder="Ej: 623200 o 623.200"
+                  aria-describedby="cuotas-sim-amount-hint"
+                />
+              </label>
+              <p id="cuotas-sim-amount-hint" class="section-hint muted cuotas-sim-amount-hint">
+                Escribí el precio de contado. No le sumes el 10%: se aplica solo.
+              </p>
+            </div>
+          </section>
+          <section class="card" aria-live="polite" aria-atomic="true">
+            <h2 class="cuotas-sim-results-title">Resultado</h2>
+            <p id="cuotas-sim-empty" class="section-hint muted">Ingresá un monto mayor a cero para ver las cuotas.</p>
+            <div id="cuotas-sim-lista-box" class="cuotas-sim-lista-box" hidden>
+              <p class="cuotas-sim-lista-box__title">Quedaría así</p>
+              <div class="cuotas-sim-formula" role="img" aria-label="Contado más 10 por ciento igual lista">
+                <div class="cuotas-sim-formula__part">
+                  <span class="cuotas-sim-formula__k">Contado</span>
+                  <strong id="cuotas-sim-contado-val" class="cuotas-sim-formula__v">—</strong>
+                </div>
+                <span class="cuotas-sim-formula__op" aria-hidden="true">+</span>
+                <div class="cuotas-sim-formula__part">
+                  <span class="cuotas-sim-formula__k">10%</span>
+                  <strong class="cuotas-sim-formula__v">tarjeta</strong>
+                </div>
+                <span class="cuotas-sim-formula__op" aria-hidden="true">=</span>
+                <div class="cuotas-sim-formula__part cuotas-sim-formula__part--lista">
+                  <span class="cuotas-sim-formula__k">Lista</span>
+                  <strong id="cuotas-sim-lista-val" class="cuotas-sim-formula__v">—</strong>
+                </div>
+              </div>
+              <p class="cuotas-sim-lista-box__hint muted">Las cuotas de abajo se calculan sobre la lista.</p>
+            </div>
+            <div id="cuotas-sim-results" class="cuotas-sim-grid" hidden>
+              <article class="cuotas-sim-card" data-plan="3">
+                <span class="cuotas-sim-badge">3x</span>
+                <p class="cuotas-sim-monthly" id="cuotas-sim-3-monthly">—</p>
+                <p class="cuotas-sim-meta muted">Total <span id="cuotas-sim-3-total">—</span></p>
+              </article>
+              <article class="cuotas-sim-card" data-plan="6">
+                <span class="cuotas-sim-badge">6x</span>
+                <p class="cuotas-sim-monthly" id="cuotas-sim-6-monthly">—</p>
+                <p class="cuotas-sim-meta muted">Total <span id="cuotas-sim-6-total">—</span></p>
+              </article>
+              <article class="cuotas-sim-card" data-plan="12">
+                <span class="cuotas-sim-badge">12x</span>
+                <p class="cuotas-sim-monthly" id="cuotas-sim-12-monthly">—</p>
+                <p class="cuotas-sim-meta muted">Total <span id="cuotas-sim-12-total">—</span> · Tasa ref. 83%</p>
+              </article>
+              <article class="cuotas-sim-card" data-plan="18">
+                <span class="cuotas-sim-badge">18x</span>
+                <p class="cuotas-sim-monthly" id="cuotas-sim-18-monthly">—</p>
+                <p class="cuotas-sim-meta muted">Total <span id="cuotas-sim-18-total">—</span> · Tasa ref. 83%</p>
+              </article>
+            </div>
+          </section>
+        </section>
+
+        <!-- Configuraciones: una vista por sección (Metas / Vendedores) -->
+        <section class="tab-panel" id="tab-configuraciones" aria-label="Configuraciones">
+          <nav class="config-subnav card glass-panel" role="tablist" aria-label="Secciones de configuración">
+            <button
+              type="button"
+              role="tab"
+              class="config-subnav-tab active"
+              id="config-tab-metas"
+              data-config-subpanel="metas"
+              aria-controls="config-panel-metas"
+              aria-selected="true"
+            >
+              Metas del negocio
+            </button>
+            <button
+              type="button"
+              role="tab"
+              class="config-subnav-tab"
+              id="config-tab-vendedores"
+              data-config-subpanel="vendedores"
+              aria-controls="config-panel-vendedores"
+              aria-selected="false"
+            >
+              Vendedores
+            </button>
+            <button
+              type="button"
+              role="tab"
+              class="config-subnav-tab"
+              id="config-tab-creativos"
+              data-config-subpanel="creativos"
+              aria-controls="config-panel-creativos"
+              aria-selected="false"
+            >
+              Creativos / IA
+            </button>
+          </nav>
+
+          <div
+            id="config-panel-metas"
+            class="config-panel"
+            role="tabpanel"
+            aria-labelledby="config-tab-metas"
+          >
+          <section class="card glass-panel goals-card">
+            <h2 class="goals-title">Metas del negocio</h2>
+            <p class="section-hint goals-hint">
+              Las metas se comparan con el <strong>mes del selector Período</strong> (arriba, mismo que en Resumen). Se guardan en este navegador.
+            </p>
+            <div class="goals-inputs grid">
+              <label>
+                Meta ingresos (USD)
+                <input id="goal-income" type="number" min="0" step="1" placeholder="Ej. 5000" />
+              </label>
+              <label>
+                Meta resultado (USD)
+                <small class="label-help muted">Ingresos del mes − egresos de caja</small>
+                <input id="goal-profit" type="number" min="0" step="1" placeholder="Ej. 1500" />
+              </label>
+              <label>
+                Meta unidades vendidas
+                <input id="goal-units" type="number" min="0" step="1" placeholder="Ej. 20" />
+              </label>
+              <label>
+                Dólar blue (ARS por US$)
+                <small class="label-help muted">Inventario: precio en pesos = US$ × este valor. Con sesión en Supabase también se guarda en la nube (tabla <code>crm_settings</code>).</small>
+                <input id="goal-dolar-blue" type="number" min="0" step="1" placeholder="Ej. 1250" />
+              </label>
+            </div>
+            <h3 class="goals-subtitle">Reparto de la ganancia</h3>
+            <p class="section-hint goals-hint goals-hint--split">
+              Las <strong>ventas</strong> y los ingresos de Caja marcados como <strong>Reparto general</strong> forman la base (menos comisiones de vendedores) y se reparten según los %.
+              Ingresos/egresos con destino fijo (<strong>Reserva</strong>, <strong>Restock</strong> o <strong>Socios</strong>) van directo a ese bucket. Las comisiones de vendedores no se descuentan dos veces.
+              <strong>Reserva + Restock + Socios</strong> deben sumar 100; si no, se normalizan al guardar.
+            </p>
+            <div class="goals-inputs grid goals-split-grid">
+              <label>
+                Reserva (%)
+                <input id="split-reserve-pct" type="number" min="0" max="100" step="0.1" />
+              </label>
+              <label>
+                Restock (%)
+                <input id="split-middle-pct" type="number" min="0" max="100" step="0.1" />
+              </label>
+              <label>
+                Socios (%)
+                <input id="split-partners-pct" type="number" min="0" max="100" step="0.1" />
+              </label>
+            </div>
+
+            <div class="goals-actions">
+              <button type="button" id="btn-save-goals" class="secondary">Guardar metas</button>
+            </div>
+            <div id="goals-progress" class="goals-progress" aria-live="polite"></div>
+          </section>
+          </div>
+
+          <div
+            id="config-panel-vendedores"
+            class="config-panel"
+            role="tabpanel"
+            aria-labelledby="config-tab-vendedores"
+            hidden
+          >
+            <section class="card">
+              <h2>Vendedores</h2>
+              <p class="section-hint">
+                Definí el <strong>% de comisión sobre lo que entró</strong> en cada venta (monto neto cobrado por línea). Al registrar una venta elegís quién vendió; acá ves totales y comisiones por período.
+              </p>
+              <p class="section-hint muted">
+                <strong>Supabase:</strong> tiene que existir la tabla <code>salespeople</code> (y columnas en <code>sales</code>). Si ves «Could not find the table…», en el panel de Supabase → <strong>SQL</strong> ejecutá el archivo
+                <code>CRM/supabase/migration_sales_sellers.sql</code> del proyecto y recargá la app.
+              </p>
+              <p id="seller-edit-hint" class="section-hint muted" hidden>Editando vendedor — guardá los cambios o cancelá la edición.</p>
+              <form id="seller-form" class="grid">
+                <label>
+                  Nombre
+                  <input id="seller-name" type="text" required placeholder="Ej: Ana" autocomplete="name" />
+                </label>
+                <label>
+                  Comisión % (sobre lo que entró)
+                  <input id="seller-commission-pct" type="number" min="0" max="100" step="0.1" value="0" required />
+                </label>
+                <label class="label-span-2 seller-active-row">
+                  <input id="seller-active" type="checkbox" checked />
+                  Activo (aparece al cargar ventas nuevas)
+                </label>
+                <div class="form-actions form-actions--inline label-span-2">
+                  <button type="submit" id="seller-form-submit-btn">Agregar vendedor</button>
+                  <button type="button" class="secondary" id="btn-seller-cancel-edit" hidden>Cancelar edición</button>
+                </div>
+              </form>
+            </section>
+
+            <section class="card">
+              <div class="table-head">
+                <h2>Listado</h2>
+              </div>
+              <div class="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Nombre</th>
+                      <th>Comisión %</th>
+                      <th>Estado</th>
+                      <th>Acción</th>
+                    </tr>
+                  </thead>
+                  <tbody id="sellers-body"></tbody>
+                </table>
+              </div>
+            </section>
+
+            <section class="card">
+              <div class="table-head table-head--filters">
+                <h2>Resultados por vendedor</h2>
+                <div class="table-head-actions">
+                  <button type="button" class="secondary" id="btn-mark-comm-paid">Marcar comisiones pagadas</button>
+                  <button type="button" class="secondary" id="btn-recalc-comm">Recalcular comisiones</button>
+                </div>
+              </div>
+              <p class="section-hint muted">
+                Usa el <strong>Período</strong> del encabezado (mismo mes que Resumen). Filtra por <strong>fecha de venta</strong>. Las
+                <strong>comisiones</strong> usan el <strong>% actual</strong> del vendedor sobre el <strong>monto que entró</strong> de
+                cada línea (neto cobrado, después de canje si hubo).
+              </p>
+              <select id="vendedores-stats-month" hidden aria-hidden="true" tabindex="-1"></select>
+              <div class="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Vendedor</th>
+                      <th>Ventas (#)</th>
+                      <th>Total vendido</th>
+                      <th>Resultado</th>
+                      <th>Comisiones</th>
+                      <th>Pendiente de pago</th>
+                    </tr>
+                  </thead>
+                  <tbody id="seller-stats-body"></tbody>
+                </table>
+              </div>
+            </section>
+          </div>
+
+          <div
+            id="config-panel-creativos"
+            class="config-panel"
+            role="tabpanel"
+            aria-labelledby="config-tab-creativos"
+            hidden
+          >
+            <section class="card glass-panel">
+              <h2>Creativos — Notion + IA + Instagram</h2>
+              <p class="section-hint">
+                Conectá <strong>Notion</strong> para traer referencias, <strong>Apify</strong> para buscar reels virales del rubro en Instagram,
+                <strong>RapidAPI</strong> para descargar reels/carruseles, <strong>OpenAI</strong> para generar copys.
+                Las imágenes se diseñan manualmente (generación IA desactivada).
+              </p>
+              <div class="grid goals-inputs">
+                <label class="label-span-2">
+                  Notion Integration Token
+                  <small class="label-help muted">Notion → Settings → Integrations → New → copia el "Internal Integration Secret"</small>
+                  <input id="config-notion-token" type="password" placeholder="ntn_…" autocomplete="off" />
+                </label>
+                <label class="label-span-2">
+                  Notion Database ID
+                  <small class="label-help muted">La URL de la DB: notion.so/TU_WORKSPACE/<strong>DATABASE_ID</strong>?v=…</small>
+                  <input id="config-notion-db-id" type="text" placeholder="32 caracteres hex" autocomplete="off" />
+                </label>
+                <label class="label-span-2">
+                  OpenAI API Key
+                  <small class="label-help muted">Para generar copy (GPT-4o), transcribir reels (Whisper) y analizar carruseles (Vision)</small>
+                  <input id="config-openai-key" type="password" placeholder="sk-…" autocomplete="off" />
+                </label>
+                <label class="label-span-2">
+                  RapidAPI Key — Instagram Downloader
+                  <small class="label-help muted">Para descargar reels y carruseles de Instagram automáticamente</small>
+                  <input id="config-rapidapi-key" type="password" placeholder="Tu key de RapidAPI" autocomplete="off" />
+                </label>
+                <label class="label-span-2">
+                  Ideogram API Key — Generación de imágenes (desactivada)
+                  <small class="label-help muted">Opcional. La generación automática de imágenes está apagada; diseño manual en Canva/Figma.</small>
+                  <input id="config-ideogram-key" type="password" placeholder="No requerido por ahora" autocomplete="off" disabled />
+                </label>
+                <label class="label-span-2">
+                  Apify API Token — Reels virales de Instagram
+                  <small class="label-help muted">Apify Console → Settings → Integrations → copia el "Personal API token"</small>
+                  <input id="config-apify-token" type="password" placeholder="apify_api_…" autocomplete="off" />
+                </label>
+                <label class="label-span-2">
+                  Hashtags a monitorear
+                  <small class="label-help muted">Separados por coma. Se buscan reels de estos hashtags en cada sincronización.</small>
+                  <input id="config-apify-hashtags" type="text" placeholder="iphone, applestore, tiendaapple, ventadeiphone" autocomplete="off" />
+                </label>
+                <label>
+                  Mínimo de vistas
+                  <small class="label-help muted">Solo se importan reels con al menos esta cantidad de reproducciones.</small>
+                  <input id="config-apify-min-views" type="number" min="0" step="10000" placeholder="300000" autocomplete="off" />
+                </label>
+              </div>
+
+              <h3 style="margin-top:20px">Contexto de la tienda</h3>
+              <p class="section-hint">
+                Info que la IA usa para adaptar el contenido a GO APPLE (reemplaza los Google Docs de N8N).
+              </p>
+              <div class="grid goals-inputs">
+                <label class="label-span-2">
+                  Info de la tienda
+                  <small class="label-help muted">Nombre, ubicación, qué vende, servicios, formas de pago, plan canje, etc.</small>
+                  <textarea id="config-store-context" rows="6" placeholder="GO APPLE — Tienda de iPhones usados y nuevos en Argentina. Ubicación: ... Formas de pago: ..."></textarea>
+                </label>
+                <label class="label-span-2">
+                  Prompt personalizado para copy (opcional)
+                  <small class="label-help muted">Si lo dejás vacío, se usa el prompt profesional incorporado (estilo N8N)</small>
+                  <textarea id="config-copy-prompt" rows="4" placeholder="Dejar vacío para usar el prompt profesional por defecto"></textarea>
+                </label>
+              </div>
+              <h3 style="margin-top:20px">Branding visual — Generación de imágenes</h3>
+              <p class="section-hint">
+                Configurá el estilo visual de tu tienda para que las imágenes generadas con IA tengan tu identidad.
+              </p>
+              <div class="grid goals-inputs">
+                <label>
+                  Nombre de la tienda
+                  <input id="config-brand-name" type="text" placeholder="GO APPLE" autocomplete="off" />
+                </label>
+                <label>
+                  Slogan (opcional)
+                  <input id="config-brand-slogan" type="text" placeholder="Ej: Tu iPhone al mejor precio" autocomplete="off" />
+                </label>
+                <label>
+                  Color principal (hex)
+                  <div style="display:flex;gap:8px;align-items:center">
+                    <input id="config-brand-color" type="text" placeholder="#7c3aed" autocomplete="off" style="flex:1" />
+                    <input id="config-brand-color-picker" type="color" value="#7c3aed" style="width:40px;height:36px;padding:2px;border:1px solid #d7dcea;border-radius:8px;cursor:pointer" />
+                  </div>
+                </label>
+                <label>
+                  Color secundario (hex)
+                  <div style="display:flex;gap:8px;align-items:center">
+                    <input id="config-brand-color2" type="text" placeholder="#22c55e" autocomplete="off" style="flex:1" />
+                    <input id="config-brand-color2-picker" type="color" value="#22c55e" style="width:40px;height:36px;padding:2px;border:1px solid #d7dcea;border-radius:8px;cursor:pointer" />
+                  </div>
+                </label>
+                <label class="label-span-2">
+                  Tipografía / estilo visual
+                  <small class="label-help muted">Describí el estilo: moderno, minimalista, juvenil, premium, etc.</small>
+                  <input id="config-brand-style" type="text" placeholder="Moderno, minimalista, juvenil, colores vibrantes" autocomplete="off" />
+                </label>
+                <label class="label-span-2">
+                  Logo URL (opcional)
+                  <small class="label-help muted">URL pública del logo de la tienda para usarlo en las imágenes generadas</small>
+                  <input id="config-brand-logo" type="text" placeholder="https://..." autocomplete="off" />
+                </label>
+                <label class="label-span-2">
+                  Instrucciones de diseño extra
+                  <small class="label-help muted">Detallá cualquier indicación: fondo, elementos que siempre incluir, estilo de fotos, etc.</small>
+                  <textarea id="config-brand-design-notes" rows="3" placeholder="Ej: Siempre usar fondo degradado oscuro, mostrar el iPhone como protagonista, texto grande y legible"></textarea>
+                </label>
+              </div>
+
+              <div class="goals-actions" style="margin-top:12px">
+                <button type="button" id="btn-save-creativos-config" class="secondary">Guardar configuración</button>
+                <span id="creativos-config-status" class="muted" style="margin-left:8px"></span>
+              </div>
+            </section>
+          </div>
+        </section>
+
+        <div
+          id="tech-warranty-modal"
+          class="sale-modal tech-modal"
+          hidden
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="tech-warranty-modal-title"
+        >
+          <div class="sale-modal__backdrop" id="tech-warranty-modal-backdrop" aria-hidden="true"></div>
+          <div class="sale-modal__panel card glass-panel" role="document">
+            <div class="sale-modal__header">
+              <h2 id="tech-warranty-modal-title">Ingreso por garantía</h2>
+              <button type="button" class="sale-modal__close" id="tech-warranty-modal-close" aria-label="Cerrar">×</button>
+            </div>
+            <div class="sale-modal__scroll tech-modal__scroll">
+              <p class="section-hint muted">
+                Equipo <strong>ya vendido</strong> que el cliente trae en garantía. No se anula la venta; queda en taller con serie/IMEI.
+              </p>
+              <form id="tech-warranty-form" class="grid tech-modal__form">
+                <label class="grid-span-2">
+                  Venta en garantía
+                  <select id="tech-warranty-pick" required>
+                    <option value="">— Elegí venta con serie o IMEI —</option>
+                  </select>
+                </label>
+                <p id="tech-warranty-pick-hint" class="tech-modal__hint muted grid-span-2" hidden></p>
+                <label class="grid-span-2 tech-modal__check">
+                  <input id="tech-warranty-include-expired" type="checkbox" />
+                  Incluir garantías vencidas (con serie/IMEI)
+                </label>
+                <label class="grid-span-2">
+                  Motivo / falla (opcional)
+                  <input id="tech-warranty-notes" type="text" placeholder="Ej: no enciende, pantalla…" />
+                </label>
+              </form>
+            </div>
+            <div class="tech-modal__footer">
+              <button type="button" class="secondary" id="tech-warranty-modal-cancel">Cancelar</button>
+              <button type="submit" form="tech-warranty-form">Enviar a taller</button>
+            </div>
+          </div>
+        </div>
+
+        <div
+          id="tech-send-modal"
+          class="sale-modal tech-modal"
+          hidden
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="tech-send-modal-title"
+        >
+          <div class="sale-modal__backdrop" id="tech-send-modal-backdrop" aria-hidden="true"></div>
+          <div class="sale-modal__panel card glass-panel" role="document">
+            <div class="sale-modal__header">
+              <h2 id="tech-send-modal-title">Enviar desde stock</h2>
+              <button type="button" class="sale-modal__close" id="tech-send-modal-close" aria-label="Cerrar">×</button>
+            </div>
+            <div class="sale-modal__scroll tech-modal__scroll">
+              <p class="section-hint muted">Equipo que tenés en inventario y mandás a reparar antes de venderlo.</p>
+              <form id="tech-send-form" class="grid tech-modal__form">
+                <label class="grid-span-2">
+                  Equipo en stock
+                  <select id="tech-send-pick" required>
+                    <option value="">— Elegí del inventario —</option>
+                  </select>
+                </label>
+                <label class="grid-span-2">
+                  Notas (opcional)
+                  <input id="tech-send-notes" type="text" placeholder="Ej: pantalla rota…" />
+                </label>
+              </form>
+            </div>
+            <div class="tech-modal__footer">
+              <button type="button" class="secondary" id="tech-send-modal-cancel">Cancelar</button>
+              <button type="submit" form="tech-send-form">Enviar a taller</button>
+            </div>
+          </div>
+        </div>
+
+        <div
+          id="tech-expense-modal"
+          class="sale-modal tech-modal"
+          hidden
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="tech-expense-modal-title"
+        >
+          <div class="sale-modal__backdrop" id="tech-expense-modal-backdrop" aria-hidden="true"></div>
+          <div class="sale-modal__panel card glass-panel" role="document">
+            <div class="sale-modal__header">
+              <h2 id="tech-expense-modal-title">Registrar gasto</h2>
+              <button type="button" class="sale-modal__close" id="tech-expense-modal-close" aria-label="Cerrar">×</button>
+            </div>
+            <div class="sale-modal__scroll tech-modal__scroll">
+              <p class="section-hint muted">Suma al equipo en taller y, si marcás la casilla, crea el egreso en Caja.</p>
+              <form id="tech-expense-form" class="grid tech-modal__form">
+                <label class="grid-span-2">
+                  Equipo en taller
+                  <select id="tech-expense-pick" required>
+                    <option value="">— Elegí equipo —</option>
+                  </select>
+                </label>
+                <label>
+                  Fecha
+                  <input id="tech-expense-date" type="date" required />
+                </label>
+                <label>
+                  Monto (US$)
+                  <input id="tech-expense-amount" type="number" min="0.01" step="0.01" required />
+                </label>
+                <label class="grid-span-2">
+                  Concepto
+                  <input id="tech-expense-concept" type="text" placeholder="Ej: Garantía · cambio de pantalla" required />
+                </label>
+                <label class="grid-span-2 tech-expense-cash-label tech-modal__check">
+                  <input id="tech-expense-cash" type="checkbox" checked />
+                  Registrar también egreso en caja
+                </label>
+              </form>
+            </div>
+            <div class="tech-modal__footer">
+              <button type="button" class="secondary" id="tech-expense-modal-cancel">Cancelar</button>
+              <button type="submit" form="tech-expense-form">Guardar gasto</button>
+            </div>
+          </div>
+        </div>
+
+        <div
+          id="device-history-modal"
+          class="sale-modal device-history-modal"
+          hidden
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="device-history-modal-title"
+        >
+          <div class="sale-modal__backdrop" id="device-history-modal-backdrop" aria-hidden="true"></div>
+          <div class="sale-modal__panel card glass-panel" role="document">
+            <div class="sale-modal__header">
+              <h2 id="device-history-modal-title">Historial del equipo</h2>
+              <button type="button" class="sale-modal__close" id="device-history-modal-close" aria-label="Cerrar">×</button>
+            </div>
+            <div class="sale-modal__scroll device-history-modal__scroll">
+              <p class="section-hint muted">
+                Seguimiento por <strong>número de serie</strong> o <strong>IMEI</strong> (15 dígitos): ingresos, ventas,
+                devoluciones y cambios en el sistema.
+              </p>
+              <div class="device-history-search">
+                <label class="device-history-search__field">
+                  Serie o IMEI
+                  <input
+                    id="device-history-query"
+                    type="search"
+                    placeholder="MQ71X9RFGF o 353456789012345"
+                    autocomplete="off"
+                  />
+                </label>
+                <button type="button" id="device-history-search-btn" class="ventas-btn-nueva">Buscar</button>
+              </div>
+              <p id="device-history-summary" class="device-history-summary muted" hidden></p>
+              <ol id="device-history-timeline" class="device-history-timeline" hidden></ol>
+              <p id="device-history-empty" class="muted device-history-empty" hidden>
+                No hay movimientos para este identificador. Si el equipo es anterior al historial automático, pueden
+                aparecer ventas guardadas con la misma serie o IMEI.
+              </p>
+            </div>
+            <div class="form-actions sale-modal__form-actions">
+              <button type="button" id="device-history-modal-done">Cerrar</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div
+      id="client-profile-modal"
+      class="sale-modal client-profile-modal"
+      hidden
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="client-profile-title"
+      aria-hidden="true"
+    >
+      <div class="sale-modal__backdrop" id="client-profile-backdrop" aria-hidden="true"></div>
+      <div class="sale-modal__panel card glass-panel" role="document">
+        <div class="sale-modal__header">
+          <h2 id="client-profile-title">Ficha de cliente</h2>
+          <button type="button" class="sale-modal__close" id="client-profile-close" aria-label="Cerrar">×</button>
+        </div>
+        <div class="sale-modal__scroll" id="client-profile-body"></div>
+      </div>
+    </div>
+
+    <!-- Modales CRUD: caja, facturación, deudores, inventario -->
+    <div
+      id="week-close-modal"
+      class="sale-modal crud-form-modal crud-form-modal--wide week-close-modal"
+      hidden
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="week-close-modal-title"
+      aria-hidden="true"
+    >
+      <div class="sale-modal__backdrop" id="week-close-modal-backdrop" aria-hidden="true"></div>
+      <div class="sale-modal__panel card glass-panel" role="document">
+        <div class="sale-modal__header">
+          <div>
+            <h2 id="week-close-modal-title">Cierre semanal de caja</h2>
+            <p id="week-close-label" class="week-close-modal__period muted"></p>
+          </div>
+          <button type="button" class="sale-modal__close" id="week-close-modal-close" aria-label="Cerrar">×</button>
+        </div>
+        <div class="sale-modal__scroll">
+          <p class="section-hint muted week-close-hint">
+            Semana <strong>domingo → sábado</strong>. El esperado suma ventas y movimientos de caja de esa semana.
+            Si una venta no tiene medios de pago cargados, se cuenta el total cobrado como efectivo.
+          </p>
+          <div class="week-close-grid">
+            <div class="week-close-block week-close-block--expected">
+              <h3 class="week-close-block__title">Esperado (sistema)</h3>
+              <div class="week-close-stats">
+                <article class="week-close-stat">
+                  <span class="week-close-stat__label">Efectivo ventas</span>
+                  <strong id="week-exp-cash" class="week-close-stat__val">$0.00</strong>
+                </article>
+                <article class="week-close-stat">
+                  <span class="week-close-stat__label">Transferencias</span>
+                  <strong id="week-exp-transfer" class="week-close-stat__val">$0.00</strong>
+                </article>
+                <article class="week-close-stat">
+                  <span class="week-close-stat__label">Tarjeta</span>
+                  <strong id="week-exp-card" class="week-close-stat__val">$0.00</strong>
+                </article>
+                <article class="week-close-stat">
+                  <span class="week-close-stat__label">Otros</span>
+                  <strong id="week-exp-other" class="week-close-stat__val">$0.00</strong>
+                </article>
+                <article class="week-close-stat week-close-stat--in">
+                  <span class="week-close-stat__label">Ingresos caja</span>
+                  <strong id="week-exp-caja-in" class="week-close-stat__val">$0.00</strong>
+                </article>
+                <article class="week-close-stat week-close-stat--out">
+                  <span class="week-close-stat__label">Egresos caja</span>
+                  <strong id="week-exp-caja-out" class="week-close-stat__val">$0.00</strong>
+                </article>
+              </div>
+              <div class="week-close-total-bar">
+                <span>Total semana</span>
+                <strong id="week-exp-total">$0.00</strong>
+              </div>
+            </div>
+            <div class="week-close-block week-close-block--count">
+              <h3 class="week-close-block__title">Conteo real (sábado)</h3>
+              <form class="grid week-close-form" onsubmit="return false;">
+                <label>
+                  Fecha de cierre
+                  <input id="week-close-date" type="date" required />
+                </label>
+                <label>
+                  Efectivo contado
+                  <input id="week-close-counted-cash" type="number" min="0" step="0.01" />
+                </label>
+                <label>
+                  Transferencias verificadas
+                  <input id="week-close-counted-transfer" type="number" min="0" step="0.01" />
+                </label>
+                <label>
+                  Tarjeta verificada
+                  <input id="week-close-counted-card" type="number" min="0" step="0.01" />
+                </label>
+                <label class="label-span-2">
+                  Notas
+                  <input id="week-close-notes" type="text" placeholder="Diferencias, observaciones…" />
+                </label>
+                <div class="week-close-diff-box label-span-2">
+                  <span class="week-close-diff-box__label">Diferencia efectivo</span>
+                  <strong id="week-close-diff" class="week-close-diff">$0.00</strong>
+                </div>
+              </form>
+            </div>
+          </div>
+          <div class="week-close-history-wrap">
+            <h3 class="week-close-block__title">Historial reciente</h3>
+            <div class="table-wrap week-close-history">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Cierre</th>
+                    <th>Semana</th>
+                    <th>Esperado</th>
+                    <th>Efectivo contado</th>
+                    <th>Diferencia</th>
+                  </tr>
+                </thead>
+                <tbody id="week-close-history-body"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+        <div class="form-actions sale-modal__form-actions">
+          <button type="button" class="secondary" id="week-close-modal-cancel">Cancelar</button>
+          <button type="button" id="btn-week-close-save" class="week-close-save-btn">Guardar cierre semanal</button>
+        </div>
+      </div>
+    </div>
+
+    <div
+      id="cash-modal"
+      class="sale-modal crud-form-modal"
+      hidden
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="cash-modal-title"
+      aria-hidden="true"
+    >
+      <div class="sale-modal__backdrop" id="cash-modal-backdrop" aria-hidden="true"></div>
+      <div class="sale-modal__panel card glass-panel" role="document">
+        <div class="sale-modal__header">
+          <h2 id="cash-modal-title">Nuevo movimiento</h2>
+          <button type="button" class="sale-modal__close" id="cash-modal-close" aria-label="Cerrar">×</button>
+        </div>
+        <div class="sale-modal__scroll">
+          <p id="cash-edit-hint" class="section-hint muted" hidden>Estás corrigiendo un movimiento ya guardado.</p>
+          <form id="cash-form" class="grid">
+            <label>
+              Tipo
+              <select id="cash-type" required>
+                <option value="ingreso">Ingreso</option>
+                <option value="egreso">Egreso</option>
+              </select>
+            </label>
+            <label>
+              Fecha
+              <input id="cash-date" type="date" required />
+            </label>
+            <label>
+              Concepto
+              <input id="cash-concept" type="text" placeholder="Ej: Alquiler, envío, accesorio" required />
+            </label>
+            <label>
+              Monto
+              <input id="cash-amount" type="number" min="0" step="0.01" required />
+            </label>
+            <label class="label-span-2" id="cash-reparto-dest-wrap">
+              Destino del movimiento
+              <select id="cash-reparto-dest" required aria-label="Destino del movimiento en caja"></select>
+              <small id="cash-reparto-dest-hint" class="label-help muted"></small>
+            </label>
+          </form>
+        </div>
+        <div class="form-actions sale-modal__form-actions">
+          <button type="button" class="secondary" id="cash-modal-cancel">Cancelar</button>
+          <button type="submit" form="cash-form" id="cash-form-submit-btn">Guardar movimiento</button>
+        </div>
+      </div>
+    </div>
+
+    <div
+      id="invoice-modal"
+      class="sale-modal crud-form-modal"
+      hidden
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="invoice-modal-title"
+      aria-hidden="true"
+    >
+      <div class="sale-modal__backdrop" id="invoice-modal-backdrop" aria-hidden="true"></div>
+      <div class="sale-modal__panel card glass-panel" role="document">
+        <div class="sale-modal__header">
+          <h2 id="invoice-modal-title">Emitir comprobante</h2>
+          <button type="button" class="sale-modal__close" id="invoice-modal-close" aria-label="Cerrar">×</button>
+        </div>
+        <div class="sale-modal__scroll">
+          <p class="section-hint muted">Ligado a una venta, con numeración automática por tipo.</p>
+          <p id="invoice-edit-hint" class="section-hint muted" hidden>
+            Corrigiendo comprobante: tipo y venta no se cambian; se actualizan fecha, impuesto y observaciones.
+          </p>
+          <form id="invoice-form" class="grid receivables-form">
+            <label>
+              Venta
+              <select id="invoice-sale-id" required></select>
+            </label>
+            <label>
+              Tipo de comprobante
+              <select id="invoice-type" required>
+                <option value="ticket">Ticket</option>
+                <option value="factura_b">Factura B</option>
+                <option value="factura_a">Factura A</option>
+                <option value="nota_credito">Nota de crédito</option>
+              </select>
+            </label>
+            <label>
+              Fecha de emisión
+              <input id="invoice-date" type="date" required />
+            </label>
+            <label>
+              % Impuesto
+              <input id="invoice-tax-pct" type="number" min="0" max="100" step="0.01" value="0" required />
+            </label>
+            <label class="label-span-2">
+              Observaciones
+              <input id="invoice-notes" type="text" placeholder="Opcional" />
+            </label>
+          </form>
+        </div>
+        <div class="form-actions sale-modal__form-actions">
+          <button type="button" class="secondary" id="invoice-modal-cancel">Cancelar</button>
+          <button type="submit" form="invoice-form" id="invoice-form-submit-btn">Emitir comprobante</button>
+        </div>
+      </div>
+    </div>
+
+    <div
+      id="receivable-modal"
+      class="sale-modal crud-form-modal"
+      hidden
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="receivable-modal-title"
+      aria-hidden="true"
+    >
+      <div class="sale-modal__backdrop" id="receivable-modal-backdrop" aria-hidden="true"></div>
+      <div class="sale-modal__panel card glass-panel" role="document">
+        <div class="sale-modal__header">
+          <h2 id="receivable-modal-title">Nuevo pendiente</h2>
+          <button type="button" class="sale-modal__close" id="receivable-modal-close" aria-label="Cerrar">×</button>
+        </div>
+        <div class="sale-modal__scroll">
+          <p id="recv-edit-hint" class="section-hint muted" hidden>Estás editando un pendiente ya guardado.</p>
+          <form id="receivable-form" class="grid receivables-form">
+            <label>
+              Cliente
+              <input id="recv-client" type="text" required placeholder="Nombre" autocomplete="name" />
+            </label>
+            <label>
+              Concepto
+              <input id="recv-concept" type="text" required placeholder="Ej: Cuota 2/2, Liquidación Naranja" />
+            </label>
+            <label>
+              Monto pendiente (USD)
+              <input id="recv-amount" type="number" min="0" step="0.01" required />
+            </label>
+            <label>
+              Próximo vencimiento / cobro
+              <input id="recv-due" type="date" />
+            </label>
+            <label>
+              Tipo
+              <select id="recv-kind" required>
+                <option value="cuotas">Cuotas / plan</option>
+                <option value="tarjeta">Tarjeta (liquida después)</option>
+                <option value="otro">Otro</option>
+              </select>
+            </label>
+            <label class="label-span-2">
+              Notas
+              <input id="recv-notes" type="text" placeholder="Opcional" />
+            </label>
+          </form>
+        </div>
+        <div class="form-actions sale-modal__form-actions">
+          <button type="button" class="secondary" id="receivable-modal-cancel">Cancelar</button>
+          <button type="submit" form="receivable-form" id="recv-form-submit-btn">Agregar pendiente</button>
+        </div>
+      </div>
+    </div>
+
+    <div
+      id="inventory-modal"
+      class="sale-modal crud-form-modal crud-form-modal--wide"
+      hidden
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="inventory-modal-title"
+      aria-hidden="true"
+    >
+      <div class="sale-modal__backdrop" id="inventory-modal-backdrop" aria-hidden="true"></div>
+      <div class="sale-modal__panel card glass-panel" role="document">
+        <div class="sale-modal__header">
+          <h2 id="inventory-modal-title">Agregar equipo</h2>
+          <button type="button" class="sale-modal__close" id="inventory-modal-close" aria-label="Cerrar">×</button>
+        </div>
+        <div class="sale-modal__scroll">
+          <p class="section-hint muted" id="inventory-section-hint">
+            Carga manual equipo por equipo. Para reportes masivos usá <strong>Carga masiva</strong> en el listado de stock.
+          </p>
+          <p id="inventory-edit-hint" class="section-hint muted" hidden>
+            Editando una fila: al guardar se reemplazan modelo, stock, precio y costo (no se suma cantidad).
+          </p>
+          <form id="inventory-form" class="grid">
+            <label>
+              Modelo
+              <input id="inv-model" type="text" placeholder="Ej: iPhone 14" required />
+            </label>
+            <label>
+              Color
+              <input id="inv-color" type="text" required />
+            </label>
+            <label>
+              Almacenamiento
+              <input id="inv-storage" type="text" required />
+            </label>
+            <label>
+              Batería (%)
+              <input id="inv-battery" type="number" min="0" max="100" step="1" placeholder="100" />
+            </label>
+            <label>
+              Categoría
+              <select id="inv-category">
+                <option value="usado">Usado</option>
+                <option value="nuevo">Nuevo</option>
+                <option value="repuesto">Repuesto</option>
+              </select>
+            </label>
+            <label>
+              Nº de serie
+              <input id="inv-serial" type="text" placeholder="Ej: MQ71X9RFGF" autocomplete="off" />
+            </label>
+            <label>
+              IMEI (15 dígitos)
+              <input id="inv-imei" type="text" placeholder="Opcional" inputmode="numeric" autocomplete="off" />
+            </label>
+            <label class="grid-span-2">
+              Notas (reporte, región, iCloud…)
+              <input id="inv-notes" type="text" placeholder="Opcional" />
+            </label>
+            <label>
+              Cantidad (stock)
+              <input id="inv-quantity" type="number" min="1" step="1" value="1" required />
+            </label>
+            <label>
+              Precio unitario (US$)
+              <input id="inv-price" type="number" min="0" step="0.01" value="0" placeholder="0 = después" />
+            </label>
+            <label>
+              Costo unitario (opcional)
+              <input id="inv-cost" type="number" min="0" step="0.01" placeholder="Para ganancia" />
+            </label>
+          </form>
+        </div>
+        <div class="form-actions sale-modal__form-actions">
+          <button type="button" class="secondary" id="inventory-modal-cancel">Cancelar</button>
+          <button type="submit" form="inventory-form" id="inventory-form-submit-btn">Agregar o actualizar stock</button>
+        </div>
+      </div>
+    </div>
+
+    <div
+      id="recv-pay-dest-modal"
+      class="sale-modal recv-pay-modal"
+      hidden
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="recv-pay-dest-title"
+      aria-hidden="true"
+    >
+      <div class="sale-modal__backdrop" id="recv-pay-dest-backdrop" aria-hidden="true"></div>
+      <div class="sale-modal__panel card glass-panel" role="document">
+        <div class="sale-modal__header">
+          <h2 id="recv-pay-dest-title">Registrar cobro</h2>
+          <button type="button" class="sale-modal__close" id="recv-pay-dest-cancel" aria-label="Cerrar">×</button>
+        </div>
+        <div class="sale-modal__scroll recv-pay-modal__body">
+          <div class="recv-pay-amount-card">
+            <span class="recv-pay-amount-card__label">Monto a registrar</span>
+            <strong id="recv-pay-dest-amount" class="recv-pay-amount-card__val">$0.00</strong>
+          </div>
+          <form id="recv-pay-dest-form" class="grid">
+            <label class="label-span-2">
+              Destino del ingreso
+              <select id="recv-pay-dest-select" required aria-label="Destino del cobro en caja"></select>
+            </label>
+            <div class="form-actions label-span-2 sale-modal__form-actions">
+              <button type="button" class="secondary" id="recv-pay-dest-cancel-btn">Cancelar</button>
+              <button type="submit">Confirmar cobro</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- Template offscreen para renderizar slides Apple -->
+    <div id="apple-tpl-stage" aria-hidden="true" style="position:fixed;left:-9999px;top:0;pointer-events:none;z-index:-1">
+      <div id="apple-tpl-root" class="apple-tpl">
+        <span class="apple-tpl__brand"></span>
+        <div class="apple-tpl__text-zone">
+          <h2 class="apple-tpl__headline"></h2>
+          <p class="apple-tpl__sub"></p>
+        </div>
+        <div class="apple-tpl__product-zone">
+          <img class="apple-tpl__product-img" src="" alt="" />
+        </div>
+        <div class="apple-tpl__cta-zone" hidden>
+          <span class="apple-tpl__cta-btn">Contactanos</span>
+        </div>
+      </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.47.10/dist/umd/supabase.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+    <script src="./config.js?v=16"></script>
+    <script src="./creativos-engine.js?v=2"></script>
+    <script src="./app.js?v=101"></script>
+    <script src="./business-extras.js?v=6"></script>
+  </body>
+</html>

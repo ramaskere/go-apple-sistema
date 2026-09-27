@@ -1,0 +1,350 @@
+/**
+ * Paletas GO APPLE — elegí una en <html data-theme="…">
+ *
+ * oceano   — Azul cian / índigo (actual, por defecto sin data-theme también aplica vía :root)
+ * bosque   — Verde esmeralda / teal, fondo profundo
+ * magma    — Carbón cálido, acentos ámbar y naranja
+ * uva      — Violeta / púrpura nocturno
+ * grafito  — Neutro frío; acento solo en cian suave (look “pro” minimal)
+ *
+ * Ejemplo: <html lang="es" data-theme="bosque">
+ */
+
+:root {
+  color-scheme: dark;
+
+  /* Rejilla tipo dashboard (sutil; se usa en .main-column) */
+  --page-grid-line: rgba(255, 255, 255, 0.045);
+  --page-grid-line-strong: rgba(255, 255, 255, 0.07);
+  /* Tendencias al estilo “media buying”: positivo verde / negativo coral */
+  --trend-positive: #00e676;
+  --trend-negative: #ff5252;
+
+  /* Fondo página (carbón profundo, cercano a dashboards tipo Litebot) */
+  --page-bg-deep: #0a0c12;
+  --page-radial-1: rgba(56, 189, 248, 0.35);
+  --page-radial-2: rgba(99, 102, 241, 0.28);
+  --page-radial-3: rgba(14, 165, 233, 0.15);
+  --page-linear-1: #0c1018;
+  --page-linear-2: #141a26;
+  --page-linear-3: #0c1018;
+
+  --overlay-scrim: rgba(12, 18, 32, 0.85);
+  --auth-brand: #0ea5e9;
+
+  --sidebar-surface: rgba(15, 23, 42, 0.55);
+  --sidebar-active-a: #0ea5e9;
+  --sidebar-active-b: #2563eb;
+  --sidebar-tab-glow: rgba(14, 165, 233, 0.35);
+  --accent-support: rgba(56, 189, 248, 0.5);
+  --accent-support-bg: rgba(56, 189, 248, 0.15);
+
+  --btn-primary-top: #2f7dff;
+  --btn-primary-bot: #0a66ff;
+  --accent-solid: #0a66ff;
+  --accent-bright: #3b82f6;
+  --accent-mid: #2563eb;
+  --focus-ring: rgba(10, 102, 255, 0.2);
+
+  --chart-bar-top: #3b82f6;
+  --chart-bar-bot: #0a66ff;
+  --compare-bar-a: #0a66ff;
+  --compare-bar-b: #2563eb;
+  --top-fill-a: #22c55e;
+  --top-fill-b: #0a66ff;
+
+  --split-card-bg-a: rgba(224, 242, 254, 0.88);
+  --split-card-bg-b: rgba(186, 230, 253, 0.5);
+  --split-card-border: rgba(14, 165, 233, 0.32);
+  --split-card-accent: #0ea5e9;
+  --split-card-shadow: rgba(14, 165, 233, 0.12);
+  --split-card-shadow-hover: rgba(14, 165, 233, 0.14);
+  --split-glass-bg: rgba(224, 242, 254, 0.55);
+  --split-glass-border: rgba(14, 165, 233, 0.28);
+
+  --stat-pct: #0ea5e9;
+  --select-dark-bg: rgba(15, 23, 42, 0.65);
+  --select-dark-bg-hover: rgba(15, 23, 42, 0.82);
+  --select-focus-border: rgba(56, 189, 248, 0.65);
+  --select-focus-shadow: rgba(56, 189, 248, 0.22);
+  --select-onlight-focus-border: rgba(14, 165, 233, 0.65);
+  --select-onlight-focus-shadow: rgba(14, 165, 233, 0.2);
+  --panel-bg-tint: rgba(15, 23, 42, 0.15);
+
+  --goals-progress-a: #0ea5e9;
+  --goals-progress-b: #6366f1;
+
+  --support-box-bg: rgba(14, 165, 233, 0.08);
+  --support-box-border: rgba(14, 165, 233, 0.2);
+  --support-title: #0c4a6e;
+
+  --footer-link: #7dd3fc;
+  --secondary-text: #0a66ff;
+  --secondary-border: #bcd0ff;
+
+  --meta-theme-color: #1e3a5f;
+}
+
+[data-theme="bosque"] {
+  --page-grid-line: rgba(52, 211, 153, 0.055);
+  --page-grid-line-strong: rgba(52, 211, 153, 0.09);
+  --page-bg-deep: #0a1512;
+  --page-radial-1: rgba(52, 211, 153, 0.28);
+  --page-radial-2: rgba(45, 212, 191, 0.22);
+  --page-radial-3: rgba(16, 185, 129, 0.12);
+  --page-linear-1: #0c1915;
+  --page-linear-2: #132820;
+  --page-linear-3: #0c1915;
+
+  --overlay-scrim: rgba(8, 22, 18, 0.88);
+  --auth-brand: #34d399;
+
+  --sidebar-surface: rgba(6, 47, 38, 0.55);
+  --sidebar-active-a: #34d399;
+  --sidebar-active-b: #059669;
+  --sidebar-tab-glow: rgba(16, 185, 129, 0.38);
+  --accent-support: rgba(45, 212, 191, 0.5);
+  --accent-support-bg: rgba(45, 212, 191, 0.16);
+
+  --btn-primary-top: #2dd4bf;
+  --btn-primary-bot: #0d9488;
+  --accent-solid: #0f766e;
+  --accent-bright: #2dd4bf;
+  --accent-mid: #0d9488;
+  --focus-ring: rgba(13, 148, 136, 0.3);
+
+  --chart-bar-top: #2dd4bf;
+  --chart-bar-bot: #0f766e;
+  --compare-bar-a: #0f766e;
+  --compare-bar-b: #14b8a6;
+  --top-fill-a: #22c55e;
+  --top-fill-b: #0f766e;
+
+  --split-card-bg-a: rgba(209, 250, 229, 0.85);
+  --split-card-bg-b: rgba(167, 243, 208, 0.45);
+  --split-card-border: rgba(16, 185, 129, 0.3);
+  --split-card-accent: #10b981;
+  --split-card-shadow: rgba(16, 185, 129, 0.14);
+  --split-card-shadow-hover: rgba(16, 185, 129, 0.18);
+  --split-glass-bg: rgba(209, 250, 229, 0.5);
+  --split-glass-border: rgba(16, 185, 129, 0.26);
+
+  --stat-pct: #059669;
+  --select-dark-bg: rgba(6, 40, 32, 0.72);
+  --select-dark-bg-hover: rgba(6, 50, 40, 0.88);
+  --select-focus-border: rgba(45, 212, 191, 0.65);
+  --select-focus-shadow: rgba(45, 212, 191, 0.22);
+  --select-onlight-focus-border: rgba(13, 148, 136, 0.55);
+  --select-onlight-focus-shadow: rgba(13, 148, 136, 0.2);
+  --panel-bg-tint: rgba(6, 40, 32, 0.2);
+
+  --goals-progress-a: #34d399;
+  --goals-progress-b: #0d9488;
+
+  --support-box-bg: rgba(16, 185, 129, 0.1);
+  --support-box-border: rgba(16, 185, 129, 0.22);
+  --support-title: #065f46;
+
+  --footer-link: #6ee7b7;
+  --secondary-text: #0f766e;
+  --secondary-border: #99f6e4;
+
+  --meta-theme-color: #134e4a;
+}
+
+[data-theme="magma"] {
+  --page-bg-deep: #140a08;
+  --page-radial-1: rgba(251, 191, 36, 0.22);
+  --page-radial-2: rgba(249, 115, 22, 0.2);
+  --page-radial-3: rgba(239, 68, 68, 0.1);
+  --page-linear-1: #1c0f0c;
+  --page-linear-2: #2a1510;
+  --page-linear-3: #1c0f0c;
+
+  --overlay-scrim: rgba(20, 10, 8, 0.9);
+  --auth-brand: #fb923c;
+
+  --sidebar-surface: rgba(67, 20, 7, 0.45);
+  --sidebar-active-a: #fb923c;
+  --sidebar-active-b: #c2410c;
+  --sidebar-tab-glow: rgba(251, 146, 60, 0.4);
+  --accent-support: rgba(251, 191, 36, 0.45);
+  --accent-support-bg: rgba(251, 191, 36, 0.12);
+
+  --btn-primary-top: #fb923c;
+  --btn-primary-bot: #c2410c;
+  --accent-solid: #ea580c;
+  --accent-bright: #fdba74;
+  --accent-mid: #c2410c;
+  --focus-ring: rgba(234, 88, 12, 0.35);
+
+  --chart-bar-top: #fdba74;
+  --chart-bar-bot: #ea580c;
+  --compare-bar-a: #ea580c;
+  --compare-bar-b: #c2410c;
+  --top-fill-a: #fbbf24;
+  --top-fill-b: #ea580c;
+
+  --split-card-bg-a: rgba(255, 237, 213, 0.9);
+  --split-card-bg-b: rgba(254, 215, 170, 0.5);
+  --split-card-border: rgba(251, 146, 60, 0.35);
+  --split-card-accent: #ea580c;
+  --split-card-shadow: rgba(234, 88, 12, 0.15);
+  --split-card-shadow-hover: rgba(234, 88, 12, 0.2);
+  --split-glass-bg: rgba(255, 237, 213, 0.52);
+  --split-glass-border: rgba(251, 146, 60, 0.28);
+
+  --stat-pct: #c2410c;
+  --select-dark-bg: rgba(50, 20, 8, 0.75);
+  --select-dark-bg-hover: rgba(60, 24, 10, 0.88);
+  --select-focus-border: rgba(251, 191, 36, 0.55);
+  --select-focus-shadow: rgba(251, 191, 36, 0.2);
+  --select-onlight-focus-border: rgba(234, 88, 12, 0.5);
+  --select-onlight-focus-shadow: rgba(234, 88, 12, 0.18);
+  --panel-bg-tint: rgba(60, 24, 10, 0.22);
+
+  --goals-progress-a: #fb923c;
+  --goals-progress-b: #dc2626;
+
+  --support-box-bg: rgba(251, 146, 60, 0.1);
+  --support-box-border: rgba(251, 146, 60, 0.25);
+  --support-title: #9a3412;
+
+  --footer-link: #fcd34d;
+  --secondary-text: #c2410c;
+  --secondary-border: #fed7aa;
+
+  --meta-theme-color: #7c2d12;
+}
+
+[data-theme="uva"] {
+  --page-bg-deep: #0c0614;
+  --page-radial-1: rgba(192, 132, 252, 0.26);
+  --page-radial-2: rgba(167, 139, 250, 0.22);
+  --page-radial-3: rgba(139, 92, 246, 0.12);
+  --page-linear-1: #12081f;
+  --page-linear-2: #1a0f2e;
+  --page-linear-3: #12081f;
+
+  --overlay-scrim: rgba(12, 6, 22, 0.9);
+  --auth-brand: #c084fc;
+
+  --sidebar-surface: rgba(46, 16, 80, 0.48);
+  --sidebar-active-a: #a855f7;
+  --sidebar-active-b: #6d28d9;
+  --sidebar-tab-glow: rgba(168, 85, 247, 0.38);
+  --accent-support: rgba(192, 132, 252, 0.5);
+  --accent-support-bg: rgba(192, 132, 252, 0.14);
+
+  --btn-primary-top: #a78bfa;
+  --btn-primary-bot: #7c3aed;
+  --accent-solid: #7c3aed;
+  --accent-bright: #a78bfa;
+  --accent-mid: #6d28d9;
+  --focus-ring: rgba(124, 58, 237, 0.32);
+
+  --chart-bar-top: #a78bfa;
+  --chart-bar-bot: #7c3aed;
+  --compare-bar-a: #7c3aed;
+  --compare-bar-b: #5b21b6;
+  --top-fill-a: #c084fc;
+  --top-fill-b: #7c3aed;
+
+  --split-card-bg-a: rgba(243, 232, 255, 0.9);
+  --split-card-bg-b: rgba(233, 213, 255, 0.48);
+  --split-card-border: rgba(168, 85, 247, 0.32);
+  --split-card-accent: #9333ea;
+  --split-card-shadow: rgba(124, 58, 237, 0.14);
+  --split-card-shadow-hover: rgba(124, 58, 237, 0.2);
+  --split-glass-bg: rgba(243, 232, 255, 0.52);
+  --split-glass-border: rgba(168, 85, 247, 0.26);
+
+  --stat-pct: #7c3aed;
+  --select-dark-bg: rgba(30, 10, 55, 0.72);
+  --select-dark-bg-hover: rgba(40, 14, 70, 0.88);
+  --select-focus-border: rgba(192, 132, 252, 0.6);
+  --select-focus-shadow: rgba(192, 132, 252, 0.22);
+  --select-onlight-focus-border: rgba(124, 58, 237, 0.5);
+  --select-onlight-focus-shadow: rgba(124, 58, 237, 0.2);
+  --panel-bg-tint: rgba(30, 10, 55, 0.22);
+
+  --goals-progress-a: #a855f7;
+  --goals-progress-b: #6366f1;
+
+  --support-box-bg: rgba(168, 85, 247, 0.1);
+  --support-box-border: rgba(168, 85, 247, 0.24);
+  --support-title: #581c87;
+
+  --footer-link: #d8b4fe;
+  --secondary-text: #7c3aed;
+  --secondary-border: #e9d5ff;
+
+  --meta-theme-color: #4c1d95;
+}
+
+[data-theme="grafito"] {
+  --page-grid-line: rgba(148, 163, 184, 0.05);
+  --page-grid-line-strong: rgba(148, 163, 184, 0.08);
+  --page-bg-deep: #0c0d10;
+  --page-radial-1: rgba(148, 163, 184, 0.14);
+  --page-radial-2: rgba(100, 116, 139, 0.12);
+  --page-radial-3: rgba(56, 189, 248, 0.08);
+  --page-linear-1: #111318;
+  --page-linear-2: #181b21;
+  --page-linear-3: #111318;
+
+  --overlay-scrim: rgba(8, 9, 12, 0.88);
+  --auth-brand: #38bdf8;
+
+  --sidebar-surface: rgba(24, 27, 34, 0.72);
+  --sidebar-active-a: #64748b;
+  --sidebar-active-b: #334155;
+  --sidebar-tab-glow: rgba(56, 189, 248, 0.25);
+  --accent-support: rgba(56, 189, 248, 0.45);
+  --accent-support-bg: rgba(56, 189, 248, 0.1);
+
+  --btn-primary-top: #38bdf8;
+  --btn-primary-bot: #0284c7;
+  --accent-solid: #0ea5e9;
+  --accent-bright: #38bdf8;
+  --accent-mid: #0369a1;
+  --focus-ring: rgba(14, 165, 233, 0.28);
+
+  --chart-bar-top: #38bdf8;
+  --chart-bar-bot: #0284c7;
+  --compare-bar-a: #0ea5e9;
+  --compare-bar-b: #475569;
+  --top-fill-a: #94a3b8;
+  --top-fill-b: #0ea5e9;
+
+  --split-card-bg-a: rgba(241, 245, 249, 0.88);
+  --split-card-bg-b: rgba(226, 232, 240, 0.55);
+  --split-card-border: rgba(100, 116, 139, 0.28);
+  --split-card-accent: #0ea5e9;
+  --split-card-shadow: rgba(15, 23, 42, 0.08);
+  --split-card-shadow-hover: rgba(14, 165, 233, 0.12);
+  --split-glass-bg: rgba(241, 245, 249, 0.58);
+  --split-glass-border: rgba(100, 116, 139, 0.22);
+
+  --stat-pct: #0284c7;
+  --select-dark-bg: rgba(24, 27, 34, 0.85);
+  --select-dark-bg-hover: rgba(30, 34, 42, 0.92);
+  --select-focus-border: rgba(56, 189, 248, 0.55);
+  --select-focus-shadow: rgba(56, 189, 248, 0.18);
+  --select-onlight-focus-border: rgba(14, 165, 233, 0.5);
+  --select-onlight-focus-shadow: rgba(14, 165, 233, 0.18);
+  --panel-bg-tint: rgba(15, 23, 42, 0.18);
+
+  --goals-progress-a: #38bdf8;
+  --goals-progress-b: #64748b;
+
+  --support-box-bg: rgba(56, 189, 248, 0.08);
+  --support-box-border: rgba(100, 116, 139, 0.28);
+  --support-title: #334155;
+
+  --footer-link: #7dd3fc;
+  --secondary-text: #0369a1;
+  --secondary-border: #bae6fd;
+
+  --meta-theme-color: #1e293b;
+}

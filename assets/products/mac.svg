@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 700 500" fill="none">
+  <!-- Screen -->
+  <rect x="80" y="20" width="540" height="340" rx="15" fill="#1D1D1F" stroke="#555" stroke-width="3"/>
+  <rect x="100" y="40" width="500" height="300" rx="4" fill="#2C2C2E"/>
+  <rect x="100" y="40" width="500" height="300" rx="4" fill="url(#mscreen)"/>
+  <!-- Camera -->
+  <circle cx="350" cy="30" r="4" fill="#2C2C2E"/>
+  <!-- Hinge -->
+  <path d="M250 360 L200 420 L500 420 L450 360" fill="#3A3A3C" stroke="#555" stroke-width="2"/>
+  <!-- Base -->
+  <rect x="170" y="420" width="360" height="16" rx="4" fill="#E8E8ED" stroke="#D1D1D6" stroke-width="1.5"/>
+  <!-- Notch -->
+  <rect x="300" y="420" width="100" height="4" rx="2" fill="#D1D1D6"/>
+  <defs>
+    <linearGradient id="mscreen" x1="100" y1="40" x2="600" y2="340">
+      <stop offset="0%" stop-color="#1a1a2e"/>
+      <stop offset="100%" stop-color="#0f3460"/>
+    </linearGradient>
+  </defs>
+</svg>
