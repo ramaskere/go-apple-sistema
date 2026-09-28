@@ -95,26 +95,6 @@ html[data-theme="app"] .app-home {
   margin: 0 0 12px;
 }
 
-html[data-theme="app"] .app-ask {
-  display: grid;
-  gap: 6px;
-  font-size: 14px;
-  font-weight: 800;
-  color: #374151;
-}
-
-html[data-theme="app"] .app-ask input {
-  width: 100%;
-  min-height: 64px;
-  padding: 0 16px;
-  border-radius: 16px;
-  border: 2px solid #111827;
-  font-size: 1.35rem;
-  font-weight: 800;
-  color: #111827;
-  background: #fff;
-}
-
 html[data-theme="app"] .app-home > button {
   min-height: 64px;
   border: 0;

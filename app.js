@@ -3454,22 +3454,11 @@ function bindAppDock() {
       updateMainHeader("resumen");
       return;
     }
-    if (go === "buscar") {
-      const input = document.getElementById("app-home-search");
-      goToStockSearch(input instanceof HTMLInputElement ? input.value.trim() : "");
-      return;
-    }
     if (go === "stock") goToStockSearch("");
     if (go === "venta") {
       switchTab("ventas");
       openSaleModal();
     }
-  });
-  const homeSearch = document.getElementById("app-home-search");
-  homeSearch?.addEventListener("keydown", (e) => {
-    if (e.key !== "Enter") return;
-    e.preventDefault();
-    goToStockSearch(homeSearch instanceof HTMLInputElement ? homeSearch.value.trim() : "");
   });
   const moneySrc = document.getElementById("kpi-entra");
   const moneyDst = document.getElementById("app-today-money");
