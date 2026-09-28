@@ -3428,10 +3428,18 @@ function bindAppDock() {
     switchTab(btn.dataset.dock);
   });
   more?.addEventListener("click", (e) => {
-    const btn = e.target.closest("[data-tab]");
-    if (!(btn instanceof HTMLElement)) return;
+    const btn = e.target.closest("button");
+    if (!(btn instanceof HTMLElement) || !more.contains(btn)) return;
     more.hidden = true;
-    switchTab(btn.dataset.tab);
+    if (btn.dataset.open === "clients") {
+      openClientsModal();
+      return;
+    }
+    if (btn.dataset.open === "track") {
+      openDeviceHistoryModal();
+      return;
+    }
+    if (btn.dataset.tab) switchTab(btn.dataset.tab);
   });
   const quick = document.getElementById("app-quick");
   quick?.addEventListener("click", (e) => {
@@ -5602,16 +5610,13 @@ function buildClientOfferMessage(item, rate) {
   const title = titleParts.join(" · ");
 
   const lines = [];
-  lines.push(`✨ *${title}*`);
+  lines.push(`*${title}*`);
+  if (bat && bat !== "-") lines.push(`Batería ${bat}`);
+  lines.push("Disponible ahora");
   lines.push("");
-  if (bat && bat !== "-") lines.push(`🔋 Batería: ${bat}`);
-  lines.push("📦 Disponible ahora");
-  lines.push("");
-
+  if (d.paNum > 0) lines.push(`Contado: ${d.unitArs}`);
+  if (d.listaNum > 0) lines.push(`Lista (tarjeta): ${d.listaArs}`);
   if (d.itemPrice > 0) lines.push(`USD: ${currency(d.itemPrice)}`);
-  if (d.paNum > 0) lines.push(`💵 *Contado:* ${d.unitArs}`);
-  if (d.listaNum > 0) lines.push(`💳 *Lista / tarjeta:* ${d.listaArs}`);
-  lines.push("");
 
   const plans = [
     { n: 3, num: d.cuota3Num },
@@ -5621,18 +5626,14 @@ function buildClientOfferMessage(item, rate) {
   ].filter((p) => p.num != null && p.num > 0);
 
   if (plans.length) {
-    lines.push("📆 *Cuotas mensuales:*");
-    for (const p of plans) {
-      const star = p.n === 12 ? " ⭐" : "";
-      lines.push(`• ${p.n}x de ${currencyArs(p.num)}${star}`);
-    }
     lines.push("");
+    lines.push(plans.map((p) => `${p.n} cuotas de ${currencyArs(p.num)}`).join("\n"));
   }
 
-  lines.push(...buildPurchasePerksLines());
   lines.push("");
-  lines.push("¿Te interesa? Te lo reservamos hoy.");
-  lines.push(`— ${brand}`);
+  lines.push("Incluye funda, templado, cargador y garantía 30 días.");
+  lines.push("¿Lo reservamos?");
+  lines.push(brand);
   return lines.join("\n");
 }
 
@@ -6086,6 +6087,25 @@ function buildInvModalEconomyHtml(item, cost, price, summary, rate) {
   </div>`;
 }
 
+function describeDeviceTrail(item) {
+  const serial = resolveInventorySerial(item);
+  const imei = resolveInventoryImei(item);
+  if (!serial && !imei) {
+    return "Sin serie ni IMEI. Cargalos en Editar para poder seguir este celular.";
+  }
+  const events = collectDeviceHistoryForQuery(serial, imei);
+  const who = serial ? `Serie ${serial}` : `IMEI ${imei}`;
+  if (!events.length) {
+    return `${who}. Está en stock. Todavía no hay ventas ni taller registrados con ese número.`;
+  }
+  const last = events[0];
+  const label = DEVICE_EVENT_LABELS[last.eventType] || "Movimiento";
+  const when = formatDeviceHistoryWhen(last.eventAt);
+  const whoClient = String(last.clientName || "").trim();
+  const extra = whoClient ? ` · ${whoClient}` : "";
+  return `${who}. Último: ${label}${extra} (${when}). ${events.length} movimiento${events.length === 1 ? "" : "s"}.`;
+}
+
 function buildInvUnitModalBodyHtml(item, rate) {
   const d = computeInventoryRowDisplay(item, rate);
   const serial = resolveInventorySerial(item);
@@ -6105,7 +6125,8 @@ function buildInvUnitModalBodyHtml(item, rate) {
     ? `<section class="inv-modal-section inv-modal-card"><h3 class="inv-modal-section__title">Diagnóstico 3uTools</h3><div class="inv-notes-block inv-notes-block--lite">${formatInvNotesDetailHtml(notesRaw)}</div></section>`
     : "";
 
-  return `${buildInvModalPricesHtml(item, d, rate)}
+  return `<p class="inv-trail">${escapeHtml(describeDeviceTrail(item))}</p>
+    ${buildInvModalPricesHtml(item, d, rate)}
     ${buildInvOfferMessageCardHtml(item, rate)}
     ${buildInvModalPlansHtml(d)}
     <section class="inv-modal-section inv-modal-card">
@@ -6287,9 +6308,14 @@ function buildInventoryUnitCardHtml(item, rate) {
             <div class="inv-tile__price-ars">${arsBlock}</div>
             ${listaBlock ? `<div class="inv-tile__price-lista">${listaBlock}</div>` : ""}
           </div>
-          <span class="inv-tile__cta">${invWaSelectMode ? (selected ? "Seleccionado" : "Tocar para seleccionar") : "Ver cuotas y detalle"}</span>
+          <span class="inv-tile__cta">${invWaSelectMode ? (selected ? "Seleccionado" : "Tocar para seleccionar") : "Ver precio y cuotas"}</span>
         </div>
       </button>
+      ${
+        invWaSelectMode
+          ? ""
+          : `<button type="button" class="inv-tile__wa" data-action="copy-offer-msg" data-id="${id}">Copiar WhatsApp</button>`
+      }
     </article>`;
 }
 
@@ -11366,6 +11392,104 @@ saleForm.addEventListener("submit", async (event) => {
 if (btnOpenSaleModal) {
   btnOpenSaleModal.addEventListener("click", () => openSaleModal());
 }
+
+function clientPurchaseRows() {
+  const byName = new Map();
+  for (const sale of getSales()) {
+    const name = String(sale.client || "").trim();
+    if (!name) continue;
+    const row = byName.get(name) || {
+      name,
+      phone: "",
+      ig: "",
+      date: "",
+      model: "",
+      count: 0,
+    };
+    row.count += 1;
+    const phone = String(sale.phone || "").trim();
+    const ig = String(sale.igHandle || "").trim();
+    if (phone) row.phone = phone;
+    if (ig) row.ig = ig;
+    if (!row.date || String(sale.date || "") >= String(row.date)) {
+      row.date = sale.date || row.date;
+      row.model = sale.model || row.model;
+    }
+    byName.set(name, row);
+  }
+  return [...byName.values()].sort((a, b) => String(b.date).localeCompare(String(a.date)));
+}
+
+function renderClientsList() {
+  const list = document.getElementById("clients-list");
+  const q = (document.getElementById("clients-search")?.value || "").trim().toLowerCase();
+  if (!list) return;
+  const rows = clientPurchaseRows().filter((row) => {
+    if (!q) return true;
+    return `${row.name} ${row.phone} ${row.model}`.toLowerCase().includes(q);
+  });
+  if (!rows.length) {
+    list.innerHTML = `<p class="muted">Todavía no hay clientes en las ventas.</p>`;
+    return;
+  }
+  list.innerHTML = rows
+    .map((row) => {
+      const bits = [row.phone, row.model, row.date].filter(Boolean).join(" · ");
+      return `<article class="clients-row">
+        <div>
+          <strong>${escapeHtml(row.name)}</strong>
+          <p class="muted">${escapeHtml(bits)} · ${row.count} compra${row.count === 1 ? "" : "s"}</p>
+        </div>
+        <button type="button" data-client-name="${escapeHtml(row.name)}">Vender de nuevo</button>
+      </article>`;
+    })
+    .join("");
+}
+
+function openClientsModal() {
+  const modal = document.getElementById("clients-modal");
+  if (!modal) return;
+  const search = document.getElementById("clients-search");
+  if (search) search.value = "";
+  renderClientsList();
+  modal.hidden = false;
+  modal.setAttribute("aria-hidden", "false");
+  document.body.classList.add("sale-modal-open");
+  search?.focus();
+}
+
+function hideClientsModal() {
+  const modal = document.getElementById("clients-modal");
+  if (!modal) return;
+  modal.hidden = true;
+  modal.setAttribute("aria-hidden", "true");
+  document.body.classList.remove("sale-modal-open");
+}
+
+function sellAgainToClient(name) {
+  hideClientsModal();
+  switchTab("ventas");
+  openSaleModal();
+  refreshSaleClientSelect();
+  if (saleClientSelect && [...saleClientSelect.options].some((opt) => opt.value === name)) {
+    saleClientSelect.value = name;
+    saleClientSelect.dispatchEvent(new Event("change"));
+  } else if (saleClient) {
+    saleClient.value = name;
+  }
+}
+
+document.getElementById("btn-open-clients")?.addEventListener("click", () => openClientsModal());
+document.getElementById("clients-modal-close")?.addEventListener("click", () => hideClientsModal());
+document.getElementById("clients-modal-done")?.addEventListener("click", () => hideClientsModal());
+document.getElementById("clients-modal-backdrop")?.addEventListener("click", () => hideClientsModal());
+document.getElementById("clients-search")?.addEventListener("input", () => renderClientsList());
+document.getElementById("clients-list")?.addEventListener("click", (event) => {
+  const btn = event.target.closest("[data-client-name]");
+  if (!(btn instanceof HTMLElement)) return;
+  sellAgainToClient(btn.dataset.clientName || "");
+});
+
 if (saleModalClose) {
   saleModalClose.addEventListener("click", () => closeSaleModalInteractive());
 }
@@ -13061,6 +13185,13 @@ if (inventoryStock) {
   if (action === "toggle-wa-select") {
     event.preventDefault();
     toggleInvWaSelection(id);
+    return;
+  }
+
+  if (action === "copy-offer-msg") {
+    event.preventDefault();
+    event.stopPropagation();
+    void copyClientOfferMessage(id, actionEl);
     return;
   }
 

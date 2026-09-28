@@ -33,6 +33,7 @@ html[data-theme="app"] .section-hint {
   display: none;
 }
 
+html[data-theme="app"] .sale-modal .section-hint,
 html[data-theme="app"] #tab-simulador-cuotas .section-hint {
   display: block;
   color: #6b7280;
@@ -205,7 +206,6 @@ html[data-theme="app"] #tab-resumen:not(.app-detail-open) .stat-num {
 
 html[data-theme="app"] #tab-inventario .section-kpi-row,
 html[data-theme="app"] #tab-inventario .table-head h2,
-html[data-theme="app"] #btn-open-device-history-modal,
 html[data-theme="app"] #btn-open-inv-bulk-modal,
 html[data-theme="app"] #tab-inventario .view-filter-label:has(#inv-stock-filter) {
   display: none;

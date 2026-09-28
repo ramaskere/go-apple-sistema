@@ -16,8 +16,8 @@
       <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="./themes.css?v=19" />
-    <link rel="stylesheet" href="./styles.css?v=75" />
-    <link rel="stylesheet" href="./theme-app.css?v=4" />
+    <link rel="stylesheet" href="./styles.css?v=76" />
+    <link rel="stylesheet" href="./theme-app.css?v=5" />
     <script>
       (function () {
         var map = {
@@ -159,6 +159,8 @@
       </nav>
       <div class="app-more" id="app-more" hidden>
         <p class="app-more-title">Más</p>
+        <button type="button" data-open="clients">Clientes que compraron</button>
+        <button type="button" data-open="track">Seguir un celular</button>
         <button type="button" data-tab="simulador-cuotas">Calcular cuotas</button>
         <button type="button" data-tab="caja">Caja</button>
         <button type="button" data-tab="ventas">Ventas hechas</button>
@@ -539,6 +541,7 @@
                 <h2 class="section-hero__title">Ventas</h2>
                 <p class="section-hero__subtitle muted">Registrá y controlá tus operaciones</p>
               </div>
+              <button type="button" id="btn-open-clients" class="secondary">Clientes</button>
               <button type="button" id="btn-open-sale-modal" class="ventas-btn-nueva">Nueva venta</button>
             </div>
             <div class="ventas-kpi-board" aria-live="polite">
@@ -1403,7 +1406,7 @@
                   Lista WhatsApp
                 </button>
                 <button type="button" id="btn-open-device-history-modal" class="secondary staff-owner-only">
-                  Historial serie/IMEI
+                  Seguir un celular
                 </button>
                 <button type="button" id="btn-open-inv-bulk-modal" class="ventas-btn-nueva staff-owner-only">
                   Carga masiva
@@ -2345,6 +2348,31 @@
         </div>
 
         <div
+          id="clients-modal"
+          class="sale-modal"
+          hidden
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="clients-modal-title"
+        >
+          <div class="sale-modal__backdrop" id="clients-modal-backdrop" aria-hidden="true"></div>
+          <div class="sale-modal__panel card glass-panel" role="document">
+            <div class="sale-modal__header">
+              <h2 id="clients-modal-title">Clientes que compraron</h2>
+              <button type="button" class="sale-modal__close" id="clients-modal-close" aria-label="Cerrar">×</button>
+            </div>
+            <div class="sale-modal__scroll">
+              <p class="section-hint muted">Gente que ya compró. Tocá Vender de nuevo y se abre la venta con su nombre.</p>
+              <input id="clients-search" type="search" placeholder="Buscar nombre o teléfono" autocomplete="off" />
+              <div id="clients-list" class="clients-list"></div>
+            </div>
+            <div class="form-actions sale-modal__form-actions">
+              <button type="button" id="clients-modal-done">Cerrar</button>
+            </div>
+          </div>
+        </div>
+
+        <div
           id="device-history-modal"
           class="sale-modal device-history-modal"
           hidden
@@ -2355,13 +2383,12 @@
           <div class="sale-modal__backdrop" id="device-history-modal-backdrop" aria-hidden="true"></div>
           <div class="sale-modal__panel card glass-panel" role="document">
             <div class="sale-modal__header">
-              <h2 id="device-history-modal-title">Historial del equipo</h2>
+              <h2 id="device-history-modal-title">Seguir un celular</h2>
               <button type="button" class="sale-modal__close" id="device-history-modal-close" aria-label="Cerrar">×</button>
             </div>
             <div class="sale-modal__scroll device-history-modal__scroll">
               <p class="section-hint muted">
-                Seguimiento por <strong>número de serie</strong> o <strong>IMEI</strong> (15 dígitos): ingresos, ventas,
-                devoluciones y cambios en el sistema.
+                Pegá la serie o el IMEI. Te dice si está en stock, a quién se lo vendiste y si pasó por el técnico.
               </p>
               <div class="device-history-search">
                 <label class="device-history-search__field">
@@ -2819,7 +2846,7 @@
     <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
     <script src="./config.js?v=17"></script>
     <script src="./creativos-engine.js?v=2"></script>
-    <script src="./app.js?v=105"></script>
+    <script src="./app.js?v=106"></script>
     <script src="./business-extras.js?v=6"></script>
   </body>
 </html>

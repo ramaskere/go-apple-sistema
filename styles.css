@@ -2861,11 +2861,9 @@ code {
 @keyframes fadeIn {
   from {
     opacity: 0;
-    transform: translateY(5px);
   }
   to {
     opacity: 1;
-    transform: translateY(0);
   }
 }
 
@@ -3247,6 +3245,13 @@ code {
 
 body.sale-modal-open {
   overflow: hidden;
+}
+
+body.sale-modal-open #app-period-bar,
+body.sale-modal-open .app-dock,
+body.sale-modal-open .app-more {
+  visibility: hidden;
+  pointer-events: none;
 }
 
 .sale-modal[hidden] {
@@ -3879,7 +3884,58 @@ body.sale-modal-open {
 }
 
 /* —— Tarjetita = un equipo (estilo card / canvas tile) —— */
-.inv-tile {
+.inv-tile__wa {
+  display: block;
+  width: calc(100% - 16px);
+  margin: 0 8px 10px;
+  min-height: 40px;
+  border: 0;
+  border-radius: 12px;
+  background: #111827;
+  color: #fff;
+  font-weight: 800;
+  font-size: 13px;
+}
+
+.inv-trail {
+  margin: 0 0 12px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: #f3f4f6;
+  color: #111827;
+  font-weight: 650;
+  line-height: 1.4;
+}
+
+.clients-list {
+  display: grid;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.clients-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+}
+
+.clients-row p {
+  margin: 4px 0 0;
+}
+
+.clients-row button {
+  flex: 0 0 auto;
+  min-height: 40px;
+  border: 0;
+  border-radius: 10px;
+  background: #111827;
+  color: #fff;
+  font-weight: 800;
+}
   --inv-accent: #94a3b8;
   margin: 0;
   min-width: 0;
@@ -8844,4 +8900,57 @@ html.app-staff-boot:not(.app-staff-ready) #staff-overlay.auth-overlay[hidden] {
 
 html.app-staff-ready #staff-overlay {
   display: none !important;
+}
+
+.inv-tile__wa {
+  display: block;
+  width: calc(100% - 16px);
+  margin: 0 8px 10px;
+  min-height: 40px;
+  border: 0;
+  border-radius: 12px;
+  background: #111827;
+  color: #fff;
+  font-weight: 800;
+  font-size: 13px;
+}
+
+.inv-trail {
+  margin: 0 0 12px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: #f3f4f6;
+  color: #111827;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.clients-list {
+  display: grid;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.clients-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+}
+
+.clients-row p {
+  margin: 4px 0 0;
+}
+
+.clients-row button {
+  flex: 0 0 auto;
+  min-height: 40px;
+  border: 0;
+  border-radius: 10px;
+  background: #111827;
+  color: #fff;
+  font-weight: 800;
 }
