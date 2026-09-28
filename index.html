@@ -16,8 +16,8 @@
       <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="./themes.css?v=19" />
-    <link rel="stylesheet" href="./styles.css?v=76" />
-    <link rel="stylesheet" href="./theme-app.css?v=6" />
+    <link rel="stylesheet" href="./styles.css?v=77" />
+    <link rel="stylesheet" href="./theme-app.css?v=7" />
     <script>
       (function () {
         var map = {
@@ -153,10 +153,16 @@
       <nav class="app-dock" id="app-dock" aria-label="Accesos rápidos">
         <button type="button" class="app-dock-btn is-on" data-dock="resumen">Inicio</button>
         <button type="button" class="app-dock-btn" data-dock="inventario">Stock</button>
-        <button type="button" class="app-dock-btn" data-dock="vender">Vender</button>
+        <button type="button" class="app-dock-btn app-dock-add" data-dock="vender" aria-label="Nuevo">+</button>
         <button type="button" class="app-dock-btn app-dock-staff" data-dock="simulador-cuotas">Cuotas</button>
         <button type="button" class="app-dock-btn" data-dock="mas" id="app-dock-more">Más</button>
       </nav>
+      <div class="app-add" id="app-add" hidden>
+        <p class="app-more-title">Nuevo</p>
+        <button type="button" data-add="venta">Nueva venta</button>
+        <button type="button" data-add="equipo">Cargar equipo</button>
+        <button type="button" data-add="lista">Copiar lista de iPhones</button>
+      </div>
       <div class="app-more" id="app-more" hidden>
         <p class="app-more-title">Más</p>
         <button type="button" data-open="clients">Clientes que compraron</button>
@@ -283,10 +289,13 @@
             </div>
           </section>
           <div class="app-only app-home" id="app-quick">
-            <button type="button" data-go="stock">Ver iPhones</button>
-            <button type="button" data-go="venta">Vender</button>
-            <p class="app-today">Hoy entró <strong id="app-today-money">—</strong></p>
-            <button type="button" class="app-quick-detail" data-go="detalle">Números del mes</button>
+            <div class="app-shortcuts">
+              <button type="button" data-go="venta">Vender</button>
+              <button type="button" data-go="equipo">Cargar equipo</button>
+              <button type="button" data-go="lista">Lista WhatsApp</button>
+              <button type="button" data-go="clientes">Clientes</button>
+            </div>
+            <button type="button" class="app-quick-detail" data-go="detalle">Ver todo el mes</button>
           </div>
           <div class="kpi-dashboard">
             <p id="dashboard-period-hint" class="sr-only">
@@ -1398,7 +1407,10 @@
               <h2>Stock actual</h2>
               <div class="table-head-actions">
                 <button type="button" id="btn-inv-wa-list" class="secondary">
-                  Lista WhatsApp
+                  Copiar lista
+                </button>
+                <button type="button" id="btn-inv-wa-pick" class="secondary">
+                  Elegir
                 </button>
                 <button type="button" id="btn-open-device-history-modal" class="secondary staff-owner-only">
                   Seguir un celular
@@ -1410,7 +1422,7 @@
             </div>
             <p class="section-hint muted inv-stock-hint">
               Tocá el <strong>modelo</strong> para ver equipos. <strong>Tocá una tarjeta</strong> para ver detalle.
-              Usá <strong>Lista WhatsApp</strong> para elegir varios y copiar una lista lista para vender.
+              <strong>Copiar lista</strong> arma el mensaje de todo el stock. <strong>Elegir</strong> si querés solo algunos.
             </p>
             <div id="inv-wa-select-bar" class="inv-wa-select-bar" hidden>
               <div class="inv-wa-select-bar__main">
@@ -2841,7 +2853,7 @@
     <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
     <script src="./config.js?v=17"></script>
     <script src="./creativos-engine.js?v=2"></script>
-    <script src="./app.js?v=107"></script>
+    <script src="./app.js?v=108"></script>
     <script src="./business-extras.js?v=6"></script>
   </body>
 </html>

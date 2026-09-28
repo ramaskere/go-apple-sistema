@@ -2,6 +2,7 @@
 
 .app-dock,
 .app-more,
+.app-add,
 html:not([data-theme="app"]) .app-only {
   display: none !important;
 }
@@ -92,30 +93,45 @@ html[data-theme="app"] .section-hero__head {
 html[data-theme="app"] .app-home {
   display: grid;
   gap: 10px;
-  margin: 0 0 12px;
-}
-
-html[data-theme="app"] .app-home > button {
-  min-height: 64px;
-  border: 0;
-  border-radius: 16px;
-  background: #111827;
-  color: #fff;
-  font-size: 1.2rem;
-  font-weight: 800;
-}
-
-html[data-theme="app"] .app-today {
   margin: 0;
-  text-align: center;
-  font-size: 1.05rem;
-  font-weight: 700;
-  color: #374151;
 }
 
-html[data-theme="app"] .app-today strong {
+html[data-theme="app"] #tab-resumen.active {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+html[data-theme="app"] #tab-resumen:not(.app-detail-open) .kpi-dashboard {
+  order: 1;
+}
+
+html[data-theme="app"] #tab-resumen:not(.app-detail-open) #app-quick {
+  order: 2;
+}
+
+html[data-theme="app"] #tab-resumen:not(.app-detail-open) #resumen-alerts-panel {
+  order: 3;
+}
+
+html[data-theme="app"] #resumen-alerts-panel:has(#resumen-alerts-toggle[hidden]) {
+  display: none;
+}
+
+html[data-theme="app"] .app-shortcuts {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+html[data-theme="app"] .app-shortcuts button {
+  min-height: 72px;
+  border-radius: 16px;
+  border: 1px solid #e5e7eb;
+  background: #fff;
   color: #111827;
-  font-size: 1.25rem;
+  font-size: 15px;
+  font-weight: 800;
 }
 
 html[data-theme="app"] .app-home .app-quick-detail {
@@ -128,10 +144,6 @@ html[data-theme="app"] .app-home .app-quick-detail {
 html[data-theme="app"] .app-home .app-quick-detail.is-on {
   background: #111827;
   color: #fff;
-}
-
-html[data-theme="app"] #tab-resumen:not(.app-detail-open) .kpi-dashboard {
-  display: none;
 }
 
 html[data-theme="app"] #tab-resumen:not(.app-detail-open) .kpi-quad-section[aria-label="Reparto de la ganancia"],
@@ -214,6 +226,7 @@ html[data-theme="app"] .table-wrap {
 
 html[data-theme="app"] .app-dock {
   display: flex !important;
+  align-items: center;
   gap: 4px;
   background: #fff;
   border: 1px solid #e5e7eb;
@@ -235,7 +248,27 @@ html[data-theme="app"] .app-dock-btn.is-on {
   color: #fff;
 }
 
-html[data-theme="app"] .app-more {
+html[data-theme="app"] .app-dock-add {
+  flex: 0 0 56px;
+  width: 56px;
+  height: 56px;
+  min-height: 56px;
+  border-radius: 50%;
+  background: #111827;
+  color: #fff;
+  font-size: 34px;
+  font-weight: 500;
+  line-height: 1;
+  box-shadow: 0 8px 18px rgba(17, 24, 39, 0.22);
+}
+
+html[data-theme="app"] .app-dock-add.is-on {
+  background: #111827;
+  color: #fff;
+}
+
+html[data-theme="app"] .app-more,
+html[data-theme="app"] .app-add {
   display: grid !important;
   gap: 8px;
   padding: 14px;
@@ -245,7 +278,8 @@ html[data-theme="app"] .app-more {
   box-shadow: 0 16px 40px rgba(17, 24, 39, 0.16);
 }
 
-html[data-theme="app"] .app-more[hidden] {
+html[data-theme="app"] .app-more[hidden],
+html[data-theme="app"] .app-add[hidden] {
   display: none !important;
 }
 
@@ -258,7 +292,8 @@ html[data-theme="app"] .app-more-title {
   color: #6b7280;
 }
 
-html[data-theme="app"] .app-more button {
+html[data-theme="app"] .app-more button,
+html[data-theme="app"] .app-add button {
   min-height: 46px;
   text-align: left;
   border-radius: 12px;
@@ -281,7 +316,12 @@ html[data-theme="app"] .app-more button {
     border-right: 1px solid #e5e7eb;
   }
 
-  html[data-theme="app"] .app-more {
+  html[data-theme="app"] .app-dock-btn:not(.app-dock-add) {
+    width: 100%;
+  }
+
+  html[data-theme="app"] .app-more,
+  html[data-theme="app"] .app-add {
     position: fixed;
     left: 116px;
     bottom: 16px;
@@ -300,7 +340,7 @@ html[data-theme="app"] .app-more button {
   }
 
   html[data-theme="app"] .main-column {
-    padding-bottom: calc(88px + env(safe-area-inset-bottom));
+    padding-bottom: calc(108px + env(safe-area-inset-bottom));
   }
 
   html[data-theme="app"] .app-dock {
@@ -309,6 +349,7 @@ html[data-theme="app"] .app-more button {
     right: 0;
     bottom: 0;
     z-index: 40;
+    align-items: flex-end;
     padding: 8px 8px calc(8px + env(safe-area-inset-bottom));
     border-left: 0;
     border-right: 0;
@@ -316,11 +357,25 @@ html[data-theme="app"] .app-more button {
     box-shadow: 0 -8px 24px rgba(17, 24, 39, 0.06);
   }
 
+  html[data-theme="app"] .app-dock-add {
+    position: relative;
+    top: -16px;
+  }
+
   html[data-theme="app"] .app-more {
     position: fixed;
     left: 12px;
     right: 12px;
-    bottom: calc(76px + env(safe-area-inset-bottom));
+    bottom: calc(96px + env(safe-area-inset-bottom));
+    z-index: 41;
+  }
+
+  html[data-theme="app"] .app-add {
+    position: fixed;
+    left: 50%;
+    width: min(320px, calc(100vw - 32px));
+    transform: translateX(-50%);
+    bottom: calc(108px + env(safe-area-inset-bottom));
     z-index: 41;
   }
 }
@@ -329,7 +384,7 @@ html[data-theme="app"] body.app-staff-mode .app-dock-btn[data-dock="resumen"],
 html[data-theme="app"] body.app-staff-mode .app-dock-btn[data-dock="vender"],
 html[data-theme="app"] body.app-staff-mode .app-dock-btn[data-dock="mas"],
 html[data-theme="app"] body.app-staff-mode .app-home,
-html[data-theme="app"] body.app-staff-mode .app-dock-staff,
+html[data-theme="app"] body.app-staff-mode #app-add,
 body.app-staff-mode #app-more {
   display: none !important;
 }

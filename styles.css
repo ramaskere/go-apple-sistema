@@ -3249,7 +3249,8 @@ body.sale-modal-open {
 
 body.sale-modal-open #app-period-bar,
 body.sale-modal-open .app-dock,
-body.sale-modal-open .app-more {
+body.sale-modal-open .app-more,
+body.sale-modal-open .app-add {
   visibility: hidden;
   pointer-events: none;
 }

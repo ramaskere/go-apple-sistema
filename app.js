@@ -3312,11 +3312,7 @@ function updateMainHeader(tabName) {
         : copy.subtitle;
   }
   const periodBar = document.getElementById("app-period-bar");
-  const simpleHome =
-    document.documentElement.dataset.theme === "app" &&
-    tabName === "resumen" &&
-    !document.getElementById("tab-resumen")?.classList.contains("app-detail-open");
-  if (periodBar) periodBar.hidden = isStaffMode() || simpleHome;
+  if (periodBar) periodBar.hidden = isStaffMode();
   updatePeriodBarNote();
 }
 
@@ -3378,9 +3374,9 @@ function switchTab(tabName) {
 const APP_DOCK_MAIN = ["resumen", "inventario", "ventas", "simulador-cuotas"];
 
 const APP_SIMPLE_TITLES = {
-  resumen: "¿Qué querés hacer?",
+  resumen: "Inicio",
   inventario: "Elegí el iPhone",
-  ventas: "Vender",
+  ventas: "Ventas",
   "simulador-cuotas": "¿En cuántas cuotas?",
   caja: "Plata de caja",
 };
@@ -3398,7 +3394,6 @@ function syncAppDock(tabName) {
   document.querySelectorAll(".app-dock-btn[data-dock]").forEach((btn) => {
     const dock = btn.dataset.dock;
     const on =
-      (dock === "vender" && tabName === "ventas") ||
       dock === tabName ||
       (dock === "mas" && tabName && !APP_DOCK_MAIN.includes(tabName) && tabName !== "ventas");
     btn.classList.toggle("is-on", on);
@@ -3407,25 +3402,55 @@ function syncAppDock(tabName) {
   if (more && APP_DOCK_MAIN.includes(tabName)) more.hidden = true;
 }
 
+function setAppAddOpen(open) {
+  const sheet = document.getElementById("app-add");
+  const btn = document.querySelector('.app-dock-add[data-dock="vender"]');
+  if (sheet) sheet.hidden = !open;
+  btn?.classList.toggle("is-on", Boolean(open));
+  if (open) {
+    const more = document.getElementById("app-more");
+    if (more) more.hidden = true;
+  }
+}
+
 function bindAppDock() {
   const dock = document.getElementById("app-dock");
   const more = document.getElementById("app-more");
+  const add = document.getElementById("app-add");
   if (!dock || dock.dataset.bound === "1") return;
   dock.dataset.bound = "1";
   dock.addEventListener("click", (e) => {
     const btn = e.target.closest("[data-dock]");
     if (!(btn instanceof HTMLElement)) return;
     if (btn.dataset.dock === "mas") {
+      setAppAddOpen(false);
       if (more) more.hidden = !more.hidden;
       return;
     }
     if (more) more.hidden = true;
     if (btn.dataset.dock === "vender") {
+      setAppAddOpen(Boolean(add?.hidden));
+      return;
+    }
+    setAppAddOpen(false);
+    switchTab(btn.dataset.dock);
+  });
+  add?.addEventListener("click", (e) => {
+    const btn = e.target.closest("[data-add]");
+    if (!(btn instanceof HTMLElement)) return;
+    const action = btn.dataset.add;
+    setAppAddOpen(false);
+    if (action === "venta") {
       switchTab("ventas");
       openSaleModal();
       return;
     }
-    switchTab(btn.dataset.dock);
+    if (action === "equipo") {
+      switchTab("inventario");
+      openInventoryModalForNew();
+      return;
+    }
+    if (action === "lista") void copyReadyInvWhatsAppList(btn);
   });
   more?.addEventListener("click", (e) => {
     const btn = e.target.closest("button");
@@ -3450,29 +3475,26 @@ function bindAppDock() {
     if (go === "detalle") {
       const open = resumen?.classList.toggle("app-detail-open");
       btn.classList.toggle("is-on", Boolean(open));
-      btn.textContent = open ? "Ocultar números" : "Números del mes";
+      btn.textContent = open ? "Ocultar" : "Ver todo el mes";
       updateMainHeader("resumen");
       return;
     }
-    if (go === "stock") goToStockSearch("");
     if (go === "venta") {
-      switchTab("ventas");
-      openSaleModal();
+      setAppAddOpen(true);
+      return;
     }
+    if (go === "equipo") {
+      setAppAddOpen(false);
+      switchTab("inventario");
+      openInventoryModalForNew();
+      return;
+    }
+    if (go === "lista") {
+      void copyReadyInvWhatsAppList(btn);
+      return;
+    }
+    if (go === "clientes") openClientsModal();
   });
-  const moneySrc = document.getElementById("kpi-entra");
-  const moneyDst = document.getElementById("app-today-money");
-  if (moneySrc && moneyDst) {
-    const copyMoney = () => {
-      moneyDst.textContent = (moneySrc.textContent || "—").trim() || "—";
-    };
-    copyMoney();
-    new MutationObserver(copyMoney).observe(moneySrc, {
-      childList: true,
-      subtree: true,
-      characterData: true,
-    });
-  }
 }
 
 /** Navegación desde alertas del Resumen → pestaña + filtro + scroll al ítem. */
@@ -5705,10 +5727,7 @@ function syncInvWaSelectBar() {
     countEl.textContent = n === 1 ? "1 seleccionado" : `${n} seleccionados`;
   }
   if (continueBtn) continueBtn.disabled = invWaSelectedIds.size === 0;
-  if (startBtn) {
-    startBtn.classList.toggle("inv-wa-list-btn--active", invWaSelectMode);
-    startBtn.textContent = invWaSelectMode ? "Seleccionando…" : "Lista WhatsApp";
-  }
+  if (startBtn) startBtn.classList.toggle("inv-wa-list-btn--active", invWaSelectMode);
   document.getElementById("tab-inventario")?.classList.toggle("inv-wa-selecting", invWaSelectMode);
 }
 
@@ -5811,11 +5830,86 @@ function buildMultiInvWhatsAppList(itemIds, fields, rate) {
     lines.push("");
   }
 
-  lines.push(...buildPurchasePerksLines());
-  lines.push("");
-  lines.push("¿Cuál te interesa? Te lo reservamos hoy.");
+  lines.push("Con la compra: funda, templado, cargador y garantía 30 días.");
+  lines.push("¿Cuál te reservo?");
   lines.push(`— ${brand}`);
   return { text: lines.join("\n").trim(), count: items.length };
+}
+
+function buildReadyInvWhatsAppList(itemIds, rate) {
+  const brand = getStoreBrandLabel();
+  const inv = getInventory();
+  const items = itemIds
+    .map((id) => inv.find((i) => String(i.id) === String(id)))
+    .filter((i) => i && numeric(i.stock, 0) > 0);
+  items.sort((a, b) => {
+    const m = String(a.model || "").localeCompare(String(b.model || ""), "es");
+    if (m !== 0) return m;
+    const c = String(a.color || "").localeCompare(String(b.color || ""), "es");
+    if (c !== 0) return c;
+    return String(a.storage || "").localeCompare(String(b.storage || ""), "es");
+  });
+
+  const byModel = new Map();
+  for (const item of items) {
+    const key = String(item.model || "").trim() || "Equipo";
+    if (!byModel.has(key)) byModel.set(key, []);
+    byModel.get(key).push(item);
+  }
+
+  const lines = [`*${brand}*`, formatInvWaListDate(), ""];
+  for (const [model, group] of byModel) {
+    lines.push(`*${model}*`);
+    for (const item of group) {
+      const d = computeInventoryRowDisplay(item, rate);
+      const bits = [];
+      const color = String(item.color || "").trim();
+      const storage = String(item.storage || "").trim();
+      const bat = toBatteryLabel(item.battery);
+      if (storage && storage !== "Sin almacenamiento") bits.push(storage);
+      if (color && color !== "Sin color") bits.push(color);
+      if (bat && bat !== "-") bits.push(bat);
+      lines.push(bits.length ? `• ${bits.join(" · ")}` : "• Disponible");
+      const prices = [];
+      if (d.paNum > 0) prices.push(`Contado ${d.unitArs}`);
+      if (d.listaNum > 0) prices.push(`Lista ${d.listaArs}`);
+      if (prices.length) lines.push(prices.join(" · "));
+      const plans = [
+        [3, d.cuota3Num],
+        [6, d.cuota6Num],
+        [12, d.cuota12Num],
+        [18, d.cuota18Num],
+      ]
+        .filter(([, n]) => n != null && n > 0)
+        .map(([n, monthly]) => `${n}x ${currencyArs(monthly)}`);
+      if (plans.length) lines.push(plans.join(" · "));
+    }
+    lines.push("");
+  }
+  lines.push("Con la compra: funda, templado, cargador y garantía 30 días.");
+  lines.push("¿Cuál te reservo?");
+  return { text: lines.join("\n").trim(), count: items.length };
+}
+
+async function copyTextToClipboard(text) {
+  try {
+    await navigator.clipboard.writeText(text);
+    return true;
+  } catch {
+    try {
+      const ta = document.createElement("textarea");
+      ta.value = text;
+      ta.setAttribute("readonly", "");
+      ta.style.cssText = "position:fixed;left:-9999px;top:0";
+      document.body.appendChild(ta);
+      ta.select();
+      const ok = document.execCommand("copy");
+      ta.remove();
+      return ok;
+    } catch {
+      return false;
+    }
+  }
 }
 
 function refreshInvWaPreview() {
@@ -5831,6 +5925,28 @@ function refreshInvWaPreview() {
   );
   preview.textContent = text;
   if (meta) meta.textContent = count ? `${count} en la lista` : "Sin equipos";
+}
+
+async function copyReadyInvWhatsAppList(triggerBtn) {
+  const inv = getInventory().filter((item) => numeric(item.stock, 0) > 0);
+  const ids = invWaSelectedIds.size ? [...invWaSelectedIds] : inv.map((item) => item.id);
+  const { text, count } = buildReadyInvWhatsAppList(ids, getDolarBlueArsPerUsd());
+  if (!count) {
+    alert("No hay equipos en stock para copiar.");
+    return;
+  }
+  const ok = await copyTextToClipboard(text);
+  if (!ok) {
+    alert("No se pudo copiar la lista.");
+    return;
+  }
+  if (triggerBtn instanceof HTMLElement) {
+    const prev = triggerBtn.textContent;
+    triggerBtn.textContent = "Lista copiada";
+    setTimeout(() => {
+      triggerBtn.textContent = prev;
+    }, 1600);
+  }
 }
 
 function openInvWaListModal() {
@@ -5901,12 +6017,11 @@ function wireInvWaListUi() {
   if (document.body.dataset.invWaWired === "1") return;
   document.body.dataset.invWaWired = "1";
 
-  document.getElementById("btn-inv-wa-list")?.addEventListener("click", () => {
-    if (invWaSelectMode) {
-      setInvWaSelectMode(false);
-      return;
-    }
-    setInvWaSelectMode(true);
+  document.getElementById("btn-inv-wa-list")?.addEventListener("click", (e) => {
+    void copyReadyInvWhatsAppList(e.currentTarget);
+  });
+  document.getElementById("btn-inv-wa-pick")?.addEventListener("click", () => {
+    setInvWaSelectMode(!invWaSelectMode);
   });
   document.getElementById("btn-inv-wa-select-cancel")?.addEventListener("click", () => {
     setInvWaSelectMode(false);
