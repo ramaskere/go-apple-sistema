@@ -9983,9 +9983,12 @@ function renderGoalsProgress() {
   if (overhead > 0) {
     const covered = actualRes > 0 ? Math.min(100, (actualRes / overhead) * 100) : 0;
     rows.push({
+      kind: "cover",
       label: "Cubrir costos de la tienda",
       sub: `${currency(actualRes)} de ${currency(overhead)} · ${monthLabel}`,
       pct: covered,
+      actual: actualRes,
+      goal: overhead,
     });
   }
   if (g.incomeMonthlyUsd > 0) {
@@ -10038,9 +10041,50 @@ function renderGoalsProgress() {
 
   const home = document.getElementById("app-goals");
   const homeProgress = document.getElementById("app-goals-progress");
+  const otherRows = rows.filter((row) => row.kind !== "cover");
+  const otherHtml = otherRows
+    .map(
+      (r) => `
+    <div class="goals-progress-row">
+      <div class="goals-progress-label">
+        <span>${escapeHtml(r.label)}</span>
+        <span class="muted goals-progress-sub">${escapeHtml(r.sub)}</span>
+      </div>
+      <div class="goals-progress-track" role="progressbar" aria-valuenow="${Math.round(r.pct)}" aria-valuemin="0" aria-valuemax="100">
+        <div class="goals-progress-fill" style="width:${Math.max(0, Math.min(100, r.pct))}%"></div>
+      </div>
+      <span class="goals-progress-pct">${r.pct.toFixed(0)}%</span>
+    </div>`
+    )
+    .join("");
   if (home && homeProgress) {
-    home.hidden = rows.length === 0;
-    homeProgress.innerHTML = rows.length ? html : "";
+    home.hidden = otherRows.length === 0;
+    homeProgress.innerHTML = otherHtml;
+  }
+
+  const coverEl = document.getElementById("app-cover");
+  const cover = rows.find((row) => row.kind === "cover");
+  if (coverEl) {
+    coverEl.hidden = !cover;
+    if (cover) {
+      const done = cover.pct >= 99.5;
+      const falta = Math.max(0, cover.goal - cover.actual);
+      const status = document.getElementById("app-cover-status");
+      const fill = document.getElementById("app-cover-fill");
+      const meta = document.getElementById("app-cover-meta");
+      const track = document.getElementById("app-cover-track");
+      if (status) status.textContent = done ? "Tienda cubierta" : `Faltan ${currency(falta)}`;
+      if (fill) {
+        fill.style.width = `${Math.max(0, Math.min(100, cover.pct))}%`;
+        fill.classList.toggle("is-done", done);
+      }
+      if (track) track.setAttribute("aria-valuenow", String(Math.round(cover.pct)));
+      if (meta) {
+        meta.textContent = done
+          ? `${currency(cover.actual)} de ${currency(cover.goal)}. Lo que sobra es ganancia.`
+          : `${currency(Math.max(0, cover.actual))} de ${currency(cover.goal)} este mes.`;
+      }
+    }
   }
 }
 

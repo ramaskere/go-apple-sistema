@@ -176,9 +176,83 @@ html[data-theme^="app"] .app-section-title {
 }
 
 html[data-theme^="app"] #app-title-mes { order: 1; margin-top: 0; }
+html[data-theme^="app"] #app-cover {
+  order: 2;
+  grid-column: 1 / -1;
+}
 html[data-theme^="app"] #app-title-mov { order: 6; }
 html[data-theme^="app"] #app-title-reparto { order: 8; }
 html[data-theme^="app"] #app-title-extra { order: 10; }
+html[data-theme^="app"] #app-cover .app-cover {
+  padding: 14px 14px 12px;
+  border-radius: 16px;
+  border: 1px solid #e6e8ec;
+  background: #fff;
+}
+html[data-theme^="app"] .app-cover__top {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+}
+html[data-theme^="app"] .app-cover__kicker {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: #6b7280;
+}
+html[data-theme^="app"] .app-cover__status {
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: #111827;
+  text-align: right;
+}
+html[data-theme^="app"] .app-cover__track {
+  margin-top: 12px;
+  height: 16px;
+  border-radius: 999px;
+  background: #e5e7eb;
+  overflow: hidden;
+}
+html[data-theme^="app"] .app-cover__fill {
+  height: 100%;
+  width: 0;
+  border-radius: inherit;
+  background: #111827;
+}
+html[data-theme^="app"] .app-cover__fill.is-done {
+  background: #15803d;
+}
+html[data-theme^="app"] .app-cover__meta {
+  margin: 8px 0 0;
+  font-size: 13px;
+  font-weight: 700;
+  color: #6b7280;
+}
+html[data-theme="app-oscuro"] #app-cover .app-cover {
+  background: rgba(18, 20, 28, 0.62);
+  border-color: rgba(255, 255, 255, 0.14);
+  backdrop-filter: blur(18px) saturate(160%);
+  -webkit-backdrop-filter: blur(18px) saturate(160%);
+}
+html[data-theme="app-oscuro"] .app-cover__kicker,
+html[data-theme="app-oscuro"] .app-cover__meta {
+  color: #e4e4e7;
+}
+html[data-theme="app-oscuro"] .app-cover__status {
+  color: #ffffff;
+}
+html[data-theme="app-oscuro"] .app-cover__track {
+  background: rgba(255, 255, 255, 0.12);
+}
+html[data-theme="app-oscuro"] .app-cover__fill {
+  background: #f4f4f5;
+}
+html[data-theme="app-oscuro"] .app-cover__fill.is-done {
+  background: #4ade80;
+}
 html[data-theme^="app"] #app-goals {
   order: 12;
   grid-column: 1 / -1;

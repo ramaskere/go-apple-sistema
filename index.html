@@ -17,7 +17,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="./themes.css?v=21" />
     <link rel="stylesheet" href="./styles.css?v=79" />
-    <link rel="stylesheet" href="./theme-app.css?v=22" />
+    <link rel="stylesheet" href="./theme-app.css?v=23" />
     <script>
       (function () {
         var map = {
@@ -301,6 +301,18 @@
               <button type="button" data-go="cobrar">Por cobrar</button>
             </div>
           </div>
+          <section class="app-only" id="app-cover" hidden>
+            <div class="app-cover">
+              <div class="app-cover__top">
+                <p class="app-cover__kicker">Para cubrir la tienda</p>
+                <strong id="app-cover-status" class="app-cover__status">—</strong>
+              </div>
+              <div class="app-cover__track" id="app-cover-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+                <div id="app-cover-fill" class="app-cover__fill"></div>
+              </div>
+              <p id="app-cover-meta" class="app-cover__meta"></p>
+            </div>
+          </section>
           <p class="app-only app-section-title" id="app-title-mov">También del mes</p>
           <p class="app-only app-section-title" id="app-title-reparto">Reparto</p>
           <p class="app-only app-section-title" id="app-title-extra">Stock y garantías</p>
@@ -2877,7 +2889,7 @@
     <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
     <script src="./config.js?v=17"></script>
     <script src="./creativos-engine.js?v=2"></script>
-    <script src="./app.js?v=117"></script>
+    <script src="./app.js?v=118"></script>
     <script src="./business-extras.js?v=6"></script>
   </body>
 </html>
