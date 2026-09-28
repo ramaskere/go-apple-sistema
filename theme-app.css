@@ -135,24 +135,24 @@ html[data-theme="app"] #resumen-alerts-panel:has(#resumen-alerts-toggle[hidden])
 html[data-theme="app"] #tab-resumen.active .stat--kpi,
 html[data-theme="app"] #tab-resumen.active .stat--kpi.glass-stat {
   order: 7;
-  grid-column: 1 / -1;
+  grid-column: auto;
   display: flex;
-  flex-direction: row;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 12px;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: flex-start;
+  gap: 6px;
   width: auto;
   height: auto;
-  min-height: 0;
+  min-height: 88px;
   max-height: none;
   min-width: 0;
   margin: 0;
-  padding: 12px 14px;
+  padding: 14px;
   overflow: visible;
   background: #fff;
   border: 1px solid #e5e7eb;
   border-left-width: 4px;
-  border-radius: 12px;
+  border-radius: 14px;
   box-shadow: none;
 }
 
@@ -161,11 +161,10 @@ html[data-theme="app"] #tab-resumen.active .stat--kpi:has(#kpi-ganancia),
 html[data-theme="app"] #tab-resumen.active .stat--kpi:has(#kpi-stock),
 html[data-theme="app"] #tab-resumen.active .stat--kpi:has(#kpi-cuotas-cobrar) {
   order: 1;
-  grid-column: auto;
-  flex-direction: column;
-  align-items: stretch;
-  min-height: 88px;
-  padding: 14px;
+}
+
+html[data-theme="app"] #tab-resumen.active .stat--kpi:has(#kpi-socios) {
+  grid-column: 1 / -1;
 }
 
 html[data-theme="app"] .app-section-title {
@@ -251,13 +250,13 @@ html[data-theme="app"] #tab-resumen.active .stat--kpi .stat-num,
 html[data-theme="app"] #tab-resumen.active .stat-num--money {
   overflow: visible;
   text-overflow: unset;
-  white-space: nowrap;
+  white-space: normal;
 }
 
 html[data-theme="app"] #tab-resumen.active .stat-title,
 html[data-theme="app"] #tab-resumen.active .stat--kpi .stat-title {
   margin: 0;
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 700;
   color: #6b7280;
 }
@@ -266,20 +265,10 @@ html[data-theme="app"] #tab-resumen.active .stat-num,
 html[data-theme="app"] #tab-resumen.active .stat--kpi .stat-num {
   flex: 0 0 auto;
   margin: 0;
-  font-size: 15px;
+  font-size: 1.2rem;
   font-weight: 800;
   color: #111827;
-  line-height: 1.2;
-  justify-content: flex-end;
-  text-align: right;
-}
-
-html[data-theme="app"] #tab-resumen.active .stat--kpi:has(#kpi-entra) .stat-num,
-html[data-theme="app"] #tab-resumen.active .stat--kpi:has(#kpi-ganancia) .stat-num,
-html[data-theme="app"] #tab-resumen.active .stat--kpi:has(#kpi-stock) .stat-num,
-html[data-theme="app"] #tab-resumen.active .stat--kpi:has(#kpi-cuotas-cobrar) .stat-num {
-  white-space: normal;
-  font-size: 1.35rem;
+  line-height: 1.15;
   justify-content: flex-start;
   text-align: left;
 }
