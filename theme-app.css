@@ -1,4 +1,8 @@
-/* Tema App: claro, simple, barra inferior en el celular. */
+/* Tema App: otra forma de usar el CRM. Los otros temas no usan estas reglas. */
+
+html:not([data-theme="app"]) .app-only {
+  display: none !important;
+}
 
 html[data-theme="app"] body {
   background-image: none;
@@ -10,45 +14,26 @@ html[data-theme="app"] .main-column::before {
   display: none;
 }
 
+html[data-theme="app"] .sidebar {
+  display: none !important;
+}
+
 html[data-theme="app"] .page-title,
 html[data-theme="app"] .sidebar-brand-title {
   color: #111827;
-  letter-spacing: -0.03em;
+  letter-spacing: -0.04em;
 }
 
 html[data-theme="app"] .page-subtitle,
-html[data-theme="app"] .sidebar-brand-sub {
+html[data-theme="app"] .app-period-bar-note,
+html[data-theme="app"] .section-hero__subtitle,
+html[data-theme="app"] .section-hint {
+  display: none;
+}
+
+html[data-theme="app"] #tab-simulador-cuotas .section-hint {
+  display: block;
   color: #6b7280;
-}
-
-html[data-theme="app"] .sidebar {
-  background: #fff;
-  color: #111827;
-  backdrop-filter: none;
-  -webkit-backdrop-filter: none;
-  border-right: 1px solid #e5e7eb;
-  box-shadow: none;
-}
-
-html[data-theme="app"] .sidebar-brand {
-  border-bottom-color: #e5e7eb;
-}
-
-html[data-theme="app"] .sidebar-nav .tab-btn {
-  color: #374151;
-  border-radius: 12px;
-}
-
-html[data-theme="app"] .sidebar-nav .tab-btn:hover {
-  background: #f3f4f6;
-  color: #111827;
-}
-
-html[data-theme="app"] .sidebar-nav .tab-btn.active:not(.tab-btn--support) {
-  background: #111827;
-  color: #fff;
-  border-color: #111827;
-  box-shadow: none;
 }
 
 html[data-theme="app"] .header-toolbar-icons .header-icon-btn {
@@ -69,31 +54,213 @@ html[data-theme="app"] .header-toolbar-clock .header-clock {
 html[data-theme="app"] .card,
 html[data-theme="app"] .glass-panel,
 html[data-theme="app"] .glass-stat,
-html[data-theme="app"] .dashboard-board-panel,
 html[data-theme="app"] .app-period-bar {
   background: #fff;
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
   border: 1px solid #e5e7eb;
-  box-shadow: 0 1px 2px rgba(17, 24, 39, 0.04);
+  box-shadow: none;
   border-radius: 16px;
 }
 
-html[data-theme="app"] .metrics-title,
-html[data-theme="app"] .kpi-quad-heading,
-html[data-theme="app"] .dashboard-panel-title,
+html[data-theme="app"] .app-period-bar {
+  padding: 8px 12px;
+  margin-bottom: 12px;
+}
+
 html[data-theme="app"] .app-period-bar-kicker,
-html[data-theme="app"] .app-period-bar-note {
+html[data-theme="app"] .metrics-title,
+html[data-theme="app"] .kpi-quad-heading {
   color: #6b7280;
 }
 
-html[data-theme="app"] .app-dock,
-html[data-theme="app"] .app-more {
+html[data-theme="app"] .section-hero__title {
   display: none;
 }
 
+html[data-theme="app"] .section-hero {
+  padding: 12px;
+}
+
+html[data-theme="app"] .section-hero__head {
+  align-items: center;
+}
+
+html[data-theme="app"] .app-quick {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin: 0 0 12px;
+}
+
+html[data-theme="app"] .app-quick button {
+  min-height: 52px;
+  border: 0;
+  border-radius: 14px;
+  background: #111827;
+  color: #fff;
+  font-size: 15px;
+  font-weight: 800;
+}
+
+html[data-theme="app"] .app-quick .app-quick-detail {
+  grid-column: 1 / -1;
+  min-height: 44px;
+  background: #fff;
+  color: #111827;
+  border: 1px solid #e5e7eb;
+}
+
+html[data-theme="app"] .app-quick .app-quick-detail.is-on {
+  background: #111827;
+  color: #fff;
+}
+
+html[data-theme="app"] #tab-resumen:not(.app-detail-open) .kpi-quad-section[aria-label="Reparto de la ganancia"],
+html[data-theme="app"] #tab-resumen:not(.app-detail-open) .stats-visual-card,
+html[data-theme="app"] #tab-resumen:not(.app-detail-open) .resumen-best-sellers-card,
+html[data-theme="app"] #tab-resumen:not(.app-detail-open) .metrics-header,
+html[data-theme="app"] #tab-resumen:not(.app-detail-open) .kpi-quad-heading,
+html[data-theme="app"] #tab-resumen:not(.app-detail-open) .kpi-quad-hint,
+html[data-theme="app"] #tab-resumen:not(.app-detail-open) .kpi-quad-tiles--stack-4 .stat--kpi:nth-child(2),
+html[data-theme="app"] #tab-resumen:not(.app-detail-open) .kpi-quad-tiles--stack-4 .stat--kpi:nth-child(4),
+html[data-theme="app"] #tab-resumen:not(.app-detail-open) .kpi-quad-section[aria-label="Inventario actual"] .stat--kpi:nth-child(2),
+html[data-theme="app"] #tab-resumen:not(.app-detail-open) .kpi-quad-section[aria-label="Seguimiento"] .stat--kpi:first-child {
+  display: none;
+}
+
+html[data-theme="app"] #tab-resumen:not(.app-detail-open) .dashboard-board-panel {
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  padding: 0;
+  margin: 0;
+}
+
+html[data-theme="app"] #tab-resumen:not(.app-detail-open) .kpi-quad-board {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+html[data-theme="app"] #tab-resumen:not(.app-detail-open) .kpi-quad-section,
+html[data-theme="app"] #tab-resumen:not(.app-detail-open) .kpi-quad-body,
+html[data-theme="app"] #tab-resumen:not(.app-detail-open) .kpi-quad-tiles {
+  display: contents;
+}
+
+html[data-theme="app"] #tab-resumen:not(.app-detail-open) .stat--kpi {
+  min-height: 92px;
+  margin: 0;
+  padding: 14px;
+}
+
+html[data-theme="app"] #tab-resumen:not(.app-detail-open) .stat-title {
+  font-size: 13px;
+  color: #6b7280;
+}
+
+html[data-theme="app"] #tab-resumen:not(.app-detail-open) .stat-num {
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: #111827;
+}
+
+html[data-theme="app"] #cuotas-sim-amount {
+  font-size: 1.6rem;
+  min-height: 56px;
+  font-weight: 800;
+}
+
+html[data-theme="app"] .table-wrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+html[data-theme="app"] .app-dock {
+  display: flex;
+  gap: 4px;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+}
+
+html[data-theme="app"] .app-dock-btn {
+  flex: 1;
+  min-height: 52px;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  color: #6b7280;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+html[data-theme="app"] .app-dock-btn.is-on {
+  background: #111827;
+  color: #fff;
+}
+
+html[data-theme="app"] .app-more {
+  display: grid;
+  gap: 8px;
+  padding: 14px;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 18px;
+  box-shadow: 0 16px 40px rgba(17, 24, 39, 0.16);
+}
+
+html[data-theme="app"] .app-more[hidden] {
+  display: none !important;
+}
+
+html[data-theme="app"] .app-more-title {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #6b7280;
+}
+
+html[data-theme="app"] .app-more button {
+  min-height: 46px;
+  text-align: left;
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+  background: #f9fafb;
+  color: #111827;
+  font-weight: 700;
+}
+
+@media (min-width: 901px) {
+  html[data-theme="app"] .app-dock {
+    position: sticky;
+    top: 0;
+    align-self: flex-start;
+    flex-direction: column;
+    width: 104px;
+    min-height: 100dvh;
+    padding: 12px 8px;
+    border-top: 0;
+    border-right: 1px solid #e5e7eb;
+  }
+
+  html[data-theme="app"] .app-more {
+    position: fixed;
+    left: 116px;
+    bottom: 16px;
+    width: 280px;
+    z-index: 41;
+  }
+
+  html[data-theme="app"] .main-column {
+    padding-top: 16px;
+  }
+}
+
 @media (max-width: 900px) {
-  html[data-theme="app"] .sidebar {
+  html[data-theme="app"] .header-toolbar-clock {
     display: none;
   }
 
@@ -101,85 +268,32 @@ html[data-theme="app"] .app-more {
     padding-bottom: calc(88px + env(safe-area-inset-bottom));
   }
 
-  html[data-theme="app"] .page-subtitle,
-  html[data-theme="app"] .app-period-bar-note,
-  html[data-theme="app"] .header-toolbar-clock {
-    display: none;
-  }
-
   html[data-theme="app"] .app-dock {
-    display: flex;
     position: fixed;
     left: 0;
     right: 0;
     bottom: 0;
     z-index: 40;
-    gap: 4px;
-    margin: 0;
     padding: 8px 8px calc(8px + env(safe-area-inset-bottom));
-    background: rgba(255, 255, 255, 0.96);
-    border-top: 1px solid #e5e7eb;
+    border-left: 0;
+    border-right: 0;
+    border-bottom: 0;
     box-shadow: 0 -8px 24px rgba(17, 24, 39, 0.06);
   }
 
-  html[data-theme="app"] .app-dock-btn {
-    flex: 1;
-    min-height: 48px;
-    border: 0;
-    border-radius: 12px;
-    background: transparent;
-    color: #6b7280;
-    font-size: 12px;
-    font-weight: 700;
-  }
-
-  html[data-theme="app"] .app-dock-btn.is-on {
-    background: #111827;
-    color: #fff;
-  }
-
   html[data-theme="app"] .app-more {
-    display: grid;
     position: fixed;
     left: 12px;
     right: 12px;
     bottom: calc(76px + env(safe-area-inset-bottom));
     z-index: 41;
-    gap: 8px;
-    padding: 14px;
-    background: #fff;
-    border: 1px solid #e5e7eb;
-    border-radius: 18px;
-    box-shadow: 0 16px 40px rgba(17, 24, 39, 0.16);
-  }
-
-  html[data-theme="app"] .app-more[hidden] {
-    display: none !important;
-  }
-
-  html[data-theme="app"] .app-more-title {
-    margin: 0 0 4px;
-    font-size: 12px;
-    font-weight: 700;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    color: #6b7280;
-  }
-
-  html[data-theme="app"] .app-more button {
-    min-height: 44px;
-    text-align: left;
-    border-radius: 12px;
-    border: 1px solid #e5e7eb;
-    background: #f9fafb;
-    color: #111827;
-    font-weight: 700;
   }
 }
 
 html[data-theme="app"] body.app-staff-mode .app-dock-btn[data-dock="resumen"],
 html[data-theme="app"] body.app-staff-mode .app-dock-btn[data-dock="caja"],
 html[data-theme="app"] body.app-staff-mode .app-dock-btn[data-dock="mas"],
+html[data-theme="app"] body.app-staff-mode .app-quick,
 body.app-staff-mode #app-more {
   display: none !important;
 }

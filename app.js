@@ -3400,6 +3400,26 @@ function bindAppDock() {
     more.hidden = true;
     switchTab(btn.dataset.tab);
   });
+  const quick = document.getElementById("app-quick");
+  quick?.addEventListener("click", (e) => {
+    const btn = e.target.closest("[data-go]");
+    if (!(btn instanceof HTMLElement)) return;
+    const go = btn.dataset.go;
+    const resumen = document.getElementById("tab-resumen");
+    if (go === "detalle") {
+      const open = resumen?.classList.toggle("app-detail-open");
+      btn.classList.toggle("is-on", Boolean(open));
+      btn.textContent = open ? "Ocultar detalle" : "Detalle del mes";
+      return;
+    }
+    if (go === "stock") switchTab("inventario");
+    if (go === "cuotas") switchTab("simulador-cuotas");
+    if (go === "caja") switchTab("caja");
+    if (go === "venta") {
+      switchTab("ventas");
+      openSaleModal();
+    }
+  });
 }
 
 /** Navegación desde alertas del Resumen → pestaña + filtro + scroll al ítem. */
