@@ -3480,7 +3480,9 @@ function bindAppDock() {
       return;
     }
     if (go === "venta") {
-      setAppAddOpen(true);
+      setAppAddOpen(false);
+      switchTab("ventas");
+      openSaleModal();
       return;
     }
     if (go === "equipo") {
