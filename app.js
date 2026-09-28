@@ -22,7 +22,7 @@ const UI_THEME_IDS = ["app", "app-oscuro", "oceano", "bosque", "magma", "uva", "
 
 const UI_THEME_META = {
   app: "#f4f5f7",
-  "app-oscuro": "#111113",
+  "app-oscuro": "#07080d",
   oceano: "#1e3a5f",
   bosque: "#134e4a",
   magma: "#7c2d12",
