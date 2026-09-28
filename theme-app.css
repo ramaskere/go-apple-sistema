@@ -624,10 +624,63 @@ html[data-theme="app"] body.app-staff-mode .app-dock-group {
   html[data-theme="app"] .view-filter-bar,
   html[data-theme="app"] .table-head,
   html[data-theme="app"] .section-hero__head,
-  html[data-theme="app"] .ventas-intro-head {
+  html[data-theme="app"] .ventas-intro-head,
+  html[data-theme="app"] .pipeline-intro-head,
+  html[data-theme="app"] .main-header-top,
+  html[data-theme="app"] .main-header-toolbar {
     flex-wrap: wrap;
     min-width: 0;
     max-width: 100%;
+  }
+
+  html[data-theme="app"] table {
+    min-width: 0 !important;
+  }
+
+  html[data-theme="app"] .grid,
+  html[data-theme="app"] .cuotas-sim-grid,
+  html[data-theme="app"] .creativos-kanban,
+  html[data-theme="app"] .creativos-kanban--4 {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  html[data-theme="app"] .section-kpi-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  html[data-theme="app"] .pipeline-board__columns {
+    flex-direction: column;
+    overflow-x: hidden;
+  }
+
+  html[data-theme="app"] .pipeline-column {
+    flex: 1 1 auto;
+    width: 100%;
+    max-width: 100%;
+    min-height: 0;
+  }
+
+  html[data-theme="app"] .tab-panel.tech-panel.active {
+    display: block;
+    min-width: 0;
+  }
+
+  html[data-theme="app"] .tech-hero,
+  html[data-theme="app"] .ventas-formula,
+  html[data-theme="app"] .cuotas-sim-formula,
+  html[data-theme="app"] pre,
+  html[data-theme="app"] code,
+  html[data-theme="app"] img,
+  html[data-theme="app"] svg {
+    max-width: 100%;
+    min-width: 0;
+  }
+
+  html[data-theme="app"] pre,
+  html[data-theme="app"] code {
+    overflow-x: hidden;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
   }
 }
 
