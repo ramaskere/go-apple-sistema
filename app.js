@@ -2590,13 +2590,28 @@ function saleFromRow(row) {
   });
 }
 
+function splitCashTotalMark(concept) {
+  const text = String(concept || "");
+  if (text.startsWith(CASH_TOTAL_MARK)) {
+    return { total: true, concept: text.slice(CASH_TOTAL_MARK.length) };
+  }
+  return { total: false, concept: text };
+}
+
+function conceptWithCashTotalMark(concept, dest) {
+  const clean = splitCashTotalMark(concept).concept.trim();
+  return dest === "total" ? `${CASH_TOTAL_MARK}${clean}` : clean;
+}
+
 function cashFromRow(row) {
   const type = row.movement_type;
-  const repartoDest = normalizeStoredRepartoDest(
+  const peeled = splitCashTotalMark(row.concept);
+  let repartoDest = normalizeStoredRepartoDest(
     type,
     row.reparto_dest,
     type === "egreso" ? row.egreso_kind : null
   );
+  if (type === "egreso" && peeled.total) repartoDest = "total";
   const egresoKind =
     type === "egreso"
       ? repartoDestToEgresoKind(repartoDest)
@@ -2605,7 +2620,7 @@ function cashFromRow(row) {
     id: row.id,
     type,
     date: row.movement_date,
-    concept: row.concept,
+    concept: peeled.concept,
     amount: Number(row.amount),
     repartoDest,
     ...(egresoKind ? { egresoKind } : {}),
@@ -2619,11 +2634,14 @@ const CASH_INGRESO_DEST_OPTIONS = [
   { value: "socios", label: "Solo Socios" },
 ];
 
+const CASH_TOTAL_MARK = "[[total]] ";
+
 const CASH_EGRESO_DEST_OPTIONS = [
   { value: "reserva", label: "Reserva (gasto operativo)" },
   { value: "restock", label: "Restock (compra de equipos)" },
   { value: "socios", label: "Socios (retiro o pago)" },
   { value: "tecnico", label: "Técnico (servicio técnico)" },
+  { value: "total", label: "Total (se descuenta de todo)" },
 ];
 
 function normalizeStoredRepartoDest(type, repartoDest, egresoKind) {
@@ -2632,7 +2650,7 @@ function normalizeStoredRepartoDest(type, repartoDest, egresoKind) {
     if (["reparto", "reserva", "restock", "socios"].includes(raw)) return raw;
     return "reparto";
   }
-  if (["reserva", "restock", "socios", "tecnico"].includes(raw)) return raw;
+  if (["reserva", "restock", "socios", "tecnico", "total"].includes(raw)) return raw;
   const k = String(egresoKind || "operativo").trim();
   if (k === "restock") return "restock";
   if (k === "tecnico") return "tecnico";
@@ -2685,7 +2703,7 @@ function populateCashRepartoDestSelect(movementType, selectedValue, targetSelect
   sel.value = ok ? selectedValue : defaultValue;
   if (!targetSelectEl && cashRepartoDestHint) {
     cashRepartoDestHint.textContent = isEgreso
-      ? "El egreso se descuenta del bucket elegido (Técnico descuenta de Reserva)."
+      ? "El egreso se descuenta del bucket elegido. Total lo reparte entre Reserva, Restock y Socios. Técnico descuenta de Reserva."
       : "Reparto general suma a la base y se divide según los % de Metas; los demás van directo al bucket.";
   }
 }
@@ -9608,12 +9626,19 @@ function renderDashboard() {
   const split = getProfitSplitPercents();
   const profitForSplit = monthProfitForSplit(sales, cash, mk);
   const parts = splitProfitByPercents(profitForSplit, split);
+  const totalSplit = splitProfitByPercents(sumCashEgresosByDestMonth(cash, mk, "total"), split);
   const reservaDirect =
-    sumCashIngresosByDestMonth(cash, mk, "reserva") - sumCashEgresosReservaMonth(cash, mk);
+    sumCashIngresosByDestMonth(cash, mk, "reserva") -
+    sumCashEgresosReservaMonth(cash, mk) -
+    totalSplit.reserva;
   const restockDirect =
-    sumCashIngresosByDestMonth(cash, mk, "restock") - sumCashEgresosByDestMonth(cash, mk, "restock");
+    sumCashIngresosByDestMonth(cash, mk, "restock") -
+    sumCashEgresosByDestMonth(cash, mk, "restock") -
+    totalSplit.restock;
   const sociosDirect =
-    sumCashIngresosByDestMonth(cash, mk, "socios") - sumCashEgresosByDestMonth(cash, mk, "socios");
+    sumCashIngresosByDestMonth(cash, mk, "socios") -
+    sumCashEgresosByDestMonth(cash, mk, "socios") -
+    totalSplit.socios;
   if (kpiReserva) setKpiMoneyText(kpiReserva, parts.reserva + reservaDirect);
   if (kpiRestock) setKpiMoneyText(kpiRestock, parts.restock + restockDirect);
   if (kpiSocios) setKpiMoneyText(kpiSocios, parts.socios + sociosDirect);
@@ -12247,7 +12272,7 @@ cashForm.addEventListener("submit", async (event) => {
         let payload = {
           movement_type: cashType.value,
           movement_date: cashDate.value,
-          concept: cashConcept.value.trim(),
+          concept: conceptWithCashTotalMark(cashConcept.value, repartoDestForSave),
           amount,
           egreso_kind: egresoKindForSave,
           reparto_dest: repartoDestForSave,
@@ -12298,7 +12323,7 @@ cashForm.addEventListener("submit", async (event) => {
         user_id: userId,
         movement_type: cashType.value,
         movement_date: cashDate.value,
-        concept: cashConcept.value.trim(),
+        concept: conceptWithCashTotalMark(cashConcept.value, repartoDestForSave),
         amount,
         egreso_kind: egresoKindForSave,
         reparto_dest: repartoDestForSave,
