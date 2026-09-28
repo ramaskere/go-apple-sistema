@@ -132,13 +132,28 @@ html[data-theme="app"] #resumen-alerts-panel:has(#resumen-alerts-toggle[hidden])
   display: none;
 }
 
-html[data-theme="app"] #tab-resumen.active .stat--kpi {
-  order: 6;
-  min-height: 78px;
+html[data-theme="app"] #tab-resumen.active .stat--kpi,
+html[data-theme="app"] #tab-resumen.active .stat--kpi.glass-stat {
+  order: 7;
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: row;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  width: auto;
+  height: auto;
+  min-height: 0;
+  max-height: none;
   min-width: 0;
-  max-width: 100%;
   margin: 0;
-  padding: 14px;
+  padding: 12px 14px;
+  overflow: visible;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-left-width: 4px;
+  border-radius: 12px;
+  box-shadow: none;
 }
 
 html[data-theme="app"] #tab-resumen.active .stat--kpi:has(#kpi-entra),
@@ -146,12 +161,25 @@ html[data-theme="app"] #tab-resumen.active .stat--kpi:has(#kpi-ganancia),
 html[data-theme="app"] #tab-resumen.active .stat--kpi:has(#kpi-stock),
 html[data-theme="app"] #tab-resumen.active .stat--kpi:has(#kpi-cuotas-cobrar) {
   order: 1;
-  min-height: 96px;
+  grid-column: auto;
+  flex-direction: column;
+  align-items: stretch;
+  min-height: 88px;
+  padding: 14px;
 }
 
 html[data-theme="app"] #app-quick {
   order: 5;
   grid-column: 1 / -1;
+}
+
+html[data-theme="app"] .app-shortcuts-label {
+  margin: 4px 2px 0;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #6b7280;
 }
 
 html[data-theme="app"] .app-shortcuts {
@@ -161,33 +189,13 @@ html[data-theme="app"] .app-shortcuts {
 }
 
 html[data-theme="app"] .app-shortcuts button {
-  min-height: 48px;
-  border-radius: 14px;
-  border: 1px solid #e5e7eb;
+  min-height: 44px;
+  border-radius: 12px;
+  border: 1px solid #d1d5db;
   background: #fff;
   color: #111827;
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 800;
-}
-
-html[data-theme="app"] .app-shortcuts button[data-go="caja"] {
-  background: #f0fdf4;
-  border-color: #86efac;
-}
-
-html[data-theme="app"] .app-shortcuts button[data-go="lista"] {
-  background: #eff6ff;
-  border-color: #93c5fd;
-}
-
-html[data-theme="app"] .app-shortcuts button[data-go="clientes"] {
-  background: #f5f3ff;
-  border-color: #c4b5fd;
-}
-
-html[data-theme="app"] .app-shortcuts button[data-go="cobrar"] {
-  background: #fff7ed;
-  border-color: #fdba74;
 }
 
 html[data-theme="app"] #tab-resumen.active .metrics-header,
@@ -206,93 +214,57 @@ html[data-theme="app"] #tab-resumen.active .resumen-best-sellers-card {
   overflow: hidden;
 }
 
-html[data-theme="app"] #tab-resumen.active .stat-title {
-  font-size: 13px;
+html[data-theme="app"] #tab-resumen.active .stat-title,
+html[data-theme="app"] #tab-resumen.active .stat--kpi .stat-title,
+html[data-theme="app"] #tab-resumen.active .stat-num,
+html[data-theme="app"] #tab-resumen.active .stat--kpi .stat-num,
+html[data-theme="app"] #tab-resumen.active .stat-num--money {
+  overflow: visible;
+  text-overflow: unset;
+  white-space: nowrap;
+}
+
+html[data-theme="app"] #tab-resumen.active .stat-title,
+html[data-theme="app"] #tab-resumen.active .stat--kpi .stat-title {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 700;
   color: #6b7280;
 }
 
-html[data-theme="app"] #tab-resumen.active .stat-num {
-  font-size: clamp(1.05rem, 4.4vw, 1.35rem);
+html[data-theme="app"] #tab-resumen.active .stat-num,
+html[data-theme="app"] #tab-resumen.active .stat--kpi .stat-num {
+  flex: 0 0 auto;
+  margin: 0;
+  font-size: 15px;
   font-weight: 800;
   color: #111827;
-  overflow-wrap: anywhere;
-  line-height: 1.15;
+  line-height: 1.2;
+  justify-content: flex-end;
+  text-align: right;
 }
 
-html[data-theme="app"] #tab-resumen.active .stat--kpi:has(#kpi-entra) {
-  background: #ecfdf3;
-  border-color: #86efac;
+html[data-theme="app"] #tab-resumen.active .stat--kpi:has(#kpi-entra) .stat-num,
+html[data-theme="app"] #tab-resumen.active .stat--kpi:has(#kpi-ganancia) .stat-num,
+html[data-theme="app"] #tab-resumen.active .stat--kpi:has(#kpi-stock) .stat-num,
+html[data-theme="app"] #tab-resumen.active .stat--kpi:has(#kpi-cuotas-cobrar) .stat-num {
+  white-space: normal;
+  font-size: 1.35rem;
+  justify-content: flex-start;
+  text-align: left;
 }
 
-html[data-theme="app"] #tab-resumen.active .stat--kpi:has(#kpi-ganancia) {
-  background: #dcfce7;
-  border-color: #4ade80;
-}
-
-html[data-theme="app"] #tab-resumen.active .stat--kpi:has(#kpi-sale) {
-  background: #fff1f2;
-  border-color: #fda4af;
-}
-
-html[data-theme="app"] #tab-resumen.active .stat--kpi:has(#kpi-ventas) {
-  background: #eff6ff;
-  border-color: #93c5fd;
-}
-
-html[data-theme="app"] #tab-resumen.active .stat--kpi:has(#kpi-stock) {
-  background: #f8fafc;
-  border-color: #cbd5e1;
-}
-
-html[data-theme="app"] #tab-resumen.active .stat--kpi:has(#kpi-stock-value) {
-  background: #eef2ff;
-  border-color: #a5b4fc;
-}
-
-html[data-theme="app"] #tab-resumen.active .stat--kpi:has(#kpi-restock) {
-  background: #e0f2fe;
-  border-color: #38bdf8;
-}
-
-html[data-theme="app"] #tab-resumen.active .stat--kpi:has(#kpi-reserva) {
-  background: #fffbeb;
-  border-color: #fbbf24;
-}
-
-html[data-theme="app"] #tab-resumen.active .stat--kpi:has(#kpi-socios) {
-  background: #f5f3ff;
-  border-color: #a78bfa;
-}
-
-html[data-theme="app"] #tab-resumen.active .stat--kpi:has(#kpi-warranty-active) {
-  background: #f0fdfa;
-  border-color: #5eead4;
-}
-
-html[data-theme="app"] #tab-resumen.active .stat--kpi:has(#kpi-cuotas-cobrar) {
-  background: #fff7ed;
-  border-color: #fb923c;
-}
-
-html[data-theme="app"] #tab-resumen.active .kpi-quad-section[aria-label="Reparto de la ganancia"] {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 8px;
-  order: 6;
-  grid-column: 1 / -1;
-  min-width: 0;
-}
-
-html[data-theme="app"] #tab-resumen.active .kpi-quad-section[aria-label="Reparto de la ganancia"] .kpi-quad-body,
-html[data-theme="app"] #tab-resumen.active .kpi-quad-section[aria-label="Reparto de la ganancia"] .kpi-quad-tiles {
-  display: contents;
-}
-
-html[data-theme="app"] #tab-resumen.active .kpi-quad-section[aria-label="Reparto de la ganancia"] .stat--kpi {
-  order: 0;
-  grid-column: auto;
-  min-height: 88px;
-}
+html[data-theme="app"] #tab-resumen.active .stat--kpi:has(#kpi-entra) { border-left-color: #16a34a; }
+html[data-theme="app"] #tab-resumen.active .stat--kpi:has(#kpi-ganancia) { border-left-color: #15803d; }
+html[data-theme="app"] #tab-resumen.active .stat--kpi:has(#kpi-stock) { border-left-color: #64748b; }
+html[data-theme="app"] #tab-resumen.active .stat--kpi:has(#kpi-cuotas-cobrar) { border-left-color: #ea580c; }
+html[data-theme="app"] #tab-resumen.active .stat--kpi:has(#kpi-sale) { border-left-color: #e11d48; }
+html[data-theme="app"] #tab-resumen.active .stat--kpi:has(#kpi-ventas) { border-left-color: #2563eb; }
+html[data-theme="app"] #tab-resumen.active .stat--kpi:has(#kpi-stock-value) { border-left-color: #4f46e5; }
+html[data-theme="app"] #tab-resumen.active .stat--kpi:has(#kpi-restock) { border-left-color: #0284c7; }
+html[data-theme="app"] #tab-resumen.active .stat--kpi:has(#kpi-reserva) { border-left-color: #d97706; }
+html[data-theme="app"] #tab-resumen.active .stat--kpi:has(#kpi-socios) { border-left-color: #7c3aed; }
+html[data-theme="app"] #tab-resumen.active .stat--kpi:has(#kpi-warranty-active) { border-left-color: #0d9488; }
 
 html[data-theme="app"] .main-column {
   min-width: 0;
