@@ -1,5 +1,7 @@
 /* Tema App: otra forma de usar el CRM. Los otros temas no usan estas reglas. */
 
+.app-dock,
+.app-more,
 html:not([data-theme="app"]) .app-only {
   display: none !important;
 }
@@ -178,7 +180,7 @@ html[data-theme="app"] .table-wrap {
 }
 
 html[data-theme="app"] .app-dock {
-  display: flex;
+  display: flex !important;
   gap: 4px;
   background: #fff;
   border: 1px solid #e5e7eb;
@@ -201,7 +203,7 @@ html[data-theme="app"] .app-dock-btn.is-on {
 }
 
 html[data-theme="app"] .app-more {
-  display: grid;
+  display: grid !important;
   gap: 8px;
   padding: 14px;
   background: #fff;
