@@ -9449,6 +9449,65 @@ function setupCreativoRefFilePreview() {
   });
 }
 
+function renderVentasMargen(monthSales, inventory) {
+  const costoEl = document.getElementById("ventas-margen-costo");
+  const usdEl = document.getElementById("ventas-margen-usd");
+  const pctEl = document.getElementById("ventas-margen-pct");
+  const netoEl = document.getElementById("ventas-margen-neto");
+  const noteEl = document.getElementById("ventas-margen-note");
+  if (!costoEl || !usdEl || !pctEl || !netoEl) return;
+
+  let cobrado = 0;
+  let costo = 0;
+  let margen = 0;
+  let sinCosto = 0;
+  for (const sale of monthSales) {
+    cobrado += numeric(sale.saleTotal, 0);
+    const cost = numeric(sale.costTotal, 0);
+    costo += cost;
+    margen += saleCashMargin(sale);
+    if (cost <= 0 && numeric(sale.saleTotal, 0) > 0) sinCosto += 1;
+  }
+  const comm = monthSales.reduce((sum, sale) => sum + saleCommissionAmount(sale), 0);
+  const neto = margen - comm;
+  const pct = cobrado > 0 ? (margen / cobrado) * 100 : null;
+  const pctText =
+    pct == null ? "—" : `${pct.toLocaleString("es-AR", { minimumFractionDigits: 1, maximumFractionDigits: 1 })}%`;
+
+  costoEl.textContent = currency(costo);
+  usdEl.textContent = currency(margen);
+  pctEl.textContent = pctText;
+  netoEl.textContent = currency(neto);
+
+  if (!noteEl) return;
+  const parts = [];
+  if (sinCosto > 0) {
+    parts.push(
+      sinCosto === 1
+        ? "1 venta no tiene costo cargado: el margen se ve más alto de lo real."
+        : `${sinCosto} ventas no tienen costo cargado: el margen se ve más alto de lo real.`
+    );
+  }
+  const inStock = inventory.filter((item) => numeric(item.stock, 0) > 0);
+  const stockCost = inStock.reduce((sum, item) => sum + numeric(item.stock, 0) * numeric(item.cost, 0), 0);
+  const stockPrice = inStock.reduce(
+    (sum, item) => sum + numeric(item.stock, 0) * numeric(item.price, numeric(item.cost, 0)),
+    0
+  );
+  if (stockPrice > 0) {
+    const stockGain = stockPrice - stockCost;
+    const stockPct = (stockGain / stockPrice) * 100;
+    const stockPctText = stockPct.toLocaleString("es-AR", {
+      minimumFractionDigits: 1,
+      maximumFractionDigits: 1,
+    });
+    parts.push(
+      `En stock hay ${currency(stockCost)} de costo. Si se vende al precio cargado, el margen sería ${currency(stockGain)} (${stockPctText}%).`
+    );
+  }
+  noteEl.textContent = parts.join(" ");
+}
+
 function renderSectionKpis() {
   const el = (id) => document.getElementById(id);
   const mk = getDashboardMonthKey();
@@ -9508,6 +9567,8 @@ function renderSectionKpis() {
     profitInline.classList.toggle("ventas-formula__v--pos", adj > 0.01);
     profitInline.classList.toggle("ventas-formula__v--neg", adj < -0.01);
   }
+
+  renderVentasMargen(monthSales, inventory);
 
   // ─── Caja ───
   const monthCash = cash.filter((c) => c.date && String(c.date).slice(0, 7) === mk);
