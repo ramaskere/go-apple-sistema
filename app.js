@@ -9615,9 +9615,11 @@ function renderDashboard() {
   const warrantyActiveCount = warrantyActiveCountForSalesInMonth(sales, mk);
   const pendingSum = sumPendingReceivables();
 
+  const overhead = monthlyStoreCostTotal();
   setKpiMoneyText(kpiEntra, moneyIn);
   setKpiMoneyText(kpiSale, moneyOut);
-  setKpiMoneyText(kpiGanancia, businessProfit - monthlyStoreCostTotal());
+  setKpiMoneyText(kpiGanancia, businessProfit - overhead);
+  setKpiMoneyText(document.getElementById("kpi-costos-fijos"), overhead);
   setKpiMoneyText(kpiVentas, salesTotal);
   kpiStock.textContent = String(totalStock);
   setKpiMoneyText(kpiStockValue, stockValue);
