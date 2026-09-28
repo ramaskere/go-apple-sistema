@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="es" data-theme="oceano">
+<html lang="es" data-theme="app">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
@@ -15,27 +15,34 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
       <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="./themes.css?v=18" />
+    <link rel="stylesheet" href="./themes.css?v=19" />
     <link rel="stylesheet" href="./styles.css?v=75" />
+    <link rel="stylesheet" href="./theme-app.css?v=1" />
     <script>
       (function () {
         var map = {
+          app: "#f3f4f6",
           oceano: "#1e3a5f",
           bosque: "#134e4a",
           magma: "#7c2d12",
           uva: "#4c1d95",
           grafito: "#1e293b",
         };
-        var allowed = ["oceano", "bosque", "magma", "uva", "grafito"];
+        var allowed = ["app", "oceano", "bosque", "magma", "uva", "grafito"];
         var stored = null;
         try {
           stored = localStorage.getItem("go_apple_ui_theme");
+          if (!localStorage.getItem("go_apple_ui_theme_seen_app")) {
+            stored = "app";
+            localStorage.setItem("go_apple_ui_theme", "app");
+            localStorage.setItem("go_apple_ui_theme_seen_app", "1");
+          }
         } catch (e) {}
         var t =
           allowed.indexOf(stored) >= 0
             ? stored
             : document.documentElement.getAttribute("data-theme") || "oceano";
-        if (allowed.indexOf(t) < 0) t = "oceano";
+        if (allowed.indexOf(t) < 0) t = "app";
         document.documentElement.setAttribute("data-theme", t);
         var m = document.getElementById("meta-theme-color");
         if (m) m.setAttribute("content", map[t] || map.oceano);
@@ -83,6 +90,7 @@
             data-theme-select
             autocomplete="off"
           >
+            <option value="app">App</option>
             <option value="oceano">Océano (azul)</option>
             <option value="bosque">Bosque (verde)</option>
             <option value="magma">Magma (cálido)</option>
@@ -142,6 +150,25 @@
           <button type="button" id="btn-staff-exit" class="staff-exit-btn" hidden>Salir</button>
         </nav>
       </aside>
+      <nav class="app-dock" id="app-dock" aria-label="Accesos rápidos">
+        <button type="button" class="app-dock-btn is-on" data-dock="resumen">Inicio</button>
+        <button type="button" class="app-dock-btn" data-dock="inventario">Stock</button>
+        <button type="button" class="app-dock-btn" data-dock="simulador-cuotas">Cuotas</button>
+        <button type="button" class="app-dock-btn" data-dock="caja">Caja</button>
+        <button type="button" class="app-dock-btn" data-dock="mas" id="app-dock-more">Más</button>
+      </nav>
+      <div class="app-more" id="app-more" hidden>
+        <p class="app-more-title">Más secciones</p>
+        <button type="button" data-tab="ventas">Ventas</button>
+        <button type="button" data-tab="pipeline">Pipeline</button>
+        <button type="button" data-tab="garantias">Garantías</button>
+        <button type="button" data-tab="servicio-tecnico">Servicio técnico</button>
+        <button type="button" data-tab="deudores">Deudores</button>
+        <button type="button" data-tab="facturacion">Facturación</button>
+        <button type="button" data-tab="creativos">Creativos</button>
+        <button type="button" data-tab="configuraciones">Configuraciones</button>
+        <button type="button" data-tab="ayuda">Ayuda</button>
+      </div>
 
       <div class="main-column">
         <header class="main-header">
@@ -194,6 +221,7 @@
                   data-theme-select
                   autocomplete="off"
                 >
+                  <option value="app">App</option>
                   <option value="oceano">Océano</option>
                   <option value="bosque">Bosque</option>
                   <option value="magma">Magma</option>
@@ -2778,7 +2806,7 @@
     <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
     <script src="./config.js?v=17"></script>
     <script src="./creativos-engine.js?v=2"></script>
-    <script src="./app.js?v=102"></script>
+    <script src="./app.js?v=103"></script>
     <script src="./business-extras.js?v=6"></script>
   </body>
 </html>

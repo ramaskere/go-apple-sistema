@@ -18,9 +18,10 @@ const KEYS = {
   creativosConfig: "go_apple_creativos_config",
 };
 
-const UI_THEME_IDS = ["oceano", "bosque", "magma", "uva", "grafito"];
+const UI_THEME_IDS = ["app", "oceano", "bosque", "magma", "uva", "grafito"];
 
 const UI_THEME_META = {
+  app: "#f3f4f6",
   oceano: "#1e3a5f",
   bosque: "#134e4a",
   magma: "#7c2d12",
@@ -3362,6 +3363,43 @@ function switchTab(tabName) {
   // Close any open modals when switching tabs
   if (typeof closeRefPreview === "function") closeRefPreview();
   document.body.style.overflow = "";
+  syncAppDock(tabName);
+}
+
+const APP_DOCK_MAIN = ["resumen", "inventario", "simulador-cuotas", "caja"];
+
+function syncAppDock(tabName) {
+  document.querySelectorAll(".app-dock-btn[data-dock]").forEach((btn) => {
+    const dock = btn.dataset.dock;
+    const on =
+      dock === tabName || (dock === "mas" && tabName && !APP_DOCK_MAIN.includes(tabName));
+    btn.classList.toggle("is-on", on);
+  });
+  const more = document.getElementById("app-more");
+  if (more && APP_DOCK_MAIN.includes(tabName)) more.hidden = true;
+}
+
+function bindAppDock() {
+  const dock = document.getElementById("app-dock");
+  const more = document.getElementById("app-more");
+  if (!dock || dock.dataset.bound === "1") return;
+  dock.dataset.bound = "1";
+  dock.addEventListener("click", (e) => {
+    const btn = e.target.closest("[data-dock]");
+    if (!(btn instanceof HTMLElement)) return;
+    if (btn.dataset.dock === "mas") {
+      if (more) more.hidden = !more.hidden;
+      return;
+    }
+    if (more) more.hidden = true;
+    switchTab(btn.dataset.dock);
+  });
+  more?.addEventListener("click", (e) => {
+    const btn = e.target.closest("[data-tab]");
+    if (!(btn instanceof HTMLElement)) return;
+    more.hidden = true;
+    switchTab(btn.dataset.tab);
+  });
 }
 
 /** Navegación desde alertas del Resumen → pestaña + filtro + scroll al ítem. */
@@ -13444,6 +13482,7 @@ if (configSubnavEl) {
 const initialTab =
   document.querySelector(".sidebar-nav .tab-btn.active")?.dataset.tab || "resumen";
 updateMainHeader(initialTab);
+syncAppDock(initialTab);
 if (initialTab === "configuraciones") {
   switchConfigSubpanel(getConfigSubpanel());
 }
@@ -13904,6 +13943,7 @@ async function initApp() {
 }
 
 initUiThemeControls();
+bindAppDock();
 setupPipelineBoardInteractions();
 setupCreativoRefFilePreview();
 hydrateCreativosConfigForm();
