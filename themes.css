@@ -112,11 +112,47 @@
   --accent-mid: #1d4ed8;
   --focus-ring: rgba(37, 99, 235, 0.25);
   --panel-bg-tint: #ffffff;
-  --meta-theme-color: #f3f4f6;
+  --meta-theme-color: #f4f5f7;
   --select-dark-bg: #ffffff;
   --select-dark-bg-hover: #f9fafb;
   --select-focus-border: #111827;
   --select-focus-shadow: rgba(17, 24, 39, 0.12);
+}
+
+/* App oscuro — misma estructura, fondo negro simple. */
+[data-theme="app-oscuro"] {
+  color-scheme: dark;
+  --page-grid-line: transparent;
+  --page-grid-line-strong: transparent;
+  --page-bg-deep: #111113;
+  --page-radial-1: transparent;
+  --page-radial-2: transparent;
+  --page-radial-3: transparent;
+  --page-linear-1: #111113;
+  --page-linear-2: #111113;
+  --page-linear-3: #111113;
+  --overlay-scrim: rgba(0, 0, 0, 0.62);
+  --auth-brand: #fafafa;
+  --sidebar-surface: #1c1c1f;
+  --sidebar-active-a: #fafafa;
+  --sidebar-active-b: #fafafa;
+  --sidebar-tab-glow: transparent;
+  --accent-support: #60a5fa;
+  --accent-support-bg: #27272a;
+  --btn-primary-top: #fafafa;
+  --btn-primary-bot: #e4e4e7;
+  --accent-solid: #fafafa;
+  --accent-bright: #60a5fa;
+  --accent-mid: #93c5fd;
+  --focus-ring: rgba(250, 250, 250, 0.2);
+  --panel-bg-tint: #1c1c1f;
+  --meta-theme-color: #111113;
+  --select-dark-bg: #27272a;
+  --select-dark-bg-hover: #3f3f46;
+  --select-focus-border: #fafafa;
+  --select-focus-shadow: rgba(250, 250, 250, 0.12);
+  --secondary-text: #fafafa;
+  --secondary-border: #3f3f46;
 }
 
 [data-theme="bosque"] {

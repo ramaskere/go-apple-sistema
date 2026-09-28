@@ -15,20 +15,21 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
       <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="./themes.css?v=19" />
+    <link rel="stylesheet" href="./themes.css?v=20" />
     <link rel="stylesheet" href="./styles.css?v=77" />
-    <link rel="stylesheet" href="./theme-app.css?v=16" />
+    <link rel="stylesheet" href="./theme-app.css?v=17" />
     <script>
       (function () {
         var map = {
-          app: "#e8eef6",
+          app: "#f4f5f7",
+          "app-oscuro": "#111113",
           oceano: "#1e3a5f",
           bosque: "#134e4a",
           magma: "#7c2d12",
           uva: "#4c1d95",
           grafito: "#1e293b",
         };
-        var allowed = ["app", "oceano", "bosque", "magma", "uva", "grafito"];
+        var allowed = ["app", "app-oscuro", "oceano", "bosque", "magma", "uva", "grafito"];
         var stored = null;
         try {
           stored = localStorage.getItem("go_apple_ui_theme");
@@ -90,7 +91,8 @@
             data-theme-select
             autocomplete="off"
           >
-            <option value="app">App</option>
+            <option value="app">App claro</option>
+            <option value="app-oscuro">App oscuro</option>
             <option value="oceano">Océano (azul)</option>
             <option value="bosque">Bosque (verde)</option>
             <option value="magma">Magma (cálido)</option>
@@ -232,7 +234,8 @@
                   data-theme-select
                   autocomplete="off"
                 >
-                  <option value="app">App</option>
+                  <option value="app">App claro</option>
+                  <option value="app-oscuro">App oscuro</option>
                   <option value="oceano">Océano</option>
                   <option value="bosque">Bosque</option>
                   <option value="magma">Magma</option>
@@ -2862,7 +2865,7 @@
     <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
     <script src="./config.js?v=17"></script>
     <script src="./creativos-engine.js?v=2"></script>
-    <script src="./app.js?v=112"></script>
+    <script src="./app.js?v=113"></script>
     <script src="./business-extras.js?v=6"></script>
   </body>
 </html>

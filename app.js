@@ -18,10 +18,11 @@ const KEYS = {
   creativosConfig: "go_apple_creativos_config",
 };
 
-const UI_THEME_IDS = ["app", "oceano", "bosque", "magma", "uva", "grafito"];
+const UI_THEME_IDS = ["app", "app-oscuro", "oceano", "bosque", "magma", "uva", "grafito"];
 
 const UI_THEME_META = {
-  app: "#f3f4f6",
+  app: "#f4f5f7",
+  "app-oscuro": "#111113",
   oceano: "#1e3a5f",
   bosque: "#134e4a",
   magma: "#7c2d12",
@@ -3319,7 +3320,7 @@ function updateMainHeader(tabName) {
   const subEl = document.getElementById("main-page-subtitle");
   if (titleEl) {
     titleEl.textContent =
-      document.documentElement.dataset.theme === "app" && APP_SIMPLE_TITLES[tabName]
+      String(document.documentElement.dataset.theme || "").startsWith("app") && APP_SIMPLE_TITLES[tabName]
         ? APP_SIMPLE_TITLES[tabName]
         : copy.title;
   }
