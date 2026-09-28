@@ -17,7 +17,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="./themes.css?v=19" />
     <link rel="stylesheet" href="./styles.css?v=77" />
-    <link rel="stylesheet" href="./theme-app.css?v=10" />
+    <link rel="stylesheet" href="./theme-app.css?v=11" />
     <script>
       (function () {
         var map = {
@@ -169,12 +169,10 @@
       </div>
       <div class="app-more" id="app-more" hidden>
         <p class="app-more-title">Más</p>
-        <button type="button" data-tab="caja">Caja</button>
-        <button type="button" data-tab="ventas">Ventas</button>
-        <button type="button" data-tab="deudores">Por cobrar</button>
-        <button type="button" data-tab="garantias">Garantías</button>
         <button type="button" data-open="clients">Clientes</button>
         <button type="button" data-open="track">Seguir celular</button>
+        <button type="button" data-tab="ventas">Ventas</button>
+        <button type="button" data-tab="garantias">Garantías</button>
         <button type="button" data-tab="servicio-tecnico">Técnico</button>
         <button type="button" data-tab="pipeline">Pipeline</button>
         <button type="button" data-tab="facturacion">Facturas</button>
@@ -291,15 +289,18 @@
               <div id="resumen-alerts-list" class="resumen-alerts-list" role="list"></div>
             </div>
           </section>
+          <p class="app-only app-section-title" id="app-title-mes">Este mes</p>
           <div class="app-only app-home" id="app-quick">
             <p class="app-shortcuts-label">Ir a</p>
             <div class="app-shortcuts">
+              <button type="button" class="app-shortcut-wide" data-go="lista">Lista WhatsApp</button>
               <button type="button" data-go="caja">Caja</button>
-              <button type="button" data-go="lista">Lista WhatsApp</button>
-              <button type="button" data-go="clientes">Clientes</button>
               <button type="button" data-go="cobrar">Por cobrar</button>
             </div>
           </div>
+          <p class="app-only app-section-title" id="app-title-mov">También del mes</p>
+          <p class="app-only app-section-title" id="app-title-reparto">Reparto</p>
+          <p class="app-only app-section-title" id="app-title-extra">Stock y garantías</p>
           <div class="kpi-dashboard">
             <p id="dashboard-period-hint" class="sr-only">
               El período elegido arriba filtra listas, KPIs y reparto en todas las secciones del CRM (salvo que actives «Ver todos los meses» en cada vista).

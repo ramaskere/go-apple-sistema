@@ -168,9 +168,35 @@ html[data-theme="app"] #tab-resumen.active .stat--kpi:has(#kpi-cuotas-cobrar) {
   padding: 14px;
 }
 
-html[data-theme="app"] #app-quick {
-  order: 5;
+html[data-theme="app"] .app-section-title {
   grid-column: 1 / -1;
+  margin: 14px 2px 0;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: #6b7280;
+}
+
+html[data-theme="app"] #app-title-mes { order: 1; margin-top: 0; }
+html[data-theme="app"] #app-title-mov { order: 6; }
+html[data-theme="app"] #app-title-reparto { order: 8; }
+html[data-theme="app"] #app-title-extra { order: 10; }
+
+html[data-theme="app"] #tab-resumen.active .stat--kpi:has(#kpi-sale),
+html[data-theme="app"] #tab-resumen.active .stat--kpi:has(#kpi-ventas) {
+  order: 7;
+}
+
+html[data-theme="app"] #tab-resumen.active .stat--kpi:has(#kpi-restock),
+html[data-theme="app"] #tab-resumen.active .stat--kpi:has(#kpi-reserva),
+html[data-theme="app"] #tab-resumen.active .stat--kpi:has(#kpi-socios) {
+  order: 9;
+}
+
+html[data-theme="app"] #tab-resumen.active .stat--kpi:has(#kpi-stock-value),
+html[data-theme="app"] #tab-resumen.active .stat--kpi:has(#kpi-warranty-active) {
+  order: 11;
 }
 
 html[data-theme="app"] .app-shortcuts-label {
@@ -182,10 +208,19 @@ html[data-theme="app"] .app-shortcuts-label {
   color: #6b7280;
 }
 
+html[data-theme="app"] #app-quick {
+  order: 5;
+  grid-column: 1 / -1;
+}
+
 html[data-theme="app"] .app-shortcuts {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 8px;
+}
+
+html[data-theme="app"] .app-shortcut-wide {
+  grid-column: 1 / -1;
 }
 
 html[data-theme="app"] .app-shortcuts button {
@@ -206,12 +241,7 @@ html[data-theme="app"] #tab-resumen.active .kpi-quad-hint {
 
 html[data-theme="app"] #tab-resumen.active .stats-visual-card,
 html[data-theme="app"] #tab-resumen.active .resumen-best-sellers-card {
-  order: 8;
-  grid-column: 1 / -1;
-  margin: 8px 0 0;
-  min-width: 0;
-  max-width: 100%;
-  overflow: hidden;
+  display: none;
 }
 
 html[data-theme="app"] #tab-resumen.active .stat-title,
