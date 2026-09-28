@@ -179,10 +179,20 @@ html[data-theme^="app"] #app-title-mes { order: 1; margin-top: 0; }
 html[data-theme^="app"] #app-title-mov { order: 6; }
 html[data-theme^="app"] #app-title-reparto { order: 8; }
 html[data-theme^="app"] #app-title-extra { order: 10; }
+html[data-theme^="app"] #app-goals {
+  order: 12;
+  grid-column: 1 / -1;
+}
+html[data-theme^="app"] #app-goals .app-section-title {
+  margin-top: 0;
+}
+html[data-theme^="app"] #app-goals .goals-progress {
+  border-top: 0;
+  padding-top: 0;
+}
 
 html[data-theme^="app"] #tab-resumen.active .stat--kpi:has(#kpi-sale),
-html[data-theme^="app"] #tab-resumen.active .stat--kpi:has(#kpi-ventas),
-html[data-theme^="app"] #tab-resumen.active .stat--kpi:has(#kpi-costos-fijos) {
+html[data-theme^="app"] #tab-resumen.active .stat--kpi:has(#kpi-ventas) {
   order: 7;
 }
 
@@ -281,7 +291,6 @@ html[data-theme^="app"] #tab-resumen.active .stat--kpi:has(#kpi-ganancia) { bord
 html[data-theme^="app"] #tab-resumen.active .stat--kpi:has(#kpi-stock) { border-left-color: #64748b; }
 html[data-theme^="app"] #tab-resumen.active .stat--kpi:has(#kpi-cuotas-cobrar) { border-left-color: #ea580c; }
 html[data-theme^="app"] #tab-resumen.active .stat--kpi:has(#kpi-sale) { border-left-color: #e11d48; }
-html[data-theme^="app"] #tab-resumen.active .stat--kpi:has(#kpi-costos-fijos) { border-left-color: #64748b; }
 html[data-theme^="app"] #tab-resumen.active .stat--kpi:has(#kpi-ventas) { border-left-color: #2563eb; }
 html[data-theme^="app"] #tab-resumen.active .stat--kpi:has(#kpi-stock-value) { border-left-color: #4f46e5; }
 html[data-theme^="app"] #tab-resumen.active .stat--kpi:has(#kpi-restock) { border-left-color: #0284c7; }
@@ -294,7 +303,6 @@ html[data-theme^="app"] #tab-resumen.active .stat--kpi:has(#kpi-ganancia) .stat-
 html[data-theme^="app"] #tab-resumen.active .stat--kpi:has(#kpi-stock) .stat-num { color: #475569; }
 html[data-theme^="app"] #tab-resumen.active .stat--kpi:has(#kpi-cuotas-cobrar) .stat-num { color: #c2410c; }
 html[data-theme^="app"] #tab-resumen.active .stat--kpi:has(#kpi-sale) .stat-num { color: #be123c; }
-html[data-theme^="app"] #tab-resumen.active .stat--kpi:has(#kpi-costos-fijos) .stat-num { color: #334155; }
 html[data-theme^="app"] #tab-resumen.active .stat--kpi:has(#kpi-ventas) .stat-num { color: #1d4ed8; }
 html[data-theme^="app"] #tab-resumen.active .stat--kpi:has(#kpi-stock-value) .stat-num { color: #4338ca; }
 html[data-theme^="app"] #tab-resumen.active .stat--kpi:has(#kpi-restock) .stat-num { color: #0369a1; }
@@ -879,8 +887,16 @@ html[data-theme="app-oscuro"] #tab-resumen.active .stat-title,
 html[data-theme="app-oscuro"] #tab-resumen.active .stat--kpi .stat-title,
 html[data-theme="app-oscuro"] .app-section-title,
 html[data-theme="app-oscuro"] .app-shortcuts-label,
-html[data-theme="app-oscuro"] .app-period-bar-kicker,
+html[data-theme="app-oscuro"] .goals-progress-label,
+html[data-theme="app-oscuro"] .goals-progress-pct {
+  color: #f4f4f5;
+}
+
+html[data-theme="app-oscuro"] .goals-progress-track {
+  background: rgba(255, 255, 255, 0.12);
+}
 html[data-theme="app-oscuro"] .resumen-alerts-summary,
+html[data-theme="app-oscuro"] .app-period-bar-kicker,
 html[data-theme="app-oscuro"] .muted {
   color: #e4e4e7;
 }

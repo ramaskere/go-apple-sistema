@@ -9619,7 +9619,6 @@ function renderDashboard() {
   setKpiMoneyText(kpiEntra, moneyIn);
   setKpiMoneyText(kpiSale, moneyOut);
   setKpiMoneyText(kpiGanancia, businessProfit - overhead);
-  setKpiMoneyText(document.getElementById("kpi-costos-fijos"), overhead);
   setKpiMoneyText(kpiVentas, salesTotal);
   kpiStock.textContent = String(totalStock);
   setKpiMoneyText(kpiStockValue, stockValue);
@@ -9984,8 +9983,8 @@ function renderGoalsProgress() {
   if (overhead > 0) {
     const covered = actualRes > 0 ? Math.min(100, (actualRes / overhead) * 100) : 0;
     rows.push({
-      label: "Costos de la tienda",
-      sub: `Hay que cubrir ${currency(overhead)} por mes. Ganancia después de eso: ${currency(actualRes - overhead)} · ${monthLabel}`,
+      label: "Cubrir costos de la tienda",
+      sub: `${currency(actualRes)} de ${currency(overhead)} · ${monthLabel}`,
       pct: covered,
     });
   }
@@ -10014,13 +10013,7 @@ function renderGoalsProgress() {
     });
   }
 
-  if (rows.length === 0) {
-    wrap.innerHTML =
-      '<p class="goals-progress-empty muted">Configurá montos arriba y guardá para ver el avance vs el mes del selector de período.</p>';
-    return;
-  }
-
-  wrap.innerHTML = rows
+  const html = rows
     .map(
       (r) => `
     <div class="goals-progress-row">
@@ -10029,12 +10022,26 @@ function renderGoalsProgress() {
         <span class="muted goals-progress-sub">${escapeHtml(r.sub)}</span>
       </div>
       <div class="goals-progress-track" role="progressbar" aria-valuenow="${Math.round(r.pct)}" aria-valuemin="0" aria-valuemax="100">
-        <div class="goals-progress-fill" style="width:${r.pct}%"></div>
+        <div class="goals-progress-fill" style="width:${Math.max(0, Math.min(100, r.pct))}%"></div>
       </div>
       <span class="goals-progress-pct">${r.pct.toFixed(0)}%</span>
     </div>`
     )
     .join("");
+
+  if (rows.length === 0) {
+    wrap.innerHTML =
+      '<p class="goals-progress-empty muted">Configurá montos arriba y guardá para ver el avance vs el mes del selector de período.</p>';
+  } else {
+    wrap.innerHTML = html;
+  }
+
+  const home = document.getElementById("app-goals");
+  const homeProgress = document.getElementById("app-goals-progress");
+  if (home && homeProgress) {
+    home.hidden = rows.length === 0;
+    homeProgress.innerHTML = rows.length ? html : "";
+  }
 }
 
 function monthKeyFromDate(d) {

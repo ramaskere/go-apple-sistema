@@ -17,7 +17,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="./themes.css?v=21" />
     <link rel="stylesheet" href="./styles.css?v=79" />
-    <link rel="stylesheet" href="./theme-app.css?v=21" />
+    <link rel="stylesheet" href="./theme-app.css?v=22" />
     <script>
       (function () {
         var map = {
@@ -304,6 +304,10 @@
           <p class="app-only app-section-title" id="app-title-mov">También del mes</p>
           <p class="app-only app-section-title" id="app-title-reparto">Reparto</p>
           <p class="app-only app-section-title" id="app-title-extra">Stock y garantías</p>
+          <section class="app-only" id="app-goals" hidden>
+            <p class="app-section-title">Metas</p>
+            <div id="app-goals-progress" class="goals-progress"></div>
+          </section>
           <div class="kpi-dashboard">
             <p id="dashboard-period-hint" class="sr-only">
               El período elegido arriba filtra listas, KPIs y reparto en todas las secciones del CRM (salvo que actives «Ver todos los meses» en cada vista).
@@ -324,10 +328,6 @@
                     <article class="card stat glass-stat stat--kpi">
                       <h3 class="stat-title">Egresos</h3>
                       <p id="kpi-sale" class="stat-num">$0.00</p>
-                    </article>
-                    <article class="card stat glass-stat stat--kpi" title="Alquiler, luz, internet y el resto cargado en Ajustes. Se resta de Ganancias.">
-                      <h3 class="stat-title">Costos fijos</h3>
-                      <p id="kpi-costos-fijos" class="stat-num">$0.00</p>
                     </article>
                     <article class="card stat glass-stat stat--kpi">
                       <h3 class="stat-title">Ganancias</h3>
