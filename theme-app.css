@@ -92,105 +92,93 @@ html[data-theme="app"] .section-hero__head {
 
 html[data-theme="app"] .app-home {
   display: grid;
-  gap: 10px;
+  gap: 8px;
   margin: 0;
 }
 
 html[data-theme="app"] #tab-resumen.active {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  align-items: start;
 }
 
-html[data-theme="app"] #tab-resumen:not(.app-detail-open) .kpi-dashboard {
-  order: 1;
+html[data-theme="app"] #tab-resumen.active .kpi-dashboard,
+html[data-theme="app"] #tab-resumen.active .kpi-quad-board,
+html[data-theme="app"] #tab-resumen.active .kpi-quad-section,
+html[data-theme="app"] #tab-resumen.active .kpi-quad-body,
+html[data-theme="app"] #tab-resumen.active .kpi-quad-tiles {
+  display: contents;
 }
 
-html[data-theme="app"] #tab-resumen:not(.app-detail-open) #app-quick {
-  order: 2;
-}
-
-html[data-theme="app"] #tab-resumen:not(.app-detail-open) #resumen-alerts-panel {
-  order: 3;
+html[data-theme="app"] #resumen-alerts-panel {
+  order: 0;
+  grid-column: 1 / -1;
+  margin: 0;
 }
 
 html[data-theme="app"] #resumen-alerts-panel:has(#resumen-alerts-toggle[hidden]) {
   display: none;
 }
 
-html[data-theme="app"] .app-shortcuts {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px;
-}
-
-html[data-theme="app"] .app-shortcuts button {
-  min-height: 72px;
-  border-radius: 16px;
-  border: 1px solid #e5e7eb;
-  background: #fff;
-  color: #111827;
-  font-size: 15px;
-  font-weight: 800;
-}
-
-html[data-theme="app"] .app-home .app-quick-detail {
-  min-height: 44px;
-  background: transparent;
-  color: #6b7280;
-  font-size: 14px;
-}
-
-html[data-theme="app"] .app-home .app-quick-detail.is-on {
-  background: #111827;
-  color: #fff;
-}
-
-html[data-theme="app"] #tab-resumen:not(.app-detail-open) .kpi-quad-section[aria-label="Reparto de la ganancia"],
-html[data-theme="app"] #tab-resumen:not(.app-detail-open) .stats-visual-card,
-html[data-theme="app"] #tab-resumen:not(.app-detail-open) .resumen-best-sellers-card,
-html[data-theme="app"] #tab-resumen:not(.app-detail-open) .metrics-header,
-html[data-theme="app"] #tab-resumen:not(.app-detail-open) .kpi-quad-heading,
-html[data-theme="app"] #tab-resumen:not(.app-detail-open) .kpi-quad-hint,
-html[data-theme="app"] #tab-resumen:not(.app-detail-open) .kpi-quad-tiles--stack-4 .stat--kpi:nth-child(2),
-html[data-theme="app"] #tab-resumen:not(.app-detail-open) .kpi-quad-tiles--stack-4 .stat--kpi:nth-child(4),
-html[data-theme="app"] #tab-resumen:not(.app-detail-open) .kpi-quad-section[aria-label="Inventario actual"] .stat--kpi:nth-child(2),
-html[data-theme="app"] #tab-resumen:not(.app-detail-open) .kpi-quad-section[aria-label="Seguimiento"] .stat--kpi:first-child {
-  display: none;
-}
-
-html[data-theme="app"] #tab-resumen:not(.app-detail-open) .dashboard-board-panel {
-  background: transparent;
-  border: 0;
-  box-shadow: none;
-  padding: 0;
-  margin: 0;
-}
-
-html[data-theme="app"] #tab-resumen:not(.app-detail-open) .kpi-quad-board {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px;
-}
-
-html[data-theme="app"] #tab-resumen:not(.app-detail-open) .kpi-quad-section,
-html[data-theme="app"] #tab-resumen:not(.app-detail-open) .kpi-quad-body,
-html[data-theme="app"] #tab-resumen:not(.app-detail-open) .kpi-quad-tiles {
-  display: contents;
-}
-
-html[data-theme="app"] #tab-resumen:not(.app-detail-open) .stat--kpi {
-  min-height: 92px;
+html[data-theme="app"] #tab-resumen.active .stat--kpi {
+  order: 6;
+  min-height: 78px;
   margin: 0;
   padding: 14px;
 }
 
-html[data-theme="app"] #tab-resumen:not(.app-detail-open) .stat-title {
+html[data-theme="app"] #tab-resumen.active .stat--kpi:has(#kpi-entra),
+html[data-theme="app"] #tab-resumen.active .stat--kpi:has(#kpi-ganancia),
+html[data-theme="app"] #tab-resumen.active .stat--kpi:has(#kpi-stock),
+html[data-theme="app"] #tab-resumen.active .stat--kpi:has(#kpi-cuotas-cobrar) {
+  order: 1;
+  min-height: 96px;
+}
+
+html[data-theme="app"] #app-quick {
+  order: 5;
+  grid-column: 1 / -1;
+}
+
+html[data-theme="app"] .app-shortcuts {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  padding: 8px;
+  border-radius: 18px;
+  background: #111827;
+}
+
+html[data-theme="app"] .app-shortcuts button {
+  min-height: 52px;
+  border: 0;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  font-size: 15px;
+  font-weight: 800;
+}
+
+html[data-theme="app"] #tab-resumen.active .metrics-header,
+html[data-theme="app"] #tab-resumen.active .kpi-quad-heading,
+html[data-theme="app"] #tab-resumen.active .kpi-quad-hint {
+  display: none;
+}
+
+html[data-theme="app"] #tab-resumen.active .stats-visual-card,
+html[data-theme="app"] #tab-resumen.active .resumen-best-sellers-card {
+  order: 8;
+  grid-column: 1 / -1;
+  margin: 8px 0 0;
+}
+
+html[data-theme="app"] #tab-resumen.active .stat-title {
   font-size: 13px;
   color: #6b7280;
 }
 
-html[data-theme="app"] #tab-resumen:not(.app-detail-open) .stat-num {
+html[data-theme="app"] #tab-resumen.active .stat-num {
   font-size: 1.35rem;
   font-weight: 800;
   color: #111827;
@@ -225,11 +213,23 @@ html[data-theme="app"] .table-wrap {
 }
 
 html[data-theme="app"] .app-dock {
-  display: flex !important;
-  align-items: center;
+  display: grid !important;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: end;
   gap: 4px;
   background: #fff;
   border: 1px solid #e5e7eb;
+  z-index: 80;
+}
+
+html[data-theme="app"] .app-dock-group {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+
+html[data-theme="app"] .app-dock-group .app-dock-btn {
+  flex: 1;
 }
 
 html[data-theme="app"] .app-dock-btn {
@@ -305,15 +305,20 @@ html[data-theme="app"] .app-add button {
 
 @media (min-width: 901px) {
   html[data-theme="app"] .app-dock {
+    display: flex !important;
+    flex-direction: column;
     position: sticky;
     top: 0;
     align-self: flex-start;
-    flex-direction: column;
     width: 104px;
     min-height: 100dvh;
     padding: 12px 8px;
     border-top: 0;
     border-right: 1px solid #e5e7eb;
+  }
+
+  html[data-theme="app"] .app-dock-group {
+    display: contents;
   }
 
   html[data-theme="app"] .app-dock-btn:not(.app-dock-add) {
@@ -326,7 +331,7 @@ html[data-theme="app"] .app-add button {
     left: 116px;
     bottom: 16px;
     width: 280px;
-    z-index: 41;
+    z-index: 90;
   }
 
   html[data-theme="app"] .main-column {
@@ -340,17 +345,19 @@ html[data-theme="app"] .app-add button {
   }
 
   html[data-theme="app"] .main-column {
-    padding-bottom: calc(108px + env(safe-area-inset-bottom));
+    padding-bottom: calc(128px + env(safe-area-inset-bottom));
   }
 
   html[data-theme="app"] .app-dock {
+    display: grid !important;
+    grid-template-columns: 1fr auto 1fr;
     position: fixed;
     left: 0;
     right: 0;
     bottom: 0;
-    z-index: 40;
-    align-items: flex-end;
-    padding: 8px 8px calc(8px + env(safe-area-inset-bottom));
+    z-index: 80;
+    align-items: end;
+    padding: 8px 10px calc(8px + env(safe-area-inset-bottom));
     border-left: 0;
     border-right: 0;
     border-bottom: 0;
@@ -367,7 +374,7 @@ html[data-theme="app"] .app-add button {
     left: 12px;
     right: 12px;
     bottom: calc(96px + env(safe-area-inset-bottom));
-    z-index: 41;
+    z-index: 90;
   }
 
   html[data-theme="app"] .app-add {
@@ -376,7 +383,7 @@ html[data-theme="app"] .app-add button {
     width: min(320px, calc(100vw - 32px));
     transform: translateX(-50%);
     bottom: calc(108px + env(safe-area-inset-bottom));
-    z-index: 41;
+    z-index: 90;
   }
 }
 
@@ -387,6 +394,14 @@ html[data-theme="app"] body.app-staff-mode .app-home,
 html[data-theme="app"] body.app-staff-mode #app-add,
 body.app-staff-mode #app-more {
   display: none !important;
+}
+
+html[data-theme="app"] body.app-staff-mode .app-dock {
+  display: flex !important;
+}
+
+html[data-theme="app"] body.app-staff-mode .app-dock-group {
+  display: contents;
 }
 
 html[data-theme="app"] body.app-staff-mode .app-dock-staff {

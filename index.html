@@ -17,7 +17,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="./themes.css?v=19" />
     <link rel="stylesheet" href="./styles.css?v=77" />
-    <link rel="stylesheet" href="./theme-app.css?v=7" />
+    <link rel="stylesheet" href="./theme-app.css?v=8" />
     <script>
       (function () {
         var map = {
@@ -151,11 +151,15 @@
         </nav>
       </aside>
       <nav class="app-dock" id="app-dock" aria-label="Accesos rápidos">
-        <button type="button" class="app-dock-btn is-on" data-dock="resumen">Inicio</button>
-        <button type="button" class="app-dock-btn" data-dock="inventario">Stock</button>
+        <div class="app-dock-group">
+          <button type="button" class="app-dock-btn is-on" data-dock="resumen">Inicio</button>
+          <button type="button" class="app-dock-btn" data-dock="inventario">Stock</button>
+        </div>
         <button type="button" class="app-dock-btn app-dock-add" data-dock="vender" aria-label="Nuevo">+</button>
-        <button type="button" class="app-dock-btn app-dock-staff" data-dock="simulador-cuotas">Cuotas</button>
-        <button type="button" class="app-dock-btn" data-dock="mas" id="app-dock-more">Más</button>
+        <div class="app-dock-group">
+          <button type="button" class="app-dock-btn app-dock-staff" data-dock="simulador-cuotas">Cuotas</button>
+          <button type="button" class="app-dock-btn" data-dock="mas" id="app-dock-more">Más</button>
+        </div>
       </nav>
       <div class="app-add" id="app-add" hidden>
         <p class="app-more-title">Nuevo</p>
@@ -295,7 +299,6 @@
               <button type="button" data-go="lista">Lista WhatsApp</button>
               <button type="button" data-go="clientes">Clientes</button>
             </div>
-            <button type="button" class="app-quick-detail" data-go="detalle">Ver todo el mes</button>
           </div>
           <div class="kpi-dashboard">
             <p id="dashboard-period-hint" class="sr-only">
@@ -1409,6 +1412,9 @@
                 <button type="button" id="btn-inv-wa-list" class="secondary">
                   Copiar lista
                 </button>
+                <button type="button" id="btn-inv-wa-config" class="secondary">
+                  Configurar
+                </button>
                 <button type="button" id="btn-inv-wa-pick" class="secondary">
                   Elegir
                 </button>
@@ -1422,7 +1428,7 @@
             </div>
             <p class="section-hint muted inv-stock-hint">
               Tocá el <strong>modelo</strong> para ver equipos. <strong>Tocá una tarjeta</strong> para ver detalle.
-              <strong>Copiar lista</strong> arma el mensaje de todo el stock. <strong>Elegir</strong> si querés solo algunos.
+              <strong>Copiar lista</strong> manda el mensaje guardado. <strong>Configurar</strong> elige qué incluir. <strong>Elegir</strong> si querés solo algunos.
             </p>
             <div id="inv-wa-select-bar" class="inv-wa-select-bar" hidden>
               <div class="inv-wa-select-bar__main">
@@ -1474,8 +1480,8 @@
             <div class="sale-modal__panel card glass-panel" role="document">
               <div class="sale-modal__header">
                 <div>
-                  <h2 id="inv-wa-list-modal-title">Lista WhatsApp</h2>
-                  <p id="inv-wa-list-modal-sub" class="muted inv-wa-list-modal__sub">Elegí qué mostrar y copiá</p>
+                  <h2 id="inv-wa-list-modal-title">Mensaje de WhatsApp</h2>
+                  <p id="inv-wa-list-modal-sub" class="muted inv-wa-list-modal__sub">Se guarda y la próxima copia sale así</p>
                 </div>
                 <button type="button" class="sale-modal__close" id="inv-wa-list-modal-close" aria-label="Cerrar">×</button>
               </div>
@@ -1486,11 +1492,12 @@
                     <label class="inv-wa-field"><input type="checkbox" data-wa-field="color" checked /> Color</label>
                     <label class="inv-wa-field"><input type="checkbox" data-wa-field="storage" checked /> Almacenamiento</label>
                     <label class="inv-wa-field"><input type="checkbox" data-wa-field="battery" checked /> Batería</label>
-                    <label class="inv-wa-field"><input type="checkbox" data-wa-field="usd" /> Precio USD</label>
-                    <label class="inv-wa-field"><input type="checkbox" data-wa-field="contado" checked /> Contado ARS</label>
+                    <label class="inv-wa-field"><input type="checkbox" data-wa-field="contado" checked /> Precio en pesos</label>
                     <label class="inv-wa-field"><input type="checkbox" data-wa-field="lista" checked /> Lista / tarjeta</label>
-                    <label class="inv-wa-field"><input type="checkbox" data-wa-field="cuotas12" /> Cuota 12x</label>
-                    <label class="inv-wa-field"><input type="checkbox" data-wa-field="cuotasAll" /> Todas las cuotas</label>
+                    <label class="inv-wa-field"><input type="checkbox" data-wa-field="usd" /> Precio en dólares</label>
+                    <label class="inv-wa-field"><input type="checkbox" data-wa-field="cuotasAll" /> Cuotas</label>
+                    <label class="inv-wa-field"><input type="checkbox" data-wa-field="perks" /> Funda y garantía</label>
+                    <label class="inv-wa-field"><input type="checkbox" data-wa-field="ask" /> Pregunta final</label>
                   </div>
                 </section>
                 <section class="inv-wa-preview-wrap">
@@ -2853,7 +2860,7 @@
     <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
     <script src="./config.js?v=17"></script>
     <script src="./creativos-engine.js?v=2"></script>
-    <script src="./app.js?v=109"></script>
+    <script src="./app.js?v=110"></script>
     <script src="./business-extras.js?v=6"></script>
   </body>
 </html>

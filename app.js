@@ -3471,14 +3471,6 @@ function bindAppDock() {
     const btn = e.target.closest("[data-go]");
     if (!(btn instanceof HTMLElement)) return;
     const go = btn.dataset.go;
-    const resumen = document.getElementById("tab-resumen");
-    if (go === "detalle") {
-      const open = resumen?.classList.toggle("app-detail-open");
-      btn.classList.toggle("is-on", Boolean(open));
-      btn.textContent = open ? "Ocultar" : "Ver todo el mes";
-      updateMainHeader("resumen");
-      return;
-    }
     if (go === "venta") {
       setAppAddOpen(false);
       switchTab("ventas");
@@ -5675,6 +5667,8 @@ const INV_WA_DEFAULT_FIELDS = {
   lista: true,
   cuotas12: false,
   cuotasAll: false,
+  perks: false,
+  ask: false,
 };
 
 let invWaSelectMode = false;
@@ -5825,7 +5819,7 @@ function buildMultiInvWhatsAppList(itemIds, fields, rate) {
   lines.push("");
 
   for (const [model, group] of byModel) {
-    lines.push(`📱 *${model}*`);
+    lines.push(`*${model}*`);
     for (const item of group) {
       lines.push(buildInvWaListLine(item, fields, rate));
     }
@@ -5838,7 +5832,7 @@ function buildMultiInvWhatsAppList(itemIds, fields, rate) {
   return { text: lines.join("\n").trim(), count: items.length };
 }
 
-function buildReadyInvWhatsAppList(itemIds, rate) {
+function buildReadyInvWhatsAppList(itemIds, rate, fields = getInvWaFields()) {
   const brand = getStoreBrandLabel();
   const inv = getInventory();
   const items = itemIds
@@ -5868,29 +5862,48 @@ function buildReadyInvWhatsAppList(itemIds, rate) {
       const color = String(item.color || "").trim();
       const storage = String(item.storage || "").trim();
       const bat = toBatteryLabel(item.battery);
-      if (storage && storage !== "Sin almacenamiento") bits.push(storage);
-      if (color && color !== "Sin color") bits.push(color);
-      if (bat && bat !== "-") bits.push(bat);
-      lines.push(bits.length ? `• ${bits.join(" · ")}` : "• Disponible");
+      if (fields.storage && storage && storage !== "Sin almacenamiento") bits.push(storage);
+      if (fields.color && color && color !== "Sin color") bits.push(color);
+      if (fields.battery && bat && bat !== "-") bits.push(bat);
+      if (bits.length) lines.push(bits.join(" · "));
       const prices = [];
-      if (d.paNum > 0) prices.push(`Contado ${d.unitArs}`);
-      if (d.listaNum > 0) prices.push(`Lista ${d.listaArs}`);
+      if (fields.contado && d.paNum > 0) prices.push(`Contado ${d.unitArs}`);
+      if (fields.lista && d.listaNum > 0) prices.push(`Lista ${d.listaArs}`);
+      if (fields.usd && d.itemPrice > 0) prices.push(currency(d.itemPrice));
       if (prices.length) lines.push(prices.join(" · "));
-      const plans = [
-        [3, d.cuota3Num],
-        [6, d.cuota6Num],
-        [12, d.cuota12Num],
-        [18, d.cuota18Num],
-      ]
-        .filter(([, n]) => n != null && n > 0)
-        .map(([n, monthly]) => `${n}x ${currencyArs(monthly)}`);
-      if (plans.length) lines.push(plans.join(" · "));
+      if (fields.cuotasAll || fields.cuotas12) {
+        const plans = fields.cuotasAll
+          ? [
+              [3, d.cuota3Num],
+              [6, d.cuota6Num],
+              [12, d.cuota12Num],
+              [18, d.cuota18Num],
+            ]
+          : [[12, d.cuota12Num]];
+        const planText = plans
+          .filter(([, n]) => n != null && n > 0)
+          .map(([n, monthly]) => `${n}x ${currencyArs(monthly)}`);
+        if (planText.length) lines.push(planText.join(" · "));
+      }
     }
     lines.push("");
   }
-  lines.push("Con la compra: funda, templado, cargador y garantía 30 días.");
-  lines.push("¿Cuál te reservo?");
+  if (fields.perks) lines.push("Con la compra: funda, templado, cargador y garantía 30 días.");
+  if (fields.ask) lines.push("¿Cuál te reservo?");
   return { text: lines.join("\n").trim(), count: items.length };
+}
+
+let invWaPreviewAll = false;
+
+function stockIdsForWa() {
+  return getInventory()
+    .filter((item) => numeric(item.stock, 0) > 0)
+    .map((item) => item.id);
+}
+
+function waMessageIds() {
+  if (invWaPreviewAll || invWaSelectedIds.size === 0) return stockIdsForWa();
+  return [...invWaSelectedIds];
 }
 
 async function copyTextToClipboard(text) {
@@ -5920,11 +5933,7 @@ function refreshInvWaPreview() {
   if (!preview) return;
   const fields = readInvWaFieldsFromUi();
   saveInvWaFields(fields);
-  const { text, count } = buildMultiInvWhatsAppList(
-    [...invWaSelectedIds],
-    fields,
-    getDolarBlueArsPerUsd()
-  );
+  const { text, count } = buildReadyInvWhatsAppList(waMessageIds(), getDolarBlueArsPerUsd(), fields);
   preview.textContent = text;
   if (meta) meta.textContent = count ? `${count} en la lista` : "Sin equipos";
 }
@@ -5951,15 +5960,23 @@ async function copyReadyInvWhatsAppList(triggerBtn) {
   }
 }
 
-function openInvWaListModal() {
+function openInvWaListModal(all) {
   const modal = document.getElementById("inv-wa-list-modal");
-  if (!modal || invWaSelectedIds.size === 0) return;
+  invWaPreviewAll = Boolean(all);
+  const ids = waMessageIds();
+  if (!modal || !ids.length) {
+    alert("No hay equipos en stock.");
+    return;
+  }
   hydrateInvWaFieldsUi();
   refreshInvWaPreview();
   const sub = document.getElementById("inv-wa-list-modal-sub");
   if (sub) {
-    const n = invWaSelectedIds.size;
-    sub.textContent = n === 1 ? "1 equipo seleccionado" : `${n} equipos seleccionados`;
+    sub.textContent = invWaPreviewAll
+      ? "Se guarda y la próxima copia sale así"
+      : ids.length === 1
+        ? "1 equipo. Se guarda para la próxima."
+        : `${ids.length} equipos. Se guarda para la próxima.`;
   }
   modal.hidden = false;
   modal.setAttribute("aria-hidden", "false");
@@ -5971,6 +5988,7 @@ function closeInvWaListModal() {
   if (!modal) return;
   modal.hidden = true;
   modal.setAttribute("aria-hidden", "true");
+  invWaPreviewAll = false;
   const anyOpen = document.querySelector(".sale-modal:not([hidden])");
   document.body.classList.toggle("sale-modal-open", Boolean(anyOpen));
 }
@@ -5978,11 +5996,7 @@ function closeInvWaListModal() {
 async function copyInvWaList(triggerBtn) {
   const fields = readInvWaFieldsFromUi();
   saveInvWaFields(fields);
-  const { text, count } = buildMultiInvWhatsAppList(
-    [...invWaSelectedIds],
-    fields,
-    getDolarBlueArsPerUsd()
-  );
+  const { text, count } = buildReadyInvWhatsAppList(waMessageIds(), getDolarBlueArsPerUsd(), fields);
   if (!count) {
     alert("Seleccioná al menos un equipo con stock.");
     return;
@@ -6021,6 +6035,9 @@ function wireInvWaListUi() {
 
   document.getElementById("btn-inv-wa-list")?.addEventListener("click", (e) => {
     void copyReadyInvWhatsAppList(e.currentTarget);
+  });
+  document.getElementById("btn-inv-wa-config")?.addEventListener("click", () => {
+    openInvWaListModal(true);
   });
   document.getElementById("btn-inv-wa-pick")?.addEventListener("click", () => {
     setInvWaSelectMode(!invWaSelectMode);
