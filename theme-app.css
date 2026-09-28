@@ -135,24 +135,24 @@ html[data-theme="app"] #resumen-alerts-panel:has(#resumen-alerts-toggle[hidden])
 html[data-theme="app"] #tab-resumen.active .stat--kpi,
 html[data-theme="app"] #tab-resumen.active .stat--kpi.glass-stat {
   order: 7;
-  grid-column: auto;
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  justify-content: flex-start;
+  grid-column: auto !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: flex-start !important;
+  justify-content: flex-start !important;
   gap: 6px;
   width: auto;
-  height: auto;
-  min-height: 88px;
-  max-height: none;
+  height: auto !important;
+  min-height: 92px !important;
+  max-height: none !important;
   min-width: 0;
   margin: 0;
-  padding: 14px;
+  padding: 14px !important;
   overflow: visible;
-  background: #fff;
+  background: #fff !important;
   border: 1px solid #e5e7eb;
   border-left-width: 4px;
-  border-radius: 14px;
+  border-radius: 16px;
   box-shadow: none;
 }
 
@@ -161,10 +161,6 @@ html[data-theme="app"] #tab-resumen.active .stat--kpi:has(#kpi-ganancia),
 html[data-theme="app"] #tab-resumen.active .stat--kpi:has(#kpi-stock),
 html[data-theme="app"] #tab-resumen.active .stat--kpi:has(#kpi-cuotas-cobrar) {
   order: 1;
-}
-
-html[data-theme="app"] #tab-resumen.active .stat--kpi:has(#kpi-socios) {
-  grid-column: 1 / -1;
 }
 
 html[data-theme="app"] .app-section-title {
@@ -262,15 +258,19 @@ html[data-theme="app"] #tab-resumen.active .stat--kpi .stat-title {
 }
 
 html[data-theme="app"] #tab-resumen.active .stat-num,
-html[data-theme="app"] #tab-resumen.active .stat--kpi .stat-num {
+html[data-theme="app"] #tab-resumen.active .stat--kpi .stat-num,
+html[data-theme="app"] #tab-resumen.active .stat-num--money {
+  display: block !important;
   flex: 0 0 auto;
+  width: 100%;
   margin: 0;
-  font-size: 1.2rem;
+  font-size: 1.35rem !important;
   font-weight: 800;
   color: #111827;
   line-height: 1.15;
   justify-content: flex-start;
-  text-align: left;
+  text-align: left !important;
+  white-space: normal !important;
 }
 
 html[data-theme="app"] #tab-resumen.active .stat--kpi:has(#kpi-entra) { border-left-color: #16a34a; }
