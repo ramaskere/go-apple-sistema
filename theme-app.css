@@ -877,3 +877,51 @@ html[data-theme="app-oscuro"] #tab-resumen.active .stat--kpi:has(#kpi-restock) .
 html[data-theme="app-oscuro"] #tab-resumen.active .stat--kpi:has(#kpi-reserva) .stat-num { color: #fbbf24; }
 html[data-theme="app-oscuro"] #tab-resumen.active .stat--kpi:has(#kpi-socios) .stat-num { color: #c4b5fd; }
 html[data-theme="app-oscuro"] #tab-resumen.active .stat--kpi:has(#kpi-warranty-active) .stat-num { color: #2dd4bf; }
+
+html[data-theme="app-oscuro"] select.dashboard-month-select--minimal {
+  appearance: none;
+  -webkit-appearance: none;
+  background-color: rgba(8, 9, 14, 0.55);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12' fill='none'%3E%3Cpath d='M2.5 4.5L6 8l3.5-3.5' stroke='%23f4f4f5' stroke-width='1.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  background-size: 12px 12px;
+  color: #f4f4f5;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  box-shadow: none;
+}
+
+html[data-theme="app-oscuro"] .resumen-alerts-toggle {
+  background: transparent;
+  color: #f4f4f5;
+  box-shadow: none;
+}
+
+html[data-theme="app-oscuro"] .resumen-alerts-title {
+  color: #fafafa;
+}
+
+html[data-theme="app-oscuro"] .resumen-alerts-summary {
+  color: #a1a1aa;
+}
+
+html[data-theme="app-oscuro"] .resumen-alerts-chevron {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+html[data-theme="app-oscuro"] .resumen-alerts-chevron::before {
+  border-right-color: #f4f4f5;
+  border-bottom-color: #f4f4f5;
+}
+
+html[data-theme="app-oscuro"] .app-dock-btn:not(.app-dock-add):not(.is-on) {
+  background: transparent;
+  color: #a1a1aa;
+  box-shadow: none;
+}
+
+html[data-theme="app-oscuro"] .app-dock-btn.is-on:not(.app-dock-add) {
+  background: rgba(255, 255, 255, 0.14);
+  color: #fafafa;
+  border-color: transparent;
+}
