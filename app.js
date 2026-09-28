@@ -3402,6 +3402,13 @@ function syncAppDock(tabName) {
   if (more && APP_DOCK_MAIN.includes(tabName)) more.hidden = true;
 }
 
+function syncAppSheets() {
+  const more = document.getElementById("app-more");
+  const add = document.getElementById("app-add");
+  const open = Boolean((more && !more.hidden) || (add && !add.hidden));
+  document.body.classList.toggle("app-sheet-open", open);
+}
+
 function setAppAddOpen(open) {
   const sheet = document.getElementById("app-add");
   const btn = document.querySelector('.app-dock-add[data-dock="vender"]');
@@ -3411,6 +3418,7 @@ function setAppAddOpen(open) {
     const more = document.getElementById("app-more");
     if (more) more.hidden = true;
   }
+  syncAppSheets();
 }
 
 function bindAppDock() {
@@ -3425,9 +3433,11 @@ function bindAppDock() {
     if (btn.dataset.dock === "mas") {
       setAppAddOpen(false);
       if (more) more.hidden = !more.hidden;
+      syncAppSheets();
       return;
     }
     if (more) more.hidden = true;
+    syncAppSheets();
     if (btn.dataset.dock === "vender") {
       setAppAddOpen(Boolean(add?.hidden));
       return;
@@ -3456,6 +3466,7 @@ function bindAppDock() {
     const btn = e.target.closest("button");
     if (!(btn instanceof HTMLElement) || !more.contains(btn)) return;
     more.hidden = true;
+    syncAppSheets();
     if (btn.dataset.open === "clients") {
       openClientsModal();
       return;
@@ -3471,16 +3482,14 @@ function bindAppDock() {
     const btn = e.target.closest("[data-go]");
     if (!(btn instanceof HTMLElement)) return;
     const go = btn.dataset.go;
-    if (go === "venta") {
+    if (go === "caja") {
       setAppAddOpen(false);
-      switchTab("ventas");
-      openSaleModal();
+      switchTab("caja");
       return;
     }
-    if (go === "equipo") {
+    if (go === "cobrar") {
       setAppAddOpen(false);
-      switchTab("inventario");
-      openInventoryModalForNew();
+      switchTab("deudores");
       return;
     }
     if (go === "lista") {
@@ -5819,7 +5828,7 @@ function buildMultiInvWhatsAppList(itemIds, fields, rate) {
   lines.push("");
 
   for (const [model, group] of byModel) {
-    lines.push(`*${model}*`);
+    lines.push(`📱 *${model}*`);
     for (const item of group) {
       lines.push(buildInvWaListLine(item, fields, rate));
     }
@@ -5855,7 +5864,7 @@ function buildReadyInvWhatsAppList(itemIds, rate, fields = getInvWaFields()) {
 
   const lines = [`*${brand}*`, formatInvWaListDate(), ""];
   for (const [model, group] of byModel) {
-    lines.push(`*${model}*`);
+    lines.push(`📱 *${model}*`);
     for (const item of group) {
       const d = computeInventoryRowDisplay(item, rate);
       const bits = [];
@@ -5864,13 +5873,13 @@ function buildReadyInvWhatsAppList(itemIds, rate, fields = getInvWaFields()) {
       const bat = toBatteryLabel(item.battery);
       if (fields.storage && storage && storage !== "Sin almacenamiento") bits.push(storage);
       if (fields.color && color && color !== "Sin color") bits.push(color);
-      if (fields.battery && bat && bat !== "-") bits.push(bat);
+      if (fields.battery && bat && bat !== "-") bits.push(`🔋 ${bat}`);
       if (bits.length) lines.push(bits.join(" · "));
       const prices = [];
       if (fields.contado && d.paNum > 0) prices.push(`Contado ${d.unitArs}`);
       if (fields.lista && d.listaNum > 0) prices.push(`Lista ${d.listaArs}`);
       if (fields.usd && d.itemPrice > 0) prices.push(currency(d.itemPrice));
-      if (prices.length) lines.push(prices.join(" · "));
+      if (prices.length) lines.push(`💰 ${prices.join(" · ")}`);
       if (fields.cuotasAll || fields.cuotas12) {
         const plans = fields.cuotasAll
           ? [

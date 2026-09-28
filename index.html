@@ -17,7 +17,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="./themes.css?v=19" />
     <link rel="stylesheet" href="./styles.css?v=77" />
-    <link rel="stylesheet" href="./theme-app.css?v=8" />
+    <link rel="stylesheet" href="./theme-app.css?v=9" />
     <script>
       (function () {
         var map = {
@@ -153,11 +153,11 @@
       <nav class="app-dock" id="app-dock" aria-label="Accesos rápidos">
         <div class="app-dock-group">
           <button type="button" class="app-dock-btn is-on" data-dock="resumen">Inicio</button>
-          <button type="button" class="app-dock-btn" data-dock="inventario">Stock</button>
+          <button type="button" class="app-dock-btn" data-dock="simulador-cuotas">Cuotas</button>
         </div>
         <button type="button" class="app-dock-btn app-dock-add" data-dock="vender" aria-label="Nuevo">+</button>
         <div class="app-dock-group">
-          <button type="button" class="app-dock-btn app-dock-staff" data-dock="simulador-cuotas">Cuotas</button>
+          <button type="button" class="app-dock-btn" data-dock="inventario">Stock</button>
           <button type="button" class="app-dock-btn" data-dock="mas" id="app-dock-more">Más</button>
         </div>
       </nav>
@@ -169,19 +169,18 @@
       </div>
       <div class="app-more" id="app-more" hidden>
         <p class="app-more-title">Más</p>
-        <button type="button" data-open="clients">Clientes que compraron</button>
-        <button type="button" data-open="track">Seguir un celular</button>
-        <button type="button" data-tab="simulador-cuotas">Calcular cuotas</button>
         <button type="button" data-tab="caja">Caja</button>
-        <button type="button" data-tab="ventas">Ventas hechas</button>
+        <button type="button" data-tab="ventas">Ventas</button>
         <button type="button" data-tab="deudores">Por cobrar</button>
         <button type="button" data-tab="garantias">Garantías</button>
-        <button type="button" data-tab="servicio-tecnico">Servicio técnico</button>
+        <button type="button" data-open="clients">Clientes</button>
+        <button type="button" data-open="track">Seguir celular</button>
+        <button type="button" data-tab="servicio-tecnico">Técnico</button>
         <button type="button" data-tab="pipeline">Pipeline</button>
-        <button type="button" data-tab="facturacion">Facturación</button>
+        <button type="button" data-tab="facturacion">Facturas</button>
         <button type="button" data-tab="creativos">Creativos</button>
-        <button type="button" data-tab="configuraciones">Configuraciones</button>
-        <button type="button" data-tab="ayuda">Ayuda</button>
+        <button type="button" data-tab="configuraciones">Ajustes</button>
+        <button type="button" class="app-more-help" data-tab="ayuda">Ayuda</button>
       </div>
 
       <div class="main-column">
@@ -294,10 +293,10 @@
           </section>
           <div class="app-only app-home" id="app-quick">
             <div class="app-shortcuts">
-              <button type="button" data-go="venta">Vender</button>
-              <button type="button" data-go="equipo">Cargar equipo</button>
+              <button type="button" data-go="caja">Caja</button>
               <button type="button" data-go="lista">Lista WhatsApp</button>
               <button type="button" data-go="clientes">Clientes</button>
+              <button type="button" data-go="cobrar">Por cobrar</button>
             </div>
           </div>
           <div class="kpi-dashboard">
@@ -2860,7 +2859,7 @@
     <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
     <script src="./config.js?v=17"></script>
     <script src="./creativos-engine.js?v=2"></script>
-    <script src="./app.js?v=110"></script>
+    <script src="./app.js?v=111"></script>
     <script src="./business-extras.js?v=6"></script>
   </body>
 </html>
