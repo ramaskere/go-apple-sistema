@@ -1063,16 +1063,10 @@ function prefillAuthEmail() {
  * Sesión guardada, ?email=&password= en la URL (una vez), o email/contraseña en config.js.
  */
 async function tryEnterCloudFromStoredUrlOrConfig() {
-  const restored = await tryRestoreStoredSession();
-  if (restored.session) {
-    hideAuthGate();
-    await loadCloudDataWithCurrentSession();
-    return true;
-  }
-
   const urlCreds = readAndStripLoginFromUrl();
   const emailTry = (urlCreds.email || (window.APP_SUPABASE_EMAIL || "").trim()).trim();
   const passwordTry = urlCreds.password || getSupabasePasswordFromConfig();
+  // Si hay usuario en config, entra con ese. Una sesión vieja (invitado u otra cuenta) deja el panel en cero.
   if (emailTry && passwordTry) {
     const pwOut = await signInWithPasswordFlow(emailTry, passwordTry);
     if (pwOut.session) {
@@ -1080,6 +1074,13 @@ async function tryEnterCloudFromStoredUrlOrConfig() {
       await loadCloudDataWithCurrentSession();
       return true;
     }
+  }
+
+  const restored = await tryRestoreStoredSession();
+  if (restored.session) {
+    hideAuthGate();
+    await loadCloudDataWithCurrentSession();
+    return true;
   }
 
   return false;
