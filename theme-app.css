@@ -88,34 +88,69 @@ html[data-theme="app"] .section-hero__head {
   align-items: center;
 }
 
-html[data-theme="app"] .app-quick {
+html[data-theme="app"] .app-home {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px;
+  gap: 10px;
   margin: 0 0 12px;
 }
 
-html[data-theme="app"] .app-quick button {
-  min-height: 52px;
+html[data-theme="app"] .app-ask {
+  display: grid;
+  gap: 6px;
+  font-size: 14px;
+  font-weight: 800;
+  color: #374151;
+}
+
+html[data-theme="app"] .app-ask input {
+  width: 100%;
+  min-height: 64px;
+  padding: 0 16px;
+  border-radius: 16px;
+  border: 2px solid #111827;
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: #111827;
+  background: #fff;
+}
+
+html[data-theme="app"] .app-home > button {
+  min-height: 64px;
   border: 0;
-  border-radius: 14px;
+  border-radius: 16px;
   background: #111827;
   color: #fff;
-  font-size: 15px;
+  font-size: 1.2rem;
   font-weight: 800;
 }
 
-html[data-theme="app"] .app-quick .app-quick-detail {
-  grid-column: 1 / -1;
-  min-height: 44px;
-  background: #fff;
-  color: #111827;
-  border: 1px solid #e5e7eb;
+html[data-theme="app"] .app-today {
+  margin: 0;
+  text-align: center;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #374151;
 }
 
-html[data-theme="app"] .app-quick .app-quick-detail.is-on {
+html[data-theme="app"] .app-today strong {
+  color: #111827;
+  font-size: 1.25rem;
+}
+
+html[data-theme="app"] .app-home .app-quick-detail {
+  min-height: 44px;
+  background: transparent;
+  color: #6b7280;
+  font-size: 14px;
+}
+
+html[data-theme="app"] .app-home .app-quick-detail.is-on {
   background: #111827;
   color: #fff;
+}
+
+html[data-theme="app"] #tab-resumen:not(.app-detail-open) .kpi-dashboard {
+  display: none;
 }
 
 html[data-theme="app"] #tab-resumen:not(.app-detail-open) .kpi-quad-section[aria-label="Reparto de la ganancia"],
@@ -166,6 +201,24 @@ html[data-theme="app"] #tab-resumen:not(.app-detail-open) .stat-num {
   font-size: 1.35rem;
   font-weight: 800;
   color: #111827;
+}
+
+html[data-theme="app"] #tab-inventario .section-kpi-row,
+html[data-theme="app"] #tab-inventario .table-head h2,
+html[data-theme="app"] #btn-open-device-history-modal,
+html[data-theme="app"] #btn-open-inv-bulk-modal,
+html[data-theme="app"] #tab-inventario .view-filter-label:has(#inv-stock-filter) {
+  display: none;
+}
+
+html[data-theme="app"] #inv-stock-search {
+  min-height: 56px;
+  font-size: 1.2rem;
+  font-weight: 700;
+}
+
+html[data-theme="app"] .app-dock-staff {
+  display: none !important;
 }
 
 html[data-theme="app"] #cuotas-sim-amount {
@@ -293,9 +346,14 @@ html[data-theme="app"] .app-more button {
 }
 
 html[data-theme="app"] body.app-staff-mode .app-dock-btn[data-dock="resumen"],
-html[data-theme="app"] body.app-staff-mode .app-dock-btn[data-dock="caja"],
+html[data-theme="app"] body.app-staff-mode .app-dock-btn[data-dock="vender"],
 html[data-theme="app"] body.app-staff-mode .app-dock-btn[data-dock="mas"],
-html[data-theme="app"] body.app-staff-mode .app-quick,
+html[data-theme="app"] body.app-staff-mode .app-home,
+html[data-theme="app"] body.app-staff-mode .app-dock-staff,
 body.app-staff-mode #app-more {
   display: none !important;
+}
+
+html[data-theme="app"] body.app-staff-mode .app-dock-staff {
+  display: block !important;
 }

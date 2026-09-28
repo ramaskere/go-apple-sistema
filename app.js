@@ -3299,7 +3299,12 @@ function updateMainHeader(tabName) {
   const copy = PAGE_TAB_COPY[tabName] || PAGE_TAB_COPY.resumen;
   const titleEl = document.getElementById("main-page-title");
   const subEl = document.getElementById("main-page-subtitle");
-  if (titleEl) titleEl.textContent = copy.title;
+  if (titleEl) {
+    titleEl.textContent =
+      document.documentElement.dataset.theme === "app" && APP_SIMPLE_TITLES[tabName]
+        ? APP_SIMPLE_TITLES[tabName]
+        : copy.title;
+  }
   if (subEl) {
     subEl.textContent =
       isStaffMode() && tabName === "inventario"
@@ -3307,7 +3312,11 @@ function updateMainHeader(tabName) {
         : copy.subtitle;
   }
   const periodBar = document.getElementById("app-period-bar");
-  if (periodBar) periodBar.hidden = isStaffMode();
+  const simpleHome =
+    document.documentElement.dataset.theme === "app" &&
+    tabName === "resumen" &&
+    !document.getElementById("tab-resumen")?.classList.contains("app-detail-open");
+  if (periodBar) periodBar.hidden = isStaffMode() || simpleHome;
   updatePeriodBarNote();
 }
 
@@ -3366,13 +3375,32 @@ function switchTab(tabName) {
   syncAppDock(tabName);
 }
 
-const APP_DOCK_MAIN = ["resumen", "inventario", "simulador-cuotas", "caja"];
+const APP_DOCK_MAIN = ["resumen", "inventario", "ventas", "simulador-cuotas"];
+
+const APP_SIMPLE_TITLES = {
+  resumen: "¿Qué querés hacer?",
+  inventario: "Elegí el iPhone",
+  ventas: "Vender",
+  "simulador-cuotas": "¿En cuántas cuotas?",
+  caja: "Plata de caja",
+};
+
+function goToStockSearch(query) {
+  switchTab("inventario");
+  const search = document.getElementById("inv-stock-search");
+  if (!(search instanceof HTMLInputElement)) return;
+  if (query != null) search.value = query;
+  search.dispatchEvent(new Event("input", { bubbles: true }));
+  search.focus();
+}
 
 function syncAppDock(tabName) {
   document.querySelectorAll(".app-dock-btn[data-dock]").forEach((btn) => {
     const dock = btn.dataset.dock;
     const on =
-      dock === tabName || (dock === "mas" && tabName && !APP_DOCK_MAIN.includes(tabName));
+      (dock === "vender" && tabName === "ventas") ||
+      dock === tabName ||
+      (dock === "mas" && tabName && !APP_DOCK_MAIN.includes(tabName) && tabName !== "ventas");
     btn.classList.toggle("is-on", on);
   });
   const more = document.getElementById("app-more");
@@ -3392,6 +3420,11 @@ function bindAppDock() {
       return;
     }
     if (more) more.hidden = true;
+    if (btn.dataset.dock === "vender") {
+      switchTab("ventas");
+      openSaleModal();
+      return;
+    }
     switchTab(btn.dataset.dock);
   });
   more?.addEventListener("click", (e) => {
@@ -3409,17 +3442,40 @@ function bindAppDock() {
     if (go === "detalle") {
       const open = resumen?.classList.toggle("app-detail-open");
       btn.classList.toggle("is-on", Boolean(open));
-      btn.textContent = open ? "Ocultar detalle" : "Detalle del mes";
+      btn.textContent = open ? "Ocultar números" : "Números del mes";
+      updateMainHeader("resumen");
       return;
     }
-    if (go === "stock") switchTab("inventario");
-    if (go === "cuotas") switchTab("simulador-cuotas");
-    if (go === "caja") switchTab("caja");
+    if (go === "buscar") {
+      const input = document.getElementById("app-home-search");
+      goToStockSearch(input instanceof HTMLInputElement ? input.value.trim() : "");
+      return;
+    }
+    if (go === "stock") goToStockSearch("");
     if (go === "venta") {
       switchTab("ventas");
       openSaleModal();
     }
   });
+  const homeSearch = document.getElementById("app-home-search");
+  homeSearch?.addEventListener("keydown", (e) => {
+    if (e.key !== "Enter") return;
+    e.preventDefault();
+    goToStockSearch(homeSearch instanceof HTMLInputElement ? homeSearch.value.trim() : "");
+  });
+  const moneySrc = document.getElementById("kpi-entra");
+  const moneyDst = document.getElementById("app-today-money");
+  if (moneySrc && moneyDst) {
+    const copyMoney = () => {
+      moneyDst.textContent = (moneySrc.textContent || "—").trim() || "—";
+    };
+    copyMoney();
+    new MutationObserver(copyMoney).observe(moneySrc, {
+      childList: true,
+      subtree: true,
+      characterData: true,
+    });
+  }
 }
 
 /** Navegación desde alertas del Resumen → pestaña + filtro + scroll al ítem. */

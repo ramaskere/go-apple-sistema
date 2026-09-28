@@ -17,7 +17,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="./themes.css?v=19" />
     <link rel="stylesheet" href="./styles.css?v=75" />
-    <link rel="stylesheet" href="./theme-app.css?v=3" />
+    <link rel="stylesheet" href="./theme-app.css?v=4" />
     <script>
       (function () {
         var map = {
@@ -153,17 +153,19 @@
       <nav class="app-dock" id="app-dock" aria-label="Accesos rápidos">
         <button type="button" class="app-dock-btn is-on" data-dock="resumen">Inicio</button>
         <button type="button" class="app-dock-btn" data-dock="inventario">Stock</button>
-        <button type="button" class="app-dock-btn" data-dock="simulador-cuotas">Cuotas</button>
-        <button type="button" class="app-dock-btn" data-dock="caja">Caja</button>
+        <button type="button" class="app-dock-btn" data-dock="vender">Vender</button>
+        <button type="button" class="app-dock-btn app-dock-staff" data-dock="simulador-cuotas">Cuotas</button>
         <button type="button" class="app-dock-btn" data-dock="mas" id="app-dock-more">Más</button>
       </nav>
       <div class="app-more" id="app-more" hidden>
-        <p class="app-more-title">Más secciones</p>
-        <button type="button" data-tab="ventas">Ventas</button>
-        <button type="button" data-tab="pipeline">Pipeline</button>
+        <p class="app-more-title">Más</p>
+        <button type="button" data-tab="simulador-cuotas">Calcular cuotas</button>
+        <button type="button" data-tab="caja">Caja</button>
+        <button type="button" data-tab="ventas">Ventas hechas</button>
+        <button type="button" data-tab="deudores">Por cobrar</button>
         <button type="button" data-tab="garantias">Garantías</button>
         <button type="button" data-tab="servicio-tecnico">Servicio técnico</button>
-        <button type="button" data-tab="deudores">Deudores</button>
+        <button type="button" data-tab="pipeline">Pipeline</button>
         <button type="button" data-tab="facturacion">Facturación</button>
         <button type="button" data-tab="creativos">Creativos</button>
         <button type="button" data-tab="configuraciones">Configuraciones</button>
@@ -278,12 +280,16 @@
               <div id="resumen-alerts-list" class="resumen-alerts-list" role="list"></div>
             </div>
           </section>
-          <div class="app-only app-quick" id="app-quick">
-            <button type="button" data-go="stock">Stock</button>
+          <div class="app-only app-home" id="app-quick">
+            <label class="app-ask">
+              Buscar iPhone
+              <input id="app-home-search" type="search" enterkeyhint="search" placeholder="13, negro, 128…" autocomplete="off" />
+            </label>
+            <button type="button" data-go="buscar">Buscar</button>
+            <button type="button" data-go="stock">Ver iPhones</button>
             <button type="button" data-go="venta">Vender</button>
-            <button type="button" data-go="cuotas">Cuotas</button>
-            <button type="button" data-go="caja">Caja</button>
-            <button type="button" class="app-quick-detail" data-go="detalle">Detalle del mes</button>
+            <p class="app-today">Hoy entró <strong id="app-today-money">—</strong></p>
+            <button type="button" class="app-quick-detail" data-go="detalle">Números del mes</button>
           </div>
           <div class="kpi-dashboard">
             <p id="dashboard-period-hint" class="sr-only">
@@ -2813,7 +2819,7 @@
     <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
     <script src="./config.js?v=17"></script>
     <script src="./creativos-engine.js?v=2"></script>
-    <script src="./app.js?v=104"></script>
+    <script src="./app.js?v=105"></script>
     <script src="./business-extras.js?v=6"></script>
   </body>
 </html>
