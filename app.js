@@ -9449,65 +9449,6 @@ function setupCreativoRefFilePreview() {
   });
 }
 
-function renderVentasMargen(monthSales, inventory) {
-  const costoEl = document.getElementById("ventas-margen-costo");
-  const usdEl = document.getElementById("ventas-margen-usd");
-  const pctEl = document.getElementById("ventas-margen-pct");
-  const netoEl = document.getElementById("ventas-margen-neto");
-  const noteEl = document.getElementById("ventas-margen-note");
-  if (!costoEl || !usdEl || !pctEl || !netoEl) return;
-
-  let cobrado = 0;
-  let costo = 0;
-  let margen = 0;
-  let sinCosto = 0;
-  for (const sale of monthSales) {
-    cobrado += numeric(sale.saleTotal, 0);
-    const cost = numeric(sale.costTotal, 0);
-    costo += cost;
-    margen += saleCashMargin(sale);
-    if (cost <= 0 && numeric(sale.saleTotal, 0) > 0) sinCosto += 1;
-  }
-  const comm = monthSales.reduce((sum, sale) => sum + saleCommissionAmount(sale), 0);
-  const neto = margen - comm;
-  const pct = cobrado > 0 ? (margen / cobrado) * 100 : null;
-  const pctText =
-    pct == null ? "—" : `${pct.toLocaleString("es-AR", { minimumFractionDigits: 1, maximumFractionDigits: 1 })}%`;
-
-  costoEl.textContent = currency(costo);
-  usdEl.textContent = currency(margen);
-  pctEl.textContent = pctText;
-  netoEl.textContent = currency(neto);
-
-  if (!noteEl) return;
-  const parts = [];
-  if (sinCosto > 0) {
-    parts.push(
-      sinCosto === 1
-        ? "1 venta no tiene costo cargado: el margen se ve más alto de lo real."
-        : `${sinCosto} ventas no tienen costo cargado: el margen se ve más alto de lo real.`
-    );
-  }
-  const inStock = inventory.filter((item) => numeric(item.stock, 0) > 0);
-  const stockCost = inStock.reduce((sum, item) => sum + numeric(item.stock, 0) * numeric(item.cost, 0), 0);
-  const stockPrice = inStock.reduce(
-    (sum, item) => sum + numeric(item.stock, 0) * numeric(item.price, numeric(item.cost, 0)),
-    0
-  );
-  if (stockPrice > 0) {
-    const stockGain = stockPrice - stockCost;
-    const stockPct = (stockGain / stockPrice) * 100;
-    const stockPctText = stockPct.toLocaleString("es-AR", {
-      minimumFractionDigits: 1,
-      maximumFractionDigits: 1,
-    });
-    parts.push(
-      `En stock hay ${currency(stockCost)} de costo. Si se vende al precio cargado, el margen sería ${currency(stockGain)} (${stockPctText}%).`
-    );
-  }
-  noteEl.textContent = parts.join(" ");
-}
-
 function renderSectionKpis() {
   const el = (id) => document.getElementById(id);
   const mk = getDashboardMonthKey();
@@ -9567,8 +9508,6 @@ function renderSectionKpis() {
     profitInline.classList.toggle("ventas-formula__v--pos", adj > 0.01);
     profitInline.classList.toggle("ventas-formula__v--neg", adj < -0.01);
   }
-
-  renderVentasMargen(monthSales, inventory);
 
   // ─── Caja ───
   const monthCash = cash.filter((c) => c.date && String(c.date).slice(0, 7) === mk);
@@ -9678,7 +9617,7 @@ function renderDashboard() {
 
   setKpiMoneyText(kpiEntra, moneyIn);
   setKpiMoneyText(kpiSale, moneyOut);
-  setKpiMoneyText(kpiGanancia, businessProfit);
+  setKpiMoneyText(kpiGanancia, businessProfit - monthlyStoreCostTotal());
   setKpiMoneyText(kpiVentas, salesTotal);
   kpiStock.textContent = String(totalStock);
   setKpiMoneyText(kpiStockValue, stockValue);
@@ -9847,6 +9786,62 @@ function writeGoals(partial) {
   localStorage.setItem(KEYS.goals, JSON.stringify(next));
 }
 
+function defaultStoreCosts() {
+  return [
+    { id: "alquiler", name: "Alquiler", amount: 0 },
+    { id: "luz", name: "Luz", amount: 0 },
+    { id: "internet", name: "Internet", amount: 0 },
+  ];
+}
+
+function normalizeStoreCosts(raw) {
+  if (!Array.isArray(raw)) return defaultStoreCosts();
+  return raw.map((cost, index) => ({
+    id: String(cost?.id || `costo-${index}`),
+    name: String(cost?.name ?? ""),
+    amount: Math.max(0, numeric(cost?.amount, 0)),
+  }));
+}
+
+function monthlyStoreCostTotal(goals = readGoals()) {
+  const list = Array.isArray(goals?.storeCosts) ? goals.storeCosts : [];
+  return list.reduce((sum, cost) => sum + Math.max(0, numeric(cost?.amount, 0)), 0);
+}
+
+function readStoreCostsFromForm() {
+  return [...document.querySelectorAll("#store-costs-list .store-cost-row")].map((row) => ({
+    id: row.dataset.id || crypto.randomUUID(),
+    name: row.querySelector("[data-cost-name]")?.value.trim() || "Costo",
+    amount: Math.max(0, numeric(row.querySelector("[data-cost-amount]")?.value, 0)),
+  }));
+}
+
+function updateStoreCostsTotal() {
+  const totalEl = document.getElementById("store-costs-total");
+  if (!totalEl) return;
+  const total = readStoreCostsFromForm().reduce((sum, cost) => sum + cost.amount, 0);
+  totalEl.innerHTML = `Por mes hay que cubrir <strong>${escapeHtml(currency(total))}</strong> para recién ver ganancia.`;
+}
+
+function renderStoreCostRows(costs) {
+  const list = document.getElementById("store-costs-list");
+  if (!list) return;
+  list.innerHTML = normalizeStoreCosts(costs)
+    .map(
+      (cost) => `<div class="store-cost-row" data-id="${escapeHtml(cost.id)}">
+        <label>Concepto
+          <input data-cost-name type="text" value="${escapeHtml(cost.name)}" />
+        </label>
+        <label>USD por mes
+          <input data-cost-amount type="number" min="0" step="0.01" value="${cost.amount ? String(cost.amount) : ""}" placeholder="0" />
+        </label>
+        <button type="button" class="secondary store-cost-remove">Quitar</button>
+      </div>`
+    )
+    .join("");
+  updateStoreCostsTotal();
+}
+
 function hydrateGoalsFormOnce() {
   if (goalsFormHydrated) return;
   const g = readGoals();
@@ -9867,6 +9862,7 @@ function hydrateGoalsFormOnce() {
   if (sr) sr.value = String(g.reservePct ?? DEFAULT_GOALS.reservePct);
   if (sm) sm.value = String(g.middlePct ?? DEFAULT_GOALS.middlePct);
   if (sp) sp.value = String(g.partnersPct ?? DEFAULT_GOALS.partnersPct);
+  renderStoreCostRows(g.storeCosts);
   goalsFormHydrated = true;
 }
 
@@ -9979,9 +9975,18 @@ function renderGoalsProgress() {
 
   const actualIn = totalMoneyInForMonth(sales, cash, periodKey);
   const actualRes = monthBusinessResult(sales, cash, periodKey);
+  const overhead = monthlyStoreCostTotal(g);
   const actualUnits = unitsSoldInMonth(sales, periodKey);
 
   const rows = [];
+  if (overhead > 0) {
+    const covered = actualRes > 0 ? Math.min(100, (actualRes / overhead) * 100) : 0;
+    rows.push({
+      label: "Costos de la tienda",
+      sub: `Hay que cubrir ${currency(overhead)} por mes. Ganancia después de eso: ${currency(actualRes - overhead)} · ${monthLabel}`,
+      pct: covered,
+    });
+  }
   if (g.incomeMonthlyUsd > 0) {
     const pct = Math.min(100, (actualIn / g.incomeMonthlyUsd) * 100);
     rows.push({
@@ -14107,6 +14112,23 @@ if (sellersBody) {
 }
 
 const btnSaveGoals = document.getElementById("btn-save-goals");
+const storeCostsList = document.getElementById("store-costs-list");
+storeCostsList?.addEventListener("input", updateStoreCostsTotal);
+storeCostsList?.addEventListener("click", (event) => {
+  const removeBtn = event.target.closest(".store-cost-remove");
+  if (!removeBtn) return;
+  removeBtn.closest(".store-cost-row")?.remove();
+  updateStoreCostsTotal();
+});
+document.getElementById("btn-add-store-cost")?.addEventListener("click", () => {
+  const list = document.getElementById("store-costs-list");
+  if (!list) return;
+  const current = readStoreCostsFromForm();
+  current.push({ id: crypto.randomUUID(), name: "", amount: 0 });
+  renderStoreCostRows(current);
+  const lastName = list.querySelector(".store-cost-row:last-child [data-cost-name]");
+  lastName?.focus();
+});
 if (btnSaveGoals) {
   btnSaveGoals.addEventListener("click", async () => {
     const income = Number(document.getElementById("goal-income")?.value);
@@ -14140,6 +14162,7 @@ if (btnSaveGoals) {
       reservePct: Math.round(r * 100) / 100,
       middlePct: Math.round(m * 100) / 100,
       partnersPct: Math.round(p * 100) / 100,
+      storeCosts: readStoreCostsFromForm(),
     });
     const sr = document.getElementById("split-reserve-pct");
     const sm = document.getElementById("split-middle-pct");

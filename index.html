@@ -16,7 +16,7 @@
       <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="./themes.css?v=21" />
-    <link rel="stylesheet" href="./styles.css?v=78" />
+    <link rel="stylesheet" href="./styles.css?v=79" />
     <link rel="stylesheet" href="./theme-app.css?v=20" />
     <script>
       (function () {
@@ -602,31 +602,6 @@
                     Con plan canje es normal que «cobrado − costo» sea negativo: parte del pago fue un equipo que revendés.
                   </p>
                 </div>
-              </article>
-              <article class="ventas-margen" id="ventas-margen" aria-label="Margen de las ventas">
-                <div class="ventas-margen__head">
-                  <h3 class="ventas-margen__title">Margen de las ventas</h3>
-                  <p class="ventas-margen__lead">Precio cobrado menos costo del equipo. Las Ganancias del inicio son otra cuenta: lo que entró menos lo que salió de caja.</p>
-                </div>
-                <div class="ventas-margen__grid">
-                  <div>
-                    <span>Costo de lo vendido</span>
-                    <strong id="ventas-margen-costo">$0.00</strong>
-                  </div>
-                  <div>
-                    <span>Margen</span>
-                    <strong id="ventas-margen-usd">$0.00</strong>
-                  </div>
-                  <div>
-                    <span>Margen %</span>
-                    <strong id="ventas-margen-pct">—</strong>
-                  </div>
-                  <div>
-                    <span>Después de comisión</span>
-                    <strong id="ventas-margen-neto">$0.00</strong>
-                  </div>
-                </div>
-                <p id="ventas-margen-note" class="ventas-margen__note"></p>
               </article>
             </div>
           </header>
@@ -2044,6 +2019,14 @@
               </label>
             </div>
 
+            <h3 class="goals-subtitle">Costos de la tienda</h3>
+            <p class="section-hint goals-hint">
+              Alquiler, luz, internet y lo que se paga todos los meses, en dólares. Esa suma es lo que hay que cubrir antes de que el inicio muestre ganancia.
+            </p>
+            <div id="store-costs-list" class="store-costs-list"></div>
+            <button type="button" id="btn-add-store-cost" class="secondary">Agregar costo</button>
+            <p id="store-costs-total" class="store-costs-total">Por mes hay que cubrir <strong>$0.00</strong> para recién ver ganancia.</p>
+
             <div class="goals-actions">
               <button type="button" id="btn-save-goals" class="secondary">Guardar metas</button>
             </div>
@@ -2890,7 +2873,7 @@
     <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
     <script src="./config.js?v=17"></script>
     <script src="./creativos-engine.js?v=2"></script>
-    <script src="./app.js?v=115"></script>
+    <script src="./app.js?v=116"></script>
     <script src="./business-extras.js?v=6"></script>
   </body>
 </html>

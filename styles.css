@@ -830,43 +830,30 @@ select.app-period-select.dashboard-month-select--minimal.dashboard-month-select-
     0 6px 24px rgba(15, 23, 42, 0.06),
     inset 0 1px 0 rgba(255, 255, 255, 0.8);
 }
-.ventas-margen {
-  padding: 14px 16px;
-  border-radius: 16px;
-  border: 1px solid rgba(148, 163, 184, 0.35);
-}
-.ventas-margen__title {
-  margin: 0 0 4px;
-  font-size: 15px;
-  font-weight: 800;
-}
-.ventas-margen__lead,
-.ventas-margen__note {
-  margin: 0;
-  font-size: 13px;
-  line-height: 1.45;
-}
-.ventas-margen__grid {
+.store-costs-list {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 10px;
-  margin: 12px 0 8px;
+  gap: 8px;
+  margin: 8px 0 12px;
 }
-.ventas-margen__grid span {
-  display: block;
-  font-size: 12px;
+.store-cost-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 0.8fr) auto;
+  gap: 8px;
+  align-items: end;
+}
+.store-cost-row label {
+  display: grid;
+  gap: 4px;
+  font-size: 13px;
   font-weight: 700;
-  opacity: 0.75;
 }
-.ventas-margen__grid strong {
-  display: block;
-  margin-top: 2px;
-  font-size: 1.15rem;
-  font-weight: 800;
+.store-costs-total {
+  margin: 12px 0 0;
+  font-size: 14px;
 }
 @media (max-width: 900px) {
-  .ventas-margen__grid {
-    grid-template-columns: 1fr 1fr;
+  .store-cost-row {
+    grid-template-columns: 1fr;
   }
 }
 .ventas-resultado-card--canje {
