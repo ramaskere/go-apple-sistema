@@ -1997,9 +1997,10 @@
           <section class="card">
             <h2>Generar precios</h2>
             <p class="section-hint">
-              El precio no es “costo + un %”. Primero se cubre el <strong>costo del producto</strong>,
-              después una <strong>cuota de los gastos fijos de la tienda</strong> (alquiler, luz, etc. de Metas)
-              y recién ahí la <strong>ganancia limpia</strong> que querés por unidad.
+              No hace falta adivinar cuántos vas a vender. Cada unidad aporta un
+              <strong>monto fijo a la tienda</strong> (alquiler, luz, etc.) + la
+              <strong>ganancia limpia</strong> que querés. Abajo te dice cuántas
+              ventas a ese aporte alcanzarían para cubrir el mes.
             </p>
             <div class="precios-gen-form grid">
               <label>
@@ -2014,14 +2015,14 @@
                 />
               </label>
               <label>
-                Ventas esperadas del mes
+                Aporte a tienda por unidad (US$)
                 <input
-                  id="precios-gen-units"
+                  id="precios-gen-overhead-unit"
                   type="number"
-                  min="1"
-                  step="1"
-                  value="30"
-                  placeholder="Ej: 30"
+                  min="0"
+                  step="0.01"
+                  value="20"
+                  placeholder="Ej: 20"
                   autocomplete="off"
                 />
               </label>
@@ -2041,8 +2042,16 @@
             <p id="precios-gen-overhead-line" class="section-hint muted">
               Costos fijos del mes: —
             </p>
+            <div class="precios-gen-chips" aria-label="Atajos de aporte a tienda">
+              <span class="muted precios-gen-chips__k">Aporte tienda:</span>
+              <button type="button" class="secondary precios-gen-chip" data-precios-oh="10">10</button>
+              <button type="button" class="secondary precios-gen-chip" data-precios-oh="15">15</button>
+              <button type="button" class="secondary precios-gen-chip" data-precios-oh="20">20</button>
+              <button type="button" class="secondary precios-gen-chip" data-precios-oh="25">25</button>
+              <button type="button" class="secondary precios-gen-chip" data-precios-oh="30">30</button>
+            </div>
             <div class="precios-gen-chips" aria-label="Atajos de ganancia limpia">
-              <span class="muted precios-gen-chips__k">Atajos ganancia limpia:</span>
+              <span class="muted precios-gen-chips__k">Ganancia limpia:</span>
               <button type="button" class="secondary precios-gen-chip" data-precios-gain="20">20</button>
               <button type="button" class="secondary precios-gen-chip" data-precios-gain="30">30</button>
               <button type="button" class="secondary precios-gen-chip" data-precios-gain="40">40</button>
@@ -2052,8 +2061,8 @@
               Sin dólar blue en Metas no se pueden calcular pesos. Configuralo en Configuraciones → Metas.
             </p>
             <p id="precios-gen-overhead-hint" class="section-hint muted" hidden>
-              No hay costos de tienda en Metas: el precio solo cubre producto + ganancia limpia.
-              Cargalos en Configuraciones → Metas → Costos de la tienda.
+              No hay costos de tienda en Metas. Podés poner aporte 0 o cargarlos en
+              Configuraciones → Metas → Costos de la tienda.
             </p>
           </section>
           <section class="card" aria-live="polite" aria-atomic="true">
@@ -2066,7 +2075,7 @@
                   <strong id="precios-gen-bd-cost">—</strong>
                 </div>
                 <div class="precios-gen-bd-row">
-                  <span>Cuota tienda <span class="muted" id="precios-gen-bd-overhead-note"></span></span>
+                  <span>Aporte a tienda</span>
                   <strong id="precios-gen-bd-overhead">—</strong>
                 </div>
                 <div class="precios-gen-bd-row precios-gen-bd-row--sub">
@@ -2082,9 +2091,8 @@
                   <strong id="precios-gen-price-usd">—</strong>
                 </div>
               </div>
-              <p class="precios-gen-summary__meta muted" id="precios-gen-explain">
-                —
-              </p>
+              <p class="precios-gen-summary__meta" id="precios-gen-cover-line">—</p>
+              <p class="precios-gen-summary__meta muted" id="precios-gen-explain">—</p>
               <p class="precios-gen-summary__meta muted">
                 Sobre costo producto: markup <span id="precios-gen-markup-pct">—</span>
                 · margen s/venta <span id="precios-gen-margin-pct">—</span>
@@ -3117,7 +3125,7 @@
     <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
     <script src="./config.js?v=16"></script>
     <script src="./creativos-engine.js?v=2"></script>
-    <script src="./app.js?v=121"></script>
+    <script src="./app.js?v=122"></script>
     <script src="./business-extras.js?v=6"></script>
   </body>
 </html>
