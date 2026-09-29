@@ -5852,10 +5852,10 @@ function getStoreBrandLabel() {
 function buildPurchasePerksLines() {
   return [
     "🎁 *Con la compra te llevás:*",
-    "• Funda",
-    "• Templado",
-    "• Cargador completo",
-    "• Garantía de 30 días",
+    "✅ Funda",
+    "✅ Templado",
+    "✅ Cargador completo",
+    "✅ Garantía de 30 días",
   ];
 }
 
@@ -5873,13 +5873,13 @@ function buildClientOfferMessage(item, rate) {
   const title = titleParts.join(" · ");
 
   const lines = [];
-  lines.push(`*${title}*`);
-  if (bat && bat !== "-") lines.push(`Batería ${bat}`);
-  lines.push("Disponible ahora");
+  lines.push(`📱 *${title}*`);
+  if (bat && bat !== "-") lines.push(`🔋 Batería ${bat}`);
+  lines.push("✅ Disponible ahora");
   lines.push("");
-  if (d.paNum > 0) lines.push(`Contado: ${d.unitArs}`);
-  if (d.listaNum > 0) lines.push(`Lista (tarjeta): ${d.listaArs}`);
-  if (d.itemPrice > 0) lines.push(`USD: ${currency(d.itemPrice)}`);
+  if (d.paNum > 0) lines.push(`💵 Contado: ${d.unitArs}`);
+  if (d.listaNum > 0) lines.push(`💳 Lista (tarjeta): ${d.listaArs}`);
+  if (d.itemPrice > 0) lines.push(`🇺🇸 USD: ${currency(d.itemPrice)}`);
 
   const plans = [
     { n: 3, num: d.cuota3Num },
@@ -5890,13 +5890,17 @@ function buildClientOfferMessage(item, rate) {
 
   if (plans.length) {
     lines.push("");
-    lines.push(plans.map((p) => `${p.n} cuotas de ${currencyArs(p.num)}`).join("\n"));
+    lines.push("💳 *Cuotas:*");
+    for (const p of plans) {
+      lines.push(`• ${p.n}x de ${currencyArs(p.num)}`);
+    }
   }
 
   lines.push("");
-  lines.push("Incluye funda, templado, cargador y garantía 30 días.");
-  lines.push("¿Lo reservamos?");
-  lines.push(brand);
+  lines.push(...buildPurchasePerksLines());
+  lines.push("");
+  lines.push("💬 ¿Lo reservamos?");
+  lines.push(`📍 *${brand}*`);
   return lines.join("\n");
 }
 
@@ -6026,12 +6030,12 @@ function buildInvWaListLine(item, fields, rate) {
   const color = String(item.color || "").trim();
   const storage = String(item.storage || "").trim();
   const bat = toBatteryLabel(item.battery);
-  if (fields.color && color && color !== "Sin color") parts.push(color);
-  if (fields.storage && storage && storage !== "Sin almacenamiento") parts.push(storage);
-  if (fields.battery && bat && bat !== "-") parts.push(bat);
-  if (fields.usd && d.itemPrice > 0) parts.push(currency(d.itemPrice));
-  if (fields.contado && d.paNum > 0) parts.push(`Contado ${d.unitArs}`);
-  if (fields.lista && d.listaNum > 0) parts.push(`Lista ${d.listaArs}`);
+  if (fields.color && color && color !== "Sin color") parts.push(`🎨 ${color}`);
+  if (fields.storage && storage && storage !== "Sin almacenamiento") parts.push(`💾 ${storage}`);
+  if (fields.battery && bat && bat !== "-") parts.push(`🔋 ${bat}`);
+  if (fields.usd && d.itemPrice > 0) parts.push(`🇺🇸 ${currency(d.itemPrice)}`);
+  if (fields.contado && d.paNum > 0) parts.push(`💵 Contado ${d.unitArs}`);
+  if (fields.lista && d.listaNum > 0) parts.push(`💳 Lista ${d.listaArs}`);
   if (fields.cuotasAll) {
     const plans = [
       [3, d.cuota3Num],
@@ -6039,15 +6043,15 @@ function buildInvWaListLine(item, fields, rate) {
       [12, d.cuota12Num],
       [18, d.cuota18Num],
     ].filter(([, n]) => n != null && n > 0);
-    for (const [n, monthly] of plans) parts.push(`${n}x ${currencyArs(monthly)}`);
+    for (const [n, monthly] of plans) parts.push(`📅 ${n}x ${currencyArs(monthly)}`);
   } else if (fields.cuotas12 && d.cuota12Num > 0) {
-    parts.push(`12x ${currencyArs(d.cuota12Num)}`);
+    parts.push(`📅 12x ${currencyArs(d.cuota12Num)}`);
   }
   if (!parts.length) {
     const title = invUnitCardTitle(item);
-    return `• ${title}`;
+    return `▫️ ${title}`;
   }
-  return `• ${parts.join(" — ")}`;
+  return `▫️ ${parts.join(" — ")}`;
 }
 
 function buildMultiInvWhatsAppList(itemIds, fields, rate) {
@@ -6072,8 +6076,10 @@ function buildMultiInvWhatsAppList(itemIds, fields, rate) {
   }
 
   const lines = [];
-  lines.push(`*Lista actualizada — ${formatInvWaListDate()}*`);
-  lines.push(`${brand} · ${items.length} equipo${items.length === 1 ? "" : "s"} disponible${items.length === 1 ? "" : "s"}`);
+  lines.push(`✨ *Lista actualizada — ${formatInvWaListDate()}*`);
+  lines.push(
+    `📍 ${brand} · ${items.length} equipo${items.length === 1 ? "" : "s"} disponible${items.length === 1 ? "" : "s"}`
+  );
   lines.push("");
 
   for (const [model, group] of byModel) {
@@ -6084,9 +6090,10 @@ function buildMultiInvWhatsAppList(itemIds, fields, rate) {
     lines.push("");
   }
 
-  lines.push("Con la compra: funda, templado, cargador y garantía 30 días.");
-  lines.push("¿Cuál te reservo?");
-  lines.push(`— ${brand}`);
+  lines.push(...buildPurchasePerksLines());
+  lines.push("");
+  lines.push("💬 ¿Cuál te reservo?");
+  lines.push(`📍 — *${brand}*`);
   return { text: lines.join("\n").trim(), count: items.length };
 }
 
@@ -6111,7 +6118,7 @@ function buildReadyInvWhatsAppList(itemIds, rate, fields = getInvWaFields()) {
     byModel.get(key).push(item);
   }
 
-  const lines = [`*${brand}*`, formatInvWaListDate(), ""];
+  const lines = [`✨ *${brand}*`, `📅 ${formatInvWaListDate()}`, ""];
   for (const [model, group] of byModel) {
     lines.push(`📱 *${model}*`);
     for (const item of group) {
@@ -6120,14 +6127,14 @@ function buildReadyInvWhatsAppList(itemIds, rate, fields = getInvWaFields()) {
       const color = String(item.color || "").trim();
       const storage = String(item.storage || "").trim();
       const bat = toBatteryLabel(item.battery);
-      if (fields.storage && storage && storage !== "Sin almacenamiento") bits.push(storage);
-      if (fields.color && color && color !== "Sin color") bits.push(color);
+      if (fields.storage && storage && storage !== "Sin almacenamiento") bits.push(`💾 ${storage}`);
+      if (fields.color && color && color !== "Sin color") bits.push(`🎨 ${color}`);
       if (fields.battery && bat && bat !== "-") bits.push(`🔋 ${bat}`);
-      if (bits.length) lines.push(bits.join(" · "));
+      if (bits.length) lines.push(`▫️ ${bits.join(" · ")}`);
       const prices = [];
-      if (fields.contado && d.paNum > 0) prices.push(`Contado ${d.unitArs}`);
-      if (fields.lista && d.listaNum > 0) prices.push(`Lista ${d.listaArs}`);
-      if (fields.usd && d.itemPrice > 0) prices.push(currency(d.itemPrice));
+      if (fields.contado && d.paNum > 0) prices.push(`💵 Contado ${d.unitArs}`);
+      if (fields.lista && d.listaNum > 0) prices.push(`💳 Lista ${d.listaArs}`);
+      if (fields.usd && d.itemPrice > 0) prices.push(`🇺🇸 ${currency(d.itemPrice)}`);
       if (prices.length) lines.push(`💰 ${prices.join(" · ")}`);
       if (fields.cuotasAll || fields.cuotas12) {
         const plans = fields.cuotasAll
@@ -6141,13 +6148,16 @@ function buildReadyInvWhatsAppList(itemIds, rate, fields = getInvWaFields()) {
         const planText = plans
           .filter(([, n]) => n != null && n > 0)
           .map(([n, monthly]) => `${n}x ${currencyArs(monthly)}`);
-        if (planText.length) lines.push(planText.join(" · "));
+        if (planText.length) lines.push(`📅 ${planText.join(" · ")}`);
       }
     }
     lines.push("");
   }
-  if (fields.perks) lines.push("Con la compra: funda, templado, cargador y garantía 30 días.");
-  if (fields.ask) lines.push("¿Cuál te reservo?");
+  if (fields.perks) {
+    lines.push(...buildPurchasePerksLines());
+    lines.push("");
+  }
+  if (fields.ask) lines.push("💬 ¿Cuál te reservo?");
   return { text: lines.join("\n").trim(), count: items.length };
 }
 
