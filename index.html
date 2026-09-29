@@ -1997,9 +1997,10 @@
           <section class="card">
             <h2>Generar precios</h2>
             <p class="section-hint">
-              Poné el <strong>costo</strong> y dos porcentajes sobre ese costo:
-              uno que se <strong>queda en el negocio</strong> (tienda / costos fijos) y otro de
-              <strong>ganancia neta</strong> para vos. El precio de venta sale solo.
+              La idea: terminar con unos <strong>~100 US$ limpios</strong> por unidad,
+              <strong>después</strong> de dejar un aporte aproximado a alquiler/luz/costos.
+              No se suma el gasto entero del mes a un solo producto: se usa un
+              <strong>mes tipo</strong> solo como referencia.
             </p>
             <div class="precios-gen-form grid">
               <label>
@@ -2009,31 +2010,31 @@
                   type="number"
                   min="0"
                   step="0.01"
-                  placeholder="Ej: 180"
+                  placeholder="Ej: 500"
                   autocomplete="off"
                 />
               </label>
               <label>
-                % para el negocio
+                Ganancia neta que querés (US$)
                 <input
-                  id="precios-gen-biz-pct"
+                  id="precios-gen-net-usd"
                   type="number"
                   min="0"
-                  step="0.1"
-                  value="10"
-                  placeholder="Ej: 10"
+                  step="0.01"
+                  value="100"
+                  placeholder="100"
                   autocomplete="off"
                 />
               </label>
               <label>
-                % ganancia neta
+                Mes tipo (solo referencia)
                 <input
-                  id="precios-gen-net-pct"
+                  id="precios-gen-mes-tipo"
                   type="number"
-                  min="0"
-                  step="0.1"
-                  value="15"
-                  placeholder="Ej: 15"
+                  min="5"
+                  step="1"
+                  value="25"
+                  placeholder="25"
                   autocomplete="off"
                 />
               </label>
@@ -2041,28 +2042,18 @@
             <p id="precios-gen-overhead-line" class="section-hint muted">
               Costos fijos del mes: —
             </p>
-            <div class="precios-gen-chips" aria-label="Atajos % negocio">
-              <span class="muted precios-gen-chips__k">% negocio:</span>
-              <button type="button" class="secondary precios-gen-chip" data-precios-biz="5">5%</button>
-              <button type="button" class="secondary precios-gen-chip" data-precios-biz="8">8%</button>
-              <button type="button" class="secondary precios-gen-chip" data-precios-biz="10">10%</button>
-              <button type="button" class="secondary precios-gen-chip" data-precios-biz="12">12%</button>
-              <button type="button" class="secondary precios-gen-chip" data-precios-biz="15">15%</button>
-            </div>
-            <div class="precios-gen-chips" aria-label="Atajos % ganancia neta">
-              <span class="muted precios-gen-chips__k">% ganancia neta:</span>
-              <button type="button" class="secondary precios-gen-chip" data-precios-net="10">10%</button>
-              <button type="button" class="secondary precios-gen-chip" data-precios-net="15">15%</button>
-              <button type="button" class="secondary precios-gen-chip" data-precios-net="20">20%</button>
-              <button type="button" class="secondary precios-gen-chip" data-precios-net="25">25%</button>
-              <button type="button" class="secondary precios-gen-chip" data-precios-net="30">30%</button>
+            <div class="precios-gen-chips" aria-label="Atajos ganancia neta">
+              <span class="muted precios-gen-chips__k">Ganancia neta:</span>
+              <button type="button" class="secondary precios-gen-chip" data-precios-net-usd="80">80</button>
+              <button type="button" class="secondary precios-gen-chip" data-precios-net-usd="100">100</button>
+              <button type="button" class="secondary precios-gen-chip" data-precios-net-usd="120">120</button>
+              <button type="button" class="secondary precios-gen-chip" data-precios-net-usd="150">150</button>
             </div>
             <p id="precios-gen-rate-hint" class="section-hint muted" hidden>
               Sin dólar blue en Metas no se pueden calcular pesos. Configuralo en Configuraciones → Metas.
             </p>
             <p id="precios-gen-overhead-hint" class="section-hint muted" hidden>
-              No hay costos de tienda en Metas. El % negocio igual suma al precio; cargá los fijos
-              en Metas si querés ver cuántas ventas hacen falta para cubrir el mes.
+              Cargá alquiler/luz en Configuraciones → Metas → Costos de la tienda para estimar el aporte.
             </p>
           </section>
           <section class="card" aria-live="polite" aria-atomic="true">
@@ -2075,11 +2066,11 @@
                   <strong id="precios-gen-bd-cost">—</strong>
                 </div>
                 <div class="precios-gen-bd-row">
-                  <span>Para el negocio <span class="muted" id="precios-gen-bd-biz-note"></span></span>
+                  <span>Aporte tienda (aprox.) <span class="muted" id="precios-gen-bd-biz-note"></span></span>
                   <strong id="precios-gen-bd-overhead">—</strong>
                 </div>
                 <div class="precios-gen-bd-row">
-                  <span>Ganancia neta <span class="muted" id="precios-gen-bd-net-note"></span></span>
+                  <span>Ganancia neta</span>
                   <strong id="precios-gen-bd-net">—</strong>
                 </div>
                 <div class="precios-gen-bd-row precios-gen-bd-row--total">
@@ -2090,7 +2081,7 @@
               <p class="precios-gen-summary__meta" id="precios-gen-cover-line">—</p>
               <p class="precios-gen-summary__meta muted" id="precios-gen-explain">—</p>
               <p class="precios-gen-summary__meta muted">
-                Markup total s/costo <span id="precios-gen-markup-pct">—</span>
+                Markup s/costo <span id="precios-gen-markup-pct">—</span>
                 · margen s/venta <span id="precios-gen-margin-pct">—</span>
               </p>
             </div>
@@ -2113,7 +2104,7 @@
                 </div>
               </div>
               <p class="cuotas-sim-lista-box__hint muted">
-                Contado = lo que cobrás cash/transf. Lista = tarjeta. Las cuotas salen de la lista.
+                Contado = cash/transf. Lista = tarjeta. Las cuotas salen de la lista.
               </p>
             </div>
             <div id="precios-gen-cuotas" class="cuotas-sim-grid" hidden>
@@ -3121,7 +3112,7 @@
     <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
     <script src="./config.js?v=16"></script>
     <script src="./creativos-engine.js?v=2"></script>
-    <script src="./app.js?v=123"></script>
+    <script src="./app.js?v=124"></script>
     <script src="./business-extras.js?v=6"></script>
   </body>
 </html>

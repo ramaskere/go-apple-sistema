@@ -3196,17 +3196,7 @@ function invDefaultColorStorageForCategory(category, colorRaw, storageRaw) {
   return { color, storage };
 }
 
-/** Precio = costo × (1 + %negocio + %ganancia neta). Ambos % sobre el costo. */
-function computeSalePriceFromPcts(cost, bizPct, netPct) {
-  const c = numeric(cost, 0);
-  if (c <= 0) return null;
-  const biz = Math.max(0, numeric(bizPct, 0));
-  const net = Math.max(0, numeric(netPct, 0));
-  const price = c * (1 + biz / 100 + net / 100);
-  return price > 0 ? Math.round(price * 100) / 100 : null;
-}
-
-/** Precio de venta US$ = costo producto + cuota tienda + ganancia limpia. */
+/** Precio = costo + aporte tienda aprox. + ganancia neta (ej. 100). */
 function computeSalePriceWithOverhead(cost, overheadPerUnit, netGain) {
   const c = numeric(cost, 0);
   if (c <= 0) return null;
@@ -3216,68 +3206,65 @@ function computeSalePriceWithOverhead(cost, overheadPerUnit, netGain) {
   return price > 0 ? Math.round(price * 100) / 100 : null;
 }
 
-/** @deprecated kept for any leftover callers; prefer computeSalePriceFromPcts */
-function computeSalePriceFromTarget(cost, mode, target) {
-  const c = numeric(cost, 0);
-  const t = numeric(target, 0);
-  if (c <= 0) return null;
-  if (mode === "gain") {
-    const price = c + t;
-    return price > 0 ? Math.round(price * 100) / 100 : null;
-  }
-  if (mode === "markup") {
-    const price = c * (1 + t / 100);
-    return price > 0 ? Math.round(price * 100) / 100 : null;
-  }
-  if (mode === "margin") {
-    if (t <= 0 || t >= 100) return null;
-    const price = c / (1 - t / 100);
-    return price > 0 ? Math.round(price * 100) / 100 : null;
-  }
-  return null;
-}
+const PRECIOS_GEN_NET_USD_KEY = "go_apple_precios_gen_net_usd";
+const PRECIOS_GEN_MES_TIPO_KEY = "go_apple_precios_gen_mes_tipo";
+const PRECIOS_GEN_MES_TIPO_DEFAULT = 25;
+const PRECIOS_GEN_NET_USD_DEFAULT = 100;
 
-const PRECIOS_GEN_BIZ_PCT_KEY = "go_apple_precios_gen_biz_pct";
-const PRECIOS_GEN_NET_PCT_KEY = "go_apple_precios_gen_net_pct";
-
-function readPreciosGenBizPct() {
-  const el = document.getElementById("precios-gen-biz-pct");
-  if (el && el.value !== "") return Math.max(0, numeric(el.value, 10));
+function readPreciosGenNetUsd() {
+  const el = document.getElementById("precios-gen-net-usd");
+  if (el && el.value !== "") return Math.max(0, numeric(el.value, PRECIOS_GEN_NET_USD_DEFAULT));
   try {
-    const saved = Number(localStorage.getItem(PRECIOS_GEN_BIZ_PCT_KEY));
+    const saved = Number(localStorage.getItem(PRECIOS_GEN_NET_USD_KEY));
     if (Number.isFinite(saved) && saved >= 0) return saved;
   } catch {
     /* ignore */
   }
-  return 10;
+  return PRECIOS_GEN_NET_USD_DEFAULT;
 }
 
-function savePreciosGenBizPct(n) {
+function savePreciosGenNetUsd(n) {
   try {
-    localStorage.setItem(PRECIOS_GEN_BIZ_PCT_KEY, String(Math.max(0, numeric(n, 10))));
+    localStorage.setItem(
+      PRECIOS_GEN_NET_USD_KEY,
+      String(Math.max(0, numeric(n, PRECIOS_GEN_NET_USD_DEFAULT)))
+    );
   } catch {
     /* ignore */
   }
 }
 
-function readPreciosGenNetPct() {
-  const el = document.getElementById("precios-gen-net-pct");
-  if (el && el.value !== "") return Math.max(0, numeric(el.value, 15));
+function readPreciosGenMesTipo() {
+  const el = document.getElementById("precios-gen-mes-tipo");
+  if (el && el.value !== "") {
+    return Math.max(5, Math.round(numeric(el.value, PRECIOS_GEN_MES_TIPO_DEFAULT)));
+  }
   try {
-    const saved = Number(localStorage.getItem(PRECIOS_GEN_NET_PCT_KEY));
-    if (Number.isFinite(saved) && saved >= 0) return saved;
+    const saved = Number(localStorage.getItem(PRECIOS_GEN_MES_TIPO_KEY));
+    if (Number.isFinite(saved) && saved >= 5) return Math.round(saved);
   } catch {
     /* ignore */
   }
-  return 15;
+  return PRECIOS_GEN_MES_TIPO_DEFAULT;
 }
 
-function savePreciosGenNetPct(n) {
+function savePreciosGenMesTipo(n) {
   try {
-    localStorage.setItem(PRECIOS_GEN_NET_PCT_KEY, String(Math.max(0, numeric(n, 15))));
+    localStorage.setItem(
+      PRECIOS_GEN_MES_TIPO_KEY,
+      String(Math.max(5, Math.round(numeric(n, PRECIOS_GEN_MES_TIPO_DEFAULT))))
+    );
   } catch {
     /* ignore */
   }
+}
+
+/** Aporte aprox. a tienda = costos fijos del mes ÷ mes tipo (referencia, no predicción). */
+function estimateStoreSharePerUnit(overheadMonth, mesTipo) {
+  const oh = Math.max(0, numeric(overheadMonth, 0));
+  const n = Math.max(5, Math.round(numeric(mesTipo, PRECIOS_GEN_MES_TIPO_DEFAULT)));
+  if (oh <= 0) return 0;
+  return Math.round((oh / n) * 100) / 100;
 }
 
 function invMetaFromPrice(price) {
@@ -14841,25 +14828,20 @@ function syncPreciosGenTargetLabel() {
 function readPriceGeneratorState() {
   const costEl = document.getElementById("precios-gen-cost");
   const cost = costEl ? numeric(costEl.value, 0) : 0;
-  const bizPct = readPreciosGenBizPct();
-  const netPct = readPreciosGenNetPct();
+  const netUsd = readPreciosGenNetUsd();
+  const mesTipo = readPreciosGenMesTipo();
   const overheadMonth = monthlyStoreCostTotal();
-  const bizUsd = cost > 0 ? Math.round(cost * (bizPct / 100) * 100) / 100 : 0;
-  const netUsd = cost > 0 ? Math.round(cost * (netPct / 100) * 100) / 100 : 0;
-  const price = computeSalePriceFromPcts(cost, bizPct, netPct);
+  const bizUsd = estimateStoreSharePerUnit(overheadMonth, mesTipo);
+  const price = computeSalePriceWithOverhead(cost, bizUsd, netUsd);
   const summary = price != null ? inventoryProfitSummary(cost, price) : null;
   const grossGain = price != null ? Math.round((price - cost) * 100) / 100 : 0;
-  const unitsToCover =
-    overheadMonth > 0 && bizUsd > 0 ? Math.ceil(overheadMonth / bizUsd) : null;
   const ok = cost > 0 && price != null && price > 0;
   return {
     cost,
-    bizPct,
-    netPct,
-    bizUsd,
     netUsd,
+    mesTipo,
     overheadMonth,
-    unitsToCover,
+    bizUsd,
     price,
     summary,
     grossGain,
@@ -14871,15 +14853,15 @@ function renderPriceGenerator() {
   const panel = document.getElementById("tab-generar-precios");
   if (!panel || !panel.classList.contains("active")) return;
 
-  const bizEl = document.getElementById("precios-gen-biz-pct");
-  if (bizEl && !bizEl.dataset.hydrated) {
-    bizEl.value = String(readPreciosGenBizPct());
-    bizEl.dataset.hydrated = "1";
-  }
-  const netEl = document.getElementById("precios-gen-net-pct");
+  const netEl = document.getElementById("precios-gen-net-usd");
   if (netEl && !netEl.dataset.hydrated) {
-    netEl.value = String(readPreciosGenNetPct());
+    netEl.value = String(readPreciosGenNetUsd());
     netEl.dataset.hydrated = "1";
+  }
+  const mesEl = document.getElementById("precios-gen-mes-tipo");
+  if (mesEl && !mesEl.dataset.hydrated) {
+    mesEl.value = String(readPreciosGenMesTipo());
+    mesEl.dataset.hydrated = "1";
   }
 
   const empty = document.getElementById("precios-gen-empty");
@@ -14892,26 +14874,14 @@ function renderPriceGenerator() {
   const overheadLine = document.getElementById("precios-gen-overhead-line");
 
   const state = readPriceGeneratorState();
-  const {
-    cost,
-    bizPct,
-    netPct,
-    bizUsd,
-    netUsd,
-    overheadMonth,
-    unitsToCover,
-    price,
-    summary,
-    grossGain,
-    ok,
-  } = state;
+  const { cost, netUsd, mesTipo, overheadMonth, bizUsd, price, summary, grossGain, ok } = state;
 
   if (overheadLine) {
     if (overheadMonth > 0) {
-      overheadLine.textContent = `Costos fijos del mes (Metas): ${currency(overheadMonth)}. El % negocio escala con el costo del equipo (un iPhone aporta más que un AirPods).`;
+      overheadLine.textContent = `Costos fijos (Metas): ${currency(overheadMonth)}. Aporte aprox. por unidad = ${currency(overheadMonth)} ÷ mes tipo ${mesTipo} ≈ ${currency(bizUsd)}. No es una predicción de ventas.`;
     } else {
       overheadLine.textContent =
-        "Costos fijos del mes: $0 — el % negocio igual suma al precio; cargá Metas si querés ver cobertura del mes.";
+        "Sin costos fijos en Metas: el aporte tienda queda en 0 y el precio es costo + ganancia neta.";
     }
   }
   if (overheadHint) overheadHint.hidden = overheadMonth > 0;
@@ -14927,25 +14897,28 @@ function renderPriceGenerator() {
     };
     setTxt("precios-gen-bd-cost", currency(cost));
     setTxt("precios-gen-bd-overhead", currency(bizUsd));
-    setTxt("precios-gen-bd-biz-note", `(${bizPct.toLocaleString("es-AR")}%)`);
+    setTxt(
+      "precios-gen-bd-biz-note",
+      overheadMonth > 0 ? `(${currency(overheadMonth)} ÷ ${mesTipo})` : "(sin costos en Metas)"
+    );
     setTxt("precios-gen-bd-net", currency(netUsd));
-    setTxt("precios-gen-bd-net-note", `(${netPct.toLocaleString("es-AR")}%)`);
     setTxt("precios-gen-price-usd", currency(price));
 
     const coverLine = document.getElementById("precios-gen-cover-line");
     if (coverLine) {
-      if (overheadMonth > 0 && bizUsd > 0 && unitsToCover != null) {
-        coverLine.textContent = `Con ${currency(bizUsd)} al negocio por esta venta (${bizPct}% del costo), ~${unitsToCover} ventas iguales cubrirían los ${currency(overheadMonth)} del mes.`;
-      } else if (overheadMonth > 0 && bizUsd <= 0) {
-        coverLine.textContent = `Tenés ${currency(overheadMonth)} de costos fijos, pero el % negocio está en 0.`;
+      if (overheadMonth > 0 && bizUsd > 0) {
+        coverLine.textContent = `Ejemplo: costo ${currency(cost)} + aporte ~${currency(bizUsd)} + ${currency(netUsd)} limpios = ${currency(price)}. Los ${currency(netUsd)} ya están “después” del aporte a tienda.`;
       } else {
-        coverLine.textContent = "Sin costos fijos en Metas: el % negocio igual se queda en el precio.";
+        coverLine.textContent = `Precio = costo ${currency(cost)} + ganancia neta ${currency(netUsd)}. Cargá costos en Metas para sumar el aporte aprox.`;
       }
     }
 
     const explain = document.getElementById("precios-gen-explain");
     if (explain) {
-      explain.textContent = `Precio = costo + ${bizPct}% negocio + ${netPct}% ganancia neta. De ${currency(grossGain)} brutos: ${currency(bizUsd)} negocio y ${currency(netUsd)} limpios.`;
+      explain.textContent =
+        bizUsd > 0
+          ? `Margen bruto ${currency(grossGain)}: ~${currency(bizUsd)} para alquiler/luz y ${currency(netUsd)} de ganancia neta.`
+          : `Margen bruto ${currency(grossGain)} = ganancia neta (sin aporte tienda estimado).`;
     }
     if (summary) {
       setTxt("precios-gen-markup-pct", `${summary.markupPct.toLocaleString("es-AR")}%`);
@@ -14979,37 +14952,27 @@ function renderPriceGenerator() {
 }
 
 function bindPriceGeneratorControls() {
-  const ids = ["precios-gen-cost", "precios-gen-biz-pct", "precios-gen-net-pct"];
+  const ids = ["precios-gen-cost", "precios-gen-net-usd", "precios-gen-mes-tipo"];
   for (const id of ids) {
     const el = document.getElementById(id);
     if (!el) continue;
     el.addEventListener("input", () => {
-      if (id === "precios-gen-biz-pct") savePreciosGenBizPct(el.value);
-      if (id === "precios-gen-net-pct") savePreciosGenNetPct(el.value);
+      if (id === "precios-gen-net-usd") savePreciosGenNetUsd(el.value);
+      if (id === "precios-gen-mes-tipo") savePreciosGenMesTipo(el.value);
       renderPriceGenerator();
     });
     el.addEventListener("change", () => {
-      if (id === "precios-gen-biz-pct") savePreciosGenBizPct(el.value);
-      if (id === "precios-gen-net-pct") savePreciosGenNetPct(el.value);
+      if (id === "precios-gen-net-usd") savePreciosGenNetUsd(el.value);
+      if (id === "precios-gen-mes-tipo") savePreciosGenMesTipo(el.value);
       renderPriceGenerator();
     });
   }
-  document.querySelectorAll("[data-precios-biz]").forEach((btn) => {
+  document.querySelectorAll("[data-precios-net-usd]").forEach((btn) => {
     btn.addEventListener("click", () => {
-      const el = document.getElementById("precios-gen-biz-pct");
+      const el = document.getElementById("precios-gen-net-usd");
       if (el) {
-        el.value = btn.getAttribute("data-precios-biz") || "10";
-        savePreciosGenBizPct(el.value);
-      }
-      renderPriceGenerator();
-    });
-  });
-  document.querySelectorAll("[data-precios-net]").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      const el = document.getElementById("precios-gen-net-pct");
-      if (el) {
-        el.value = btn.getAttribute("data-precios-net") || "15";
-        savePreciosGenNetPct(el.value);
+        el.value = btn.getAttribute("data-precios-net-usd") || "100";
+        savePreciosGenNetUsd(el.value);
       }
       renderPriceGenerator();
     });
