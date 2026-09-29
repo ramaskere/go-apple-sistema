@@ -3168,11 +3168,53 @@ function syncCashRepartoDestUi(preferredDest) {
   populateCashRepartoDestSelect(movementType, current);
 }
 
-const INV_CATEGORY_LABELS = { usado: "Usado", nuevo: "Nuevo", repuesto: "Repuesto" };
+const INV_CATEGORY_LABELS = {
+  usado: "Usado",
+  nuevo: "Nuevo",
+  repuesto: "Repuesto",
+  accesorio: "Accesorio",
+};
 
 function normalizeInvCategory(raw) {
   const c = String(raw || "usado").trim().toLowerCase();
-  return c === "nuevo" || c === "repuesto" ? c : "usado";
+  if (c === "nuevo" || c === "repuesto" || c === "accesorio") return c;
+  return "usado";
+}
+
+function invCategoryIsAccessory(category) {
+  return normalizeInvCategory(category) === "accesorio";
+}
+
+function invDefaultColorStorageForCategory(category, colorRaw, storageRaw) {
+  const accessory = invCategoryIsAccessory(category);
+  let color = String(colorRaw || "").trim();
+  let storage = String(storageRaw || "").trim();
+  if (accessory) {
+    if (!color) color = "Sin color";
+    if (!storage) storage = "Sin almacenamiento";
+  }
+  return { color, storage };
+}
+
+/** Precio de venta US$ según costo y objetivo (ganancia, markup % o margen %). */
+function computeSalePriceFromTarget(cost, mode, target) {
+  const c = numeric(cost, 0);
+  const t = numeric(target, 0);
+  if (c <= 0) return null;
+  if (mode === "gain") {
+    const price = c + t;
+    return price > 0 ? Math.round(price * 100) / 100 : null;
+  }
+  if (mode === "markup") {
+    const price = c * (1 + t / 100);
+    return price > 0 ? Math.round(price * 100) / 100 : null;
+  }
+  if (mode === "margin") {
+    if (t <= 0 || t >= 100) return null;
+    const price = c / (1 - t / 100);
+    return price > 0 ? Math.round(price * 100) / 100 : null;
+  }
+  return null;
 }
 
 function invMetaFromPrice(price) {
@@ -3842,6 +3884,10 @@ const PAGE_TAB_COPY = {
     title: "Simulador de cuotas",
     subtitle: "Cuota mensual de referencia en pesos (3, 6, 12 y 18)",
   },
+  "generar-precios": {
+    title: "Generar precios",
+    subtitle: "Costo en dólares → precio de venta, ganancia y cuotas en ARS",
+  },
   configuraciones: {
     title: "Configuraciones",
     subtitle: "Metas del negocio o vendedores: una sección por pantalla (elegí arriba)",
@@ -3926,6 +3972,7 @@ function switchTab(tabName) {
   if (typeof closeRefPreview === "function") closeRefPreview();
   document.body.style.overflow = "";
   syncAppDock(tabName);
+  if (tabName === "generar-precios") renderPriceGenerator();
 }
 
 const APP_DOCK_MAIN = ["resumen", "inventario", "ventas", "simulador-cuotas"];
@@ -5057,6 +5104,10 @@ function inventoryItemMatchesFilter(item, filter) {
       const days = Math.floor((Date.now() - ing.getTime()) / 86400000);
       return days >= 45;
     }
+    case "accesorio":
+      return invCategoryIsAccessory(item.category);
+    case "celulares":
+      return !invCategoryIsAccessory(item.category) && normalizeInvCategory(item.category) !== "repuesto";
     default:
       return true;
   }
@@ -11730,6 +11781,7 @@ function renderAll() {
   renderSaleCart();
   window.__businessExtras?.renderResumenAlerts?.();
   window.__businessExtras?.renderWeeklyCashClose?.();
+  renderPriceGenerator();
 }
 
 async function afterDataChange() {
@@ -12935,15 +12987,66 @@ function closeReceivableModal() {
   closeCrudModal(receivableModal);
 }
 
-function openInventoryModalForNew() {
+function syncInvCategoryFormUi() {
+  const cat = invCategory ? invCategory.value : "usado";
+  const accessory = invCategoryIsAccessory(cat);
+  const presetWrap = document.getElementById("inv-accessory-preset-wrap");
+  if (presetWrap) presetWrap.hidden = !accessory;
+  if (invColor) invColor.required = !accessory;
+  if (invStorage) invStorage.required = !accessory;
+  const colorLabel = document.getElementById("inv-color-label");
+  const storageLabel = document.getElementById("inv-storage-label");
+  if (colorLabel) {
+    colorLabel.childNodes[0].textContent = accessory ? "Color (opcional) " : "Color ";
+  }
+  if (storageLabel) {
+    storageLabel.childNodes[0].textContent = accessory
+      ? "Variante / detalle (opcional) "
+      : "Almacenamiento ";
+  }
+  if (invModel) {
+    invModel.placeholder = accessory
+      ? "Ej: AirPods Pro 2, MagSafe…"
+      : "Ej: iPhone 14";
+  }
+}
+
+function openInventoryModalForNew(opts) {
   if (blockStaffWrite()) return;
   clearInvEdit();
   inventoryForm?.reset();
   if (invQuantity) invQuantity.value = "1";
-  if (invCategory) invCategory.value = "usado";
+  const preset = opts && typeof opts === "object" ? opts : null;
+  if (invCategory) {
+    invCategory.value = preset?.category ? normalizeInvCategory(preset.category) : "usado";
+  }
+  syncInvCategoryFormUi();
+  if (preset?.model && invModel) invModel.value = String(preset.model).trim();
+  if (preset?.cost != null && invCost) invCost.value = String(numeric(preset.cost, 0));
+  if (preset?.price != null && invPrice) invPrice.value = String(numeric(preset.price, 0));
   setTodayDefaults();
-  if (inventoryModalTitle) inventoryModalTitle.textContent = "Agregar equipo";
+  if (inventoryModalTitle) {
+    inventoryModalTitle.textContent = invCategoryIsAccessory(invCategory?.value)
+      ? "Agregar accesorio"
+      : "Agregar equipo";
+  }
   openCrudModal(inventoryModal, invModel);
+}
+
+function openInventoryFromPriceGenerator() {
+  const costEl = document.getElementById("precios-gen-cost");
+  const modeEl = document.getElementById("precios-gen-mode");
+  const targetEl = document.getElementById("precios-gen-target");
+  const cost = costEl ? numeric(costEl.value, 0) : 0;
+  const mode = modeEl ? modeEl.value : "markup";
+  const target = targetEl ? numeric(targetEl.value, 0) : 0;
+  const price = computeSalePriceFromTarget(cost, mode, target);
+  if (!price || cost <= 0) {
+    alert("Completá costo y objetivo válidos en Generar precios.");
+    return;
+  }
+  switchTab("inventario");
+  openInventoryModalForNew({ category: "usado", cost, price });
 }
 
 function openInventoryModalForEdit() {
@@ -12956,6 +13059,7 @@ function closeInventoryModal() {
   inventoryForm?.reset();
   if (invQuantity) invQuantity.value = "1";
   if (invCategory) invCategory.value = "usado";
+  syncInvCategoryFormUi();
   setTodayDefaults();
   closeCrudModal(inventoryModal);
 }
@@ -13003,6 +13107,7 @@ function beginEditInventory(id) {
     invBattery.value = item.battery === "" || item.battery == null ? "" : String(item.battery);
   }
   if (invCategory) invCategory.value = normalizeInvCategory(item.category);
+  syncInvCategoryFormUi();
   if (invSerial) invSerial.value = resolveInventorySerial(item);
   if (invImei) invImei.value = resolveInventoryImei(item);
   if (invNotes) invNotes.value = (item.notes || "").trim();
@@ -13687,10 +13792,13 @@ inventoryForm.addEventListener("submit", async (event) => {
   event.preventDefault();
   if (blockStaffWrite()) return;
   const model = invModel.value.trim();
-  const color = invColor.value.trim();
-  const storage = invStorage.value.trim();
-  const battery = invBattery.value === "" ? "" : String(invBattery.value);
   const category = invCategory ? invCategory.value : "usado";
+  const { color, storage } = invDefaultColorStorageForCategory(
+    category,
+    invColor.value,
+    invStorage.value
+  );
+  const battery = invBattery.value === "" ? "" : String(invBattery.value);
   const serial = invSerial ? invSerial.value.trim().toUpperCase() : "";
   const imei = invImei ? normalizeImeiDigits(invImei.value) : "";
   const notes = invNotes ? invNotes.value.trim() : "";
@@ -13701,7 +13809,15 @@ inventoryForm.addEventListener("submit", async (event) => {
   const price = invPrice.value === "" ? 0 : Number(invPrice.value);
   const costRaw = invCost.value === "" ? 0 : Number(invCost.value);
 
-  if (!model || !color || !storage || quantity <= 0 || Number.isNaN(price) || price < 0 || costRaw < 0) {
+  const needsPhoneFields = !invCategoryIsAccessory(category);
+  if (
+    !model ||
+    (needsPhoneFields && (!color || !storage)) ||
+    quantity <= 0 ||
+    Number.isNaN(price) ||
+    price < 0 ||
+    costRaw < 0
+  ) {
     alert("Completa correctamente los datos de inventario.");
     return;
   }
@@ -14658,6 +14774,143 @@ if (receivablesBodyEl) {
       }
     }
   });
+}
+
+function syncPreciosGenTargetLabel() {
+  const modeEl = document.getElementById("precios-gen-mode");
+  const label = document.getElementById("precios-gen-target-label");
+  const input = document.getElementById("precios-gen-target");
+  if (!modeEl || !label || !input) return;
+  const mode = modeEl.value;
+  let text = "Valor objetivo";
+  let step = "0.01";
+  if (mode === "gain") {
+    text = "Ganancia deseada (US$)";
+    input.placeholder = "Ej: 50";
+  } else if (mode === "margin") {
+    text = "Margen sobre venta (%)";
+    input.placeholder = "Ej: 20";
+  } else {
+    text = "Markup sobre costo (%)";
+    input.placeholder = "Ej: 25";
+  }
+  label.childNodes[0].textContent = `${text} `;
+  input.step = step;
+}
+
+function readPriceGeneratorState() {
+  const costEl = document.getElementById("precios-gen-cost");
+  const modeEl = document.getElementById("precios-gen-mode");
+  const targetEl = document.getElementById("precios-gen-target");
+  const cost = costEl ? numeric(costEl.value, 0) : 0;
+  const mode = modeEl ? modeEl.value : "markup";
+  const target = targetEl ? numeric(targetEl.value, 0) : 0;
+  const price = computeSalePriceFromTarget(cost, mode, target);
+  const summary = price != null ? inventoryProfitSummary(cost, price) : null;
+  return { cost, mode, target, price, summary };
+}
+
+function renderPriceGenerator() {
+  const panel = document.getElementById("tab-generar-precios");
+  if (!panel || !panel.classList.contains("active")) return;
+
+  syncPreciosGenTargetLabel();
+
+  const empty = document.getElementById("precios-gen-empty");
+  const summaryBox = document.getElementById("precios-gen-summary");
+  const arsBox = document.getElementById("precios-gen-ars-box");
+  const cuotasGrid = document.getElementById("precios-gen-cuotas");
+  const actions = document.getElementById("precios-gen-actions");
+  const rateHint = document.getElementById("precios-gen-rate-hint");
+
+  const { cost, price, summary } = readPriceGeneratorState();
+  const ok = cost > 0 && price != null && price > 0 && summary;
+
+  if (empty) empty.hidden = ok;
+  if (summaryBox) summaryBox.hidden = !ok;
+  if (actions) actions.hidden = !ok;
+
+  const priceUsdEl = document.getElementById("precios-gen-price-usd");
+  const gainUsdEl = document.getElementById("precios-gen-gain-usd");
+  const markupEl = document.getElementById("precios-gen-markup-pct");
+  const marginEl = document.getElementById("precios-gen-margin-pct");
+  if (ok && summary) {
+    if (priceUsdEl) priceUsdEl.textContent = currency(price);
+    if (gainUsdEl) gainUsdEl.textContent = currency(summary.gainUsd);
+    if (markupEl) markupEl.textContent = `${summary.markupPct.toLocaleString("es-AR")}%`;
+    if (marginEl) marginEl.textContent = `${summary.marginPct.toLocaleString("es-AR")}%`;
+  }
+
+  const rate = getDolarBlueArsPerUsd();
+  const hasRate = rate > 0;
+  if (rateHint) rateHint.hidden = !ok || hasRate;
+
+  let showArs = ok && hasRate;
+  if (arsBox) arsBox.hidden = !showArs;
+  if (cuotasGrid) cuotasGrid.hidden = !showArs;
+
+  if (showArs && price != null) {
+    const contadoArs = Math.round(price * rate);
+    const listaArs = listaArsFromContado(contadoArs);
+    const contadoEl = document.getElementById("precios-gen-contado-ars");
+    const listaEl = document.getElementById("precios-gen-lista-ars");
+    if (contadoEl) contadoEl.textContent = currencyArs(contadoArs);
+    if (listaEl) listaEl.textContent = currencyArs(listaArs);
+    const plans = computeCuotaSimPlans(listaArs);
+    for (const plan of plans) {
+      const monthlyEl = document.getElementById(`precios-gen-${plan.n}-monthly`);
+      const totalEl = document.getElementById(`precios-gen-${plan.n}-total`);
+      if (monthlyEl) monthlyEl.textContent = currencyArs(plan.monthly);
+      if (totalEl) totalEl.textContent = currencyArs(plan.total);
+    }
+  }
+}
+
+function bindPriceGeneratorControls() {
+  const ids = ["precios-gen-cost", "precios-gen-mode", "precios-gen-target"];
+  for (const id of ids) {
+    const el = document.getElementById(id);
+    if (!el) continue;
+    el.addEventListener("input", renderPriceGenerator);
+    el.addEventListener("change", renderPriceGenerator);
+  }
+  document.querySelectorAll("[data-precios-markup]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const modeEl = document.getElementById("precios-gen-mode");
+      const targetEl = document.getElementById("precios-gen-target");
+      if (modeEl) modeEl.value = "markup";
+      if (targetEl) targetEl.value = btn.getAttribute("data-precios-markup") || "25";
+      renderPriceGenerator();
+    });
+  });
+  const toInv = document.getElementById("precios-gen-to-inventory");
+  if (toInv) {
+    toInv.addEventListener("click", () => {
+      if (blockStaffWrite()) return;
+      openInventoryFromPriceGenerator();
+    });
+  }
+}
+
+bindPriceGeneratorControls();
+
+const invAccessoryPreset = document.getElementById("inv-accessory-preset");
+if (invAccessoryPreset) {
+  invAccessoryPreset.addEventListener("change", () => {
+    const v = invAccessoryPreset.value.trim();
+    if (v && invModel) invModel.value = v;
+  });
+}
+if (invCategory) {
+  invCategory.addEventListener("change", () => {
+    syncInvCategoryFormUi();
+    if (inventoryModalTitle && !editingInventoryId) {
+      inventoryModalTitle.textContent = invCategoryIsAccessory(invCategory.value)
+        ? "Agregar accesorio"
+        : "Agregar equipo";
+    }
+  });
+  syncInvCategoryFormUi();
 }
 
 function renderCuotasSimulator() {

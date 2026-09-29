@@ -4326,6 +4326,61 @@ body.sale-modal-open .app-add {
   color: #c2410c;
 }
 
+.inv-tag--accesorio {
+  background: #ede9fe;
+  color: #6d28d9;
+}
+
+.precios-gen-form {
+  margin-top: 12px;
+}
+
+.precios-gen-chips {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.precios-gen-chips__k {
+  font-size: 13px;
+}
+
+.precios-gen-chip {
+  padding: 4px 10px;
+  font-size: 13px;
+}
+
+.precios-gen-summary {
+  margin-bottom: 16px;
+}
+
+.precios-gen-summary__hero {
+  margin: 0 0 6px;
+  font-size: 1.15rem;
+  line-height: 1.35;
+}
+
+.precios-gen-summary__meta {
+  margin: 0;
+  font-size: 14px;
+}
+
+.precios-gen-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border-subtle, rgba(148, 163, 184, 0.35));
+}
+
+.precios-gen-actions__hint {
+  font-size: 13px;
+}
+
 .inv-tag--bat {
   text-transform: none;
   font-weight: 600;

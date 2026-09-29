@@ -138,6 +138,7 @@
           <button type="button" class="tab-btn active" data-tab="resumen">Resumen</button>
           <button type="button" class="tab-btn" data-tab="inventario">Inventario</button>
           <button type="button" class="tab-btn" data-tab="simulador-cuotas">Simulador de cuotas</button>
+          <button type="button" class="tab-btn staff-owner-only" data-tab="generar-precios">Generar precios</button>
           <button type="button" class="tab-btn" data-tab="caja">Caja</button>
           <button type="button" class="tab-btn" data-tab="ventas">Ventas</button>
           <button type="button" class="tab-btn" data-tab="pipeline">Pipeline</button>
@@ -1519,6 +1520,8 @@
                   <option value="sin_costo">Sin costo</option>
                   <option value="en_tecnico">En técnico</option>
                   <option value="antiguo">+45 días en stock</option>
+                  <option value="accesorio">Solo accesorios</option>
+                  <option value="celulares">Solo celulares</option>
                 </select>
               </label>
             </div>
@@ -1978,6 +1981,119 @@
                 <p class="cuotas-sim-monthly" id="cuotas-sim-18-monthly">—</p>
                 <p class="cuotas-sim-meta muted">Total <span id="cuotas-sim-18-total">—</span> · Tasa ref. 83%</p>
               </article>
+            </div>
+          </section>
+        </section>
+
+        <!-- Generar precios -->
+        <section class="tab-panel" id="tab-generar-precios" aria-label="Generar precios">
+          <section class="card">
+            <h2>Generar precios</h2>
+            <p class="section-hint">
+              Poné cuánto te <strong>costó en US$</strong> y el objetivo: <strong>ganancia en dólares</strong>,
+              <strong>margen sobre venta</strong> o <strong>markup sobre costo</strong>. Te calculamos el precio de
+              venta, la ganancia y los mismos <strong>ARS contado / lista / cuotas</strong> que usa el inventario.
+            </p>
+            <div class="precios-gen-form grid">
+              <label>
+                Costo (US$)
+                <input
+                  id="precios-gen-cost"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  placeholder="Ej: 120"
+                  autocomplete="off"
+                />
+              </label>
+              <label>
+                Quiero lograr
+                <select id="precios-gen-mode">
+                  <option value="gain">Ganar X US$ (neto)</option>
+                  <option value="markup" selected>Markup X% sobre costo</option>
+                  <option value="margin">Margen X% sobre venta</option>
+                </select>
+              </label>
+              <label id="precios-gen-target-label">
+                Valor objetivo
+                <input
+                  id="precios-gen-target"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value="25"
+                  placeholder="Ej: 25 o 30"
+                  autocomplete="off"
+                />
+              </label>
+            </div>
+            <div class="precios-gen-chips" aria-label="Atajos de markup">
+              <span class="muted precios-gen-chips__k">Atajos markup:</span>
+              <button type="button" class="secondary precios-gen-chip" data-precios-markup="20">20%</button>
+              <button type="button" class="secondary precios-gen-chip" data-precios-markup="25">25%</button>
+              <button type="button" class="secondary precios-gen-chip" data-precios-markup="30">30%</button>
+              <button type="button" class="secondary precios-gen-chip" data-precios-markup="35">35%</button>
+            </div>
+            <p id="precios-gen-rate-hint" class="section-hint muted" hidden>
+              Sin dólar blue en Metas no se pueden calcular pesos. Configuralo en Configuraciones → Metas.
+            </p>
+          </section>
+          <section class="card" aria-live="polite" aria-atomic="true">
+            <h2 class="cuotas-sim-results-title">Precio sugerido</h2>
+            <p id="precios-gen-empty" class="section-hint muted">Ingresá un costo mayor a cero y un objetivo válido.</p>
+            <div id="precios-gen-summary" class="precios-gen-summary" hidden>
+              <p class="precios-gen-summary__hero">
+                Vender a <strong id="precios-gen-price-usd">—</strong>
+                <span class="muted">· ganás <strong id="precios-gen-gain-usd">—</strong></span>
+              </p>
+              <p class="precios-gen-summary__meta muted">
+                Markup <span id="precios-gen-markup-pct">—</span> s/costo · Margen <span id="precios-gen-margin-pct">—</span> s/venta
+              </p>
+            </div>
+            <div id="precios-gen-ars-box" class="cuotas-sim-lista-box" hidden>
+              <p class="cuotas-sim-lista-box__title">En pesos (blue de Metas)</p>
+              <div class="cuotas-sim-formula" role="img" aria-label="Contado más 10 por ciento igual lista">
+                <div class="cuotas-sim-formula__part">
+                  <span class="cuotas-sim-formula__k">Contado</span>
+                  <strong id="precios-gen-contado-ars" class="cuotas-sim-formula__v">—</strong>
+                </div>
+                <span class="cuotas-sim-formula__op" aria-hidden="true">+</span>
+                <div class="cuotas-sim-formula__part">
+                  <span class="cuotas-sim-formula__k">10%</span>
+                  <strong class="cuotas-sim-formula__v">tarjeta</strong>
+                </div>
+                <span class="cuotas-sim-formula__op" aria-hidden="true">=</span>
+                <div class="cuotas-sim-formula__part cuotas-sim-formula__part--lista">
+                  <span class="cuotas-sim-formula__k">Lista</span>
+                  <strong id="precios-gen-lista-ars" class="cuotas-sim-formula__v">—</strong>
+                </div>
+              </div>
+            </div>
+            <div id="precios-gen-cuotas" class="cuotas-sim-grid" hidden>
+              <article class="cuotas-sim-card" data-plan="3">
+                <span class="cuotas-sim-badge">3x</span>
+                <p class="cuotas-sim-monthly" id="precios-gen-3-monthly">—</p>
+                <p class="cuotas-sim-meta muted">Total <span id="precios-gen-3-total">—</span></p>
+              </article>
+              <article class="cuotas-sim-card" data-plan="6">
+                <span class="cuotas-sim-badge">6x</span>
+                <p class="cuotas-sim-monthly" id="precios-gen-6-monthly">—</p>
+                <p class="cuotas-sim-meta muted">Total <span id="precios-gen-6-total">—</span></p>
+              </article>
+              <article class="cuotas-sim-card" data-plan="12">
+                <span class="cuotas-sim-badge">12x</span>
+                <p class="cuotas-sim-monthly" id="precios-gen-12-monthly">—</p>
+                <p class="cuotas-sim-meta muted">Total <span id="precios-gen-12-total">—</span> · Tasa ref. 83%</p>
+              </article>
+              <article class="cuotas-sim-card" data-plan="18">
+                <span class="cuotas-sim-badge">18x</span>
+                <p class="cuotas-sim-monthly" id="precios-gen-18-monthly">—</p>
+                <p class="cuotas-sim-meta muted">Total <span id="precios-gen-18-total">—</span> · Tasa ref. 83%</p>
+              </article>
+            </div>
+            <div class="precios-gen-actions" hidden id="precios-gen-actions">
+              <button type="button" class="ventas-btn-nueva" id="precios-gen-to-inventory">Cargar en inventario</button>
+              <span class="muted precios-gen-actions__hint">Abre el formulario con costo y precio ya completos.</span>
             </div>
           </section>
         </section>
@@ -2813,17 +2929,48 @@
             Editando una fila: al guardar se reemplazan modelo, stock, precio y costo (no se suma cantidad).
           </p>
           <form id="inventory-form" class="grid">
+            <label id="inv-accessory-preset-wrap" class="grid-span-2" hidden>
+              Atajo accesorio
+              <select id="inv-accessory-preset">
+                <option value="">Elegir modelo…</option>
+                <option value="AirPods 4">AirPods 4</option>
+                <option value="AirPods 4 (con cancelación)">AirPods 4 (con cancelación)</option>
+                <option value="AirPods Pro 2">AirPods Pro 2</option>
+                <option value="AirPods Pro 2 (USB-C)">AirPods Pro 2 (USB-C)</option>
+                <option value="AirPods Max">AirPods Max</option>
+                <option value="AirPods (2.ª gen)">AirPods (2.ª gen)</option>
+                <option value="MagSafe Charger">MagSafe Charger</option>
+                <option value="Cable USB-C">Cable USB-C</option>
+                <option value="Funda / case">Funda / case</option>
+              </select>
+            </label>
             <label>
               Modelo
-              <input id="inv-model" type="text" placeholder="Ej: iPhone 14" required />
+              <input
+                id="inv-model"
+                type="text"
+                placeholder="Ej: iPhone 14 o AirPods Pro 2"
+                list="inv-accessory-models"
+                required
+              />
             </label>
-            <label>
+            <datalist id="inv-accessory-models">
+              <option value="AirPods 4"></option>
+              <option value="AirPods 4 (con cancelación)"></option>
+              <option value="AirPods Pro 2"></option>
+              <option value="AirPods Pro 2 (USB-C)"></option>
+              <option value="AirPods Max"></option>
+              <option value="AirPods (2.ª gen)"></option>
+              <option value="MagSafe Charger"></option>
+              <option value="Cable USB-C"></option>
+            </datalist>
+            <label id="inv-color-label">
               Color
-              <input id="inv-color" type="text" required />
+              <input id="inv-color" type="text" placeholder="Opcional en accesorios" required />
             </label>
-            <label>
+            <label id="inv-storage-label">
               Almacenamiento
-              <input id="inv-storage" type="text" required />
+              <input id="inv-storage" type="text" placeholder="Opcional en accesorios" required />
             </label>
             <label>
               Batería (%)
@@ -2832,8 +2979,9 @@
             <label>
               Categoría
               <select id="inv-category">
-                <option value="usado">Usado</option>
-                <option value="nuevo">Nuevo</option>
+                <option value="usado">Usado (celular)</option>
+                <option value="nuevo">Nuevo (celular)</option>
+                <option value="accesorio">Accesorio (AirPods, etc.)</option>
                 <option value="repuesto">Repuesto</option>
               </select>
             </label>
