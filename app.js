@@ -3982,6 +3982,7 @@ const APP_SIMPLE_TITLES = {
   inventario: "Elegí el iPhone",
   ventas: "Ventas",
   "simulador-cuotas": "¿En cuántas cuotas?",
+  "generar-precios": "¿A cuánto lo vendo?",
   caja: "Plata de caja",
 };
 
@@ -14946,6 +14947,10 @@ if (cuotasSimAmountInput) {
   cuotasSimAmountInput.addEventListener("input", renderCuotasSimulator);
   cuotasSimAmountInput.addEventListener("change", renderCuotasSimulator);
 }
+
+document.getElementById("btn-go-generar-precios")?.addEventListener("click", () => {
+  switchTab("generar-precios");
+});
 
 tabButtons.forEach((btn) => {
   btn.addEventListener("click", () => switchTab(btn.dataset.tab));

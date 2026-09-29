@@ -16,8 +16,8 @@
       <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="./themes.css?v=21" />
-    <link rel="stylesheet" href="./styles.css?v=79" />
-    <link rel="stylesheet" href="./theme-app.css?v=23" />
+    <link rel="stylesheet" href="./styles.css?v=80" />
+    <link rel="stylesheet" href="./theme-app.css?v=24" />
     <script>
       (function () {
         var map = {
@@ -138,7 +138,7 @@
           <button type="button" class="tab-btn active" data-tab="resumen">Resumen</button>
           <button type="button" class="tab-btn" data-tab="inventario">Inventario</button>
           <button type="button" class="tab-btn" data-tab="simulador-cuotas">Simulador de cuotas</button>
-          <button type="button" class="tab-btn staff-owner-only" data-tab="generar-precios">Generar precios</button>
+          <button type="button" class="tab-btn" data-tab="generar-precios">Generar precios</button>
           <button type="button" class="tab-btn" data-tab="caja">Caja</button>
           <button type="button" class="tab-btn" data-tab="ventas">Ventas</button>
           <button type="button" class="tab-btn" data-tab="pipeline">Pipeline</button>
@@ -175,6 +175,9 @@
         <button type="button" data-open="clients">Clientes</button>
         <button type="button" data-open="track">Seguir celular</button>
         <button type="button" data-tab="ventas">Ventas</button>
+        <button type="button" data-tab="caja">Caja</button>
+        <button type="button" data-tab="deudores">Deudores</button>
+        <button type="button" data-tab="generar-precios">Generar precios</button>
         <button type="button" data-tab="garantias">Garantías</button>
         <button type="button" data-tab="servicio-tecnico">Técnico</button>
         <button type="button" data-tab="pipeline">Pipeline</button>
@@ -1920,6 +1923,10 @@
               Ingresá el <strong>contado en ARS</strong>. El simulador le suma <strong>+10% (lista / tarjeta)</strong>
               y recién ahí calcula <strong>3, 6, 12 y 18 cuotas</strong>, igual que el inventario.
             </p>
+            <p class="section-hint">
+              ¿Partís del costo en dólares?
+              <button type="button" class="linkish" id="btn-go-generar-precios">Abrir Generar precios</button>
+            </p>
             <div class="cuotas-sim-input-row">
               <label class="cuotas-sim-amount-label" for="cuotas-sim-amount">
                 Contado (ARS)
@@ -3074,7 +3081,7 @@
     <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
     <script src="./config.js?v=16"></script>
     <script src="./creativos-engine.js?v=2"></script>
-    <script src="./app.js?v=119"></script>
+    <script src="./app.js?v=120"></script>
     <script src="./business-extras.js?v=6"></script>
   </body>
 </html>
