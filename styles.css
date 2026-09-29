@@ -4363,8 +4363,42 @@ body.sale-modal-open .app-add {
 }
 
 .precios-gen-summary__meta {
-  margin: 0;
+  margin: 0 0 8px;
   font-size: 14px;
+}
+
+.precios-gen-breakdown {
+  display: grid;
+  gap: 8px;
+  margin: 0 0 14px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: rgba(148, 163, 184, 0.12);
+}
+
+.precios-gen-bd-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  font-size: 14px;
+}
+
+.precios-gen-bd-row--sub {
+  padding-top: 6px;
+  border-top: 1px dashed rgba(148, 163, 184, 0.45);
+  color: #64748b;
+}
+
+.precios-gen-bd-row--total {
+  padding-top: 8px;
+  margin-top: 2px;
+  border-top: 1px solid rgba(148, 163, 184, 0.55);
+  font-size: 1.05rem;
+}
+
+.precios-gen-bd-row--total strong {
+  font-size: 1.15rem;
 }
 
 .precios-gen-actions {

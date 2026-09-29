@@ -16,7 +16,7 @@
       <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="./themes.css?v=21" />
-    <link rel="stylesheet" href="./styles.css?v=80" />
+    <link rel="stylesheet" href="./styles.css?v=81" />
     <link rel="stylesheet" href="./theme-app.css?v=24" />
     <script>
       (function () {
@@ -1997,64 +1997,97 @@
           <section class="card">
             <h2>Generar precios</h2>
             <p class="section-hint">
-              Poné cuánto te <strong>costó en US$</strong> y el objetivo: <strong>ganancia en dólares</strong>,
-              <strong>margen sobre venta</strong> o <strong>markup sobre costo</strong>. Te calculamos el precio de
-              venta, la ganancia y los mismos <strong>ARS contado / lista / cuotas</strong> que usa el inventario.
+              El precio no es “costo + un %”. Primero se cubre el <strong>costo del producto</strong>,
+              después una <strong>cuota de los gastos fijos de la tienda</strong> (alquiler, luz, etc. de Metas)
+              y recién ahí la <strong>ganancia limpia</strong> que querés por unidad.
             </p>
             <div class="precios-gen-form grid">
               <label>
-                Costo (US$)
+                Costo del producto (US$)
                 <input
                   id="precios-gen-cost"
                   type="number"
                   min="0"
                   step="0.01"
-                  placeholder="Ej: 120"
+                  placeholder="Ej: 180"
                   autocomplete="off"
                 />
               </label>
               <label>
-                Quiero lograr
-                <select id="precios-gen-mode">
-                  <option value="gain">Ganar X US$ (neto)</option>
-                  <option value="markup" selected>Markup X% sobre costo</option>
-                  <option value="margin">Margen X% sobre venta</option>
-                </select>
+                Ventas esperadas del mes
+                <input
+                  id="precios-gen-units"
+                  type="number"
+                  min="1"
+                  step="1"
+                  value="30"
+                  placeholder="Ej: 30"
+                  autocomplete="off"
+                />
               </label>
-              <label id="precios-gen-target-label">
-                Valor objetivo
+              <label>
+                Ganancia limpia por unidad (US$)
                 <input
                   id="precios-gen-target"
                   type="number"
                   min="0"
                   step="0.01"
-                  value="25"
-                  placeholder="Ej: 25 o 30"
+                  value="30"
+                  placeholder="Ej: 30"
                   autocomplete="off"
                 />
               </label>
             </div>
-            <div class="precios-gen-chips" aria-label="Atajos de markup">
-              <span class="muted precios-gen-chips__k">Atajos markup:</span>
-              <button type="button" class="secondary precios-gen-chip" data-precios-markup="20">20%</button>
-              <button type="button" class="secondary precios-gen-chip" data-precios-markup="25">25%</button>
-              <button type="button" class="secondary precios-gen-chip" data-precios-markup="30">30%</button>
-              <button type="button" class="secondary precios-gen-chip" data-precios-markup="35">35%</button>
+            <p id="precios-gen-overhead-line" class="section-hint muted">
+              Costos fijos del mes: —
+            </p>
+            <div class="precios-gen-chips" aria-label="Atajos de ganancia limpia">
+              <span class="muted precios-gen-chips__k">Atajos ganancia limpia:</span>
+              <button type="button" class="secondary precios-gen-chip" data-precios-gain="20">20</button>
+              <button type="button" class="secondary precios-gen-chip" data-precios-gain="30">30</button>
+              <button type="button" class="secondary precios-gen-chip" data-precios-gain="40">40</button>
+              <button type="button" class="secondary precios-gen-chip" data-precios-gain="50">50</button>
             </div>
             <p id="precios-gen-rate-hint" class="section-hint muted" hidden>
               Sin dólar blue en Metas no se pueden calcular pesos. Configuralo en Configuraciones → Metas.
             </p>
+            <p id="precios-gen-overhead-hint" class="section-hint muted" hidden>
+              No hay costos de tienda en Metas: el precio solo cubre producto + ganancia limpia.
+              Cargalos en Configuraciones → Metas → Costos de la tienda.
+            </p>
           </section>
           <section class="card" aria-live="polite" aria-atomic="true">
-            <h2 class="cuotas-sim-results-title">Precio sugerido</h2>
-            <p id="precios-gen-empty" class="section-hint muted">Ingresá un costo mayor a cero y un objetivo válido.</p>
+            <h2 class="cuotas-sim-results-title">Desglose del precio</h2>
+            <p id="precios-gen-empty" class="section-hint muted">Ingresá el costo del producto para ver el precio.</p>
             <div id="precios-gen-summary" class="precios-gen-summary" hidden>
-              <p class="precios-gen-summary__hero">
-                Vender a <strong id="precios-gen-price-usd">—</strong>
-                <span class="muted">· ganás <strong id="precios-gen-gain-usd">—</strong></span>
+              <div class="precios-gen-breakdown" id="precios-gen-breakdown">
+                <div class="precios-gen-bd-row">
+                  <span>Costo producto</span>
+                  <strong id="precios-gen-bd-cost">—</strong>
+                </div>
+                <div class="precios-gen-bd-row">
+                  <span>Cuota tienda <span class="muted" id="precios-gen-bd-overhead-note"></span></span>
+                  <strong id="precios-gen-bd-overhead">—</strong>
+                </div>
+                <div class="precios-gen-bd-row precios-gen-bd-row--sub">
+                  <span>Precio de empate</span>
+                  <strong id="precios-gen-bd-breakeven">—</strong>
+                </div>
+                <div class="precios-gen-bd-row">
+                  <span>Ganancia limpia</span>
+                  <strong id="precios-gen-bd-net">—</strong>
+                </div>
+                <div class="precios-gen-bd-row precios-gen-bd-row--total">
+                  <span>Precio de venta</span>
+                  <strong id="precios-gen-price-usd">—</strong>
+                </div>
+              </div>
+              <p class="precios-gen-summary__meta muted" id="precios-gen-explain">
+                —
               </p>
               <p class="precios-gen-summary__meta muted">
-                Markup <span id="precios-gen-markup-pct">—</span> s/costo · Margen <span id="precios-gen-margin-pct">—</span> s/venta
+                Sobre costo producto: markup <span id="precios-gen-markup-pct">—</span>
+                · margen s/venta <span id="precios-gen-margin-pct">—</span>
               </p>
             </div>
             <div id="precios-gen-ars-box" class="cuotas-sim-lista-box" hidden>
@@ -2075,6 +2108,9 @@
                   <strong id="precios-gen-lista-ars" class="cuotas-sim-formula__v">—</strong>
                 </div>
               </div>
+              <p class="cuotas-sim-lista-box__hint muted">
+                Contado = lo que cobrás cash/transf. Lista = tarjeta. Las cuotas salen de la lista.
+              </p>
             </div>
             <div id="precios-gen-cuotas" class="cuotas-sim-grid" hidden>
               <article class="cuotas-sim-card" data-plan="3">
@@ -3081,7 +3117,7 @@
     <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
     <script src="./config.js?v=16"></script>
     <script src="./creativos-engine.js?v=2"></script>
-    <script src="./app.js?v=120"></script>
+    <script src="./app.js?v=121"></script>
     <script src="./business-extras.js?v=6"></script>
   </body>
 </html>
