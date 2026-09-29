@@ -246,6 +246,11 @@ const salePayCash = document.getElementById("sale-pay-cash");
 const salePayTransfer = document.getElementById("sale-pay-transfer");
 const salePayCard = document.getElementById("sale-pay-card");
 const salePayOther = document.getElementById("sale-pay-other");
+const saleCasaCuotaEnabled = document.getElementById("sale-casa-cuota-enabled");
+const saleCasaCuotaFields = document.getElementById("sale-casa-cuota-fields");
+const saleCasaPending = document.getElementById("sale-casa-pending");
+const saleCasaInstallments = document.getElementById("sale-casa-installments");
+const saleCasaFirstDue = document.getElementById("sale-casa-first-due");
 const saleClientSelect = document.getElementById("sale-client-select");
 const saleSeller = document.getElementById("sale-seller");
 const saleAddCartBtn = document.getElementById("sale-add-cart-btn");
@@ -1251,6 +1256,211 @@ function updateSaleCheckoutSummary() {
     saleSummaryTrade.textContent = tradeIn > 0 ? `−${currency(tradeIn)}` : currency(0);
   }
   if (saleSummaryNet) saleSummaryNet.textContent = currency(net);
+  syncSaleCasaPendingFromPayments();
+}
+
+function isSaleCasaCuotaEnabled() {
+  return Boolean(saleCasaCuotaEnabled?.checked);
+}
+
+function setSaleCasaCuotaFieldsVisible(on) {
+  if (saleCasaCuotaFields) saleCasaCuotaFields.hidden = !on;
+  if (!on) return;
+  if (saleCasaFirstDue && !saleCasaFirstDue.value) {
+    const d = new Date();
+    d.setMonth(d.getMonth() + 1);
+    saleCasaFirstDue.value = d.toISOString().slice(0, 10);
+  }
+  syncSaleCasaPendingFromPayments();
+}
+
+function syncSaleCasaPendingFromPayments() {
+  if (!isSaleCasaCuotaEnabled() || !saleCasaPending) return;
+  if (document.activeElement === saleCasaPending) return;
+  const gross = saleCartGrossTotal();
+  const tradeIn = saleTradeInValue ? numeric(saleTradeInValue.value, 0) : 0;
+  const net = Math.max(0, gross - tradeIn);
+  const paid =
+    numeric(salePayCash?.value, 0) +
+    numeric(salePayTransfer?.value, 0) +
+    numeric(salePayCard?.value, 0) +
+    numeric(salePayOther?.value, 0);
+  const pending = Math.max(0, Math.round((net - paid) * 100) / 100);
+  saleCasaPending.value = pending > 0 ? String(pending) : "";
+}
+
+function readSaleCasaPlan() {
+  if (!isSaleCasaCuotaEnabled()) return null;
+  const amountPending = numeric(saleCasaPending?.value, 0);
+  const installments = Math.max(1, Math.min(24, Math.floor(numeric(saleCasaInstallments?.value, 3) || 3)));
+  const firstDue = saleCasaFirstDue?.value || "";
+  return { amountPending, installments, firstDue };
+}
+
+/** Suma N meses a una fecha YYYY-MM-DD (mediodía local para evitar saltos DST). */
+function addMonthsToYmd(ymd, months) {
+  if (!ymd) return "";
+  const [y, m, d] = String(ymd).split("-").map(Number);
+  if (!y || !m || !d) return "";
+  const dt = new Date(y, m - 1, d, 12, 0, 0);
+  dt.setMonth(dt.getMonth() + months);
+  const yy = dt.getFullYear();
+  const mm = String(dt.getMonth() + 1).padStart(2, "0");
+  const dd = String(dt.getDate()).padStart(2, "0");
+  return `${yy}-${mm}-${dd}`;
+}
+
+function splitAmountIntoInstallments(total, n) {
+  const count = Math.max(1, Math.min(24, Math.floor(n) || 1));
+  const cents = Math.round(Math.max(0, numeric(total, 0)) * 100);
+  const base = Math.floor(cents / count);
+  const parts = [];
+  let used = 0;
+  for (let i = 0; i < count; i++) {
+    const c = i === count - 1 ? cents - used : base;
+    used += c;
+    parts.push(c / 100);
+  }
+  return parts;
+}
+
+/**
+ * Crea pendientes en Deudores a partir de un plan de cuota de la casa.
+ * @returns {number} cantidad de filas creadas
+ */
+async function createHousePlanReceivables({
+  userId,
+  clientName,
+  phone,
+  modelsLabel,
+  amountPending,
+  installments,
+  firstDue,
+  saleId,
+}) {
+  const parts = splitAmountIntoInstallments(amountPending, installments);
+  if (parts.length === 0 || parts.every((p) => p <= 0)) return 0;
+  const n = parts.length;
+  const label = String(modelsLabel || "equipo").trim() || "equipo";
+  const created = [];
+
+  for (let i = 0; i < n; i++) {
+    const amt = parts[i];
+    if (amt <= 0) continue;
+    const concept =
+      n === 1 ? `Cuota casa · ${label}` : `Cuota ${i + 1}/${n} · ${label}`;
+    const dueDate = firstDue ? addMonthsToYmd(firstDue, i) : "";
+    const notes = [
+      "Cuota de la casa",
+      phone ? `Tel: ${phone}` : "",
+      saleId ? `Venta ${String(saleId).slice(0, 8)}` : "",
+    ]
+      .filter(Boolean)
+      .join(" · ");
+
+    if (useCloud && supabaseClient) {
+      const payload = {
+        user_id: userId,
+        client_name: clientName,
+        concept,
+        amount_pending: amt,
+        due_date: dueDate || null,
+        kind: "cuotas",
+        notes,
+        sale_id: saleId || null,
+      };
+      let { data, error } = await supabaseClient
+        .from("pending_receivables")
+        .insert(payload)
+        .select("*")
+        .single();
+      if (error && /sale_id|schema cache|could not find/i.test(error.message || "")) {
+        delete payload.sale_id;
+        ({ data, error } = await supabaseClient
+          .from("pending_receivables")
+          .insert(payload)
+          .select("*")
+          .single());
+      }
+      if (error) throw error;
+      if (data) created.push(receivableFromRow(data));
+    } else {
+      const row = {
+        id: crypto.randomUUID(),
+        clientName,
+        concept,
+        amountPending: amt,
+        dueDate,
+        kind: "cuotas",
+        notes,
+        saleId: saleId || null,
+        createdAt: new Date().toISOString(),
+      };
+      created.push(row);
+    }
+  }
+
+  if (!useCloud && created.length) {
+    const list = readList(KEYS.receivables);
+    writeList(KEYS.receivables, [...created, ...list]);
+  } else if (useCloud && created.length) {
+    cacheReceivables = [...created, ...cacheReceivables];
+    mirrorCloudCachesToLocal();
+  }
+  return created.length;
+}
+
+/**
+ * Tras cobrar el último pendiente de un cliente, pasa leads «cobrando» → «venta».
+ */
+async function promoteCobrandoLeadsIfDebtCleared(clientName, phoneRaw) {
+  const name = String(clientName || "").trim().toLowerCase();
+  const digits = normalizePhoneDigits(phoneRaw);
+  const stillOwes = getReceivables().some((r) => {
+    if (numeric(r.amountPending, 0) <= 0) return false;
+    const rn = String(r.clientName || "").trim().toLowerCase();
+    if (name && rn === name) return true;
+    if (digits && normalizePhoneDigits(r.notes).includes(digits)) return true;
+    return false;
+  });
+  if (stillOwes) return;
+
+  const leads = getPipelineLeads().filter((l) => {
+    if (l.stage !== "cobrando") return false;
+    if (name && String(l.name || "").trim().toLowerCase() === name) return true;
+    if (digits && normalizePhoneDigits(l.phone) === digits) return true;
+    return false;
+  });
+  if (!leads.length) return;
+
+  const now = new Date().toISOString();
+  if (useCloud) {
+    try {
+      const userId = await getUserId();
+      for (const lead of leads) {
+        const { error } = await supabaseClient
+          .from("pipeline_leads")
+          .update({ stage: "venta", updated_at: now })
+          .eq("id", lead.id)
+          .eq("user_id", userId);
+        if (error) throw error;
+      }
+    } catch (e) {
+      console.warn("No se pudo pasar lead cobrando → venta:", e);
+    }
+  } else {
+    const list = readList(KEYS.pipelineLeads);
+    let changed = false;
+    for (const lead of leads) {
+      const idx = list.findIndex((x) => String(x.id) === String(lead.id));
+      if (idx >= 0) {
+        list[idx].stage = "venta";
+        list[idx].updatedAt = now;
+        changed = true;
+      }
+    }
+    if (changed) writeList(KEYS.pipelineLeads, list);
+  }
 }
 
 function renderSaleCart() {
@@ -2795,6 +3005,7 @@ function receivableFromRow(row) {
     dueDate: row.due_date || "",
     kind,
     notes: row.notes || "",
+    saleId: row.sale_id || null,
     createdAt: row.created_at,
   };
 }
@@ -2899,6 +3110,7 @@ const PIPELINE_STAGE_LABELS = {
   interesado: "Interesado",
   plan_canje: "Plan canje",
   cita: "Cita",
+  cobrando: "Cobrando",
   venta: "Venta",
   perdido: "Perdido",
 };
@@ -2918,6 +3130,7 @@ const PIPELINE_KANBAN_STAGES = [
   "interesado",
   "plan_canje",
   "cita",
+  "cobrando",
   "venta",
   "perdido",
 ];
@@ -3137,6 +3350,16 @@ function resetSaleModalFields() {
   if (salePayTransfer) salePayTransfer.value = "0";
   if (salePayCard) salePayCard.value = "0";
   if (salePayOther) salePayOther.value = "0";
+  if (saleCasaCuotaEnabled) {
+    saleCasaCuotaEnabled.checked = false;
+    saleCasaCuotaEnabled.disabled = false;
+  }
+  setSaleCasaCuotaFieldsVisible(false);
+  if (saleCasaPending) saleCasaPending.value = "";
+  if (saleCasaInstallments) saleCasaInstallments.value = "3";
+  if (saleCasaFirstDue) saleCasaFirstDue.value = "";
+  const casaBoxReset = document.getElementById("sale-casa-cuota-box");
+  if (casaBoxReset) casaBoxReset.hidden = false;
   if (saleClientSelect) saleClientSelect.value = "__new__";
   if (saleSeller) saleSeller.value = "";
   setTodayDefaults();
@@ -3224,6 +3447,13 @@ function openSaleModalForEdit(saleId) {
   if (salePayCard) salePayCard.value = String(numeric(sale.paymentCard, 0));
   if (salePayOther) salePayOther.value = String(numeric(sale.paymentOther, 0));
   if (salePayment) salePayment.value = (sale.payment || "").trim();
+  if (saleCasaCuotaEnabled) {
+    saleCasaCuotaEnabled.checked = false;
+    saleCasaCuotaEnabled.disabled = true;
+  }
+  setSaleCasaCuotaFieldsVisible(false);
+  const casaBox = document.getElementById("sale-casa-cuota-box");
+  if (casaBox) casaBox.hidden = true;
 
   refreshSaleSellerSelect();
 
@@ -10664,50 +10894,127 @@ function renderReceivables() {
   });
 }
 
-async function linkPipelineLeadsAfterSale(phoneRaw, saleId, igRaw) {
+async function linkPipelineLeadsAfterSale(phoneRaw, saleId, igRaw, opts = {}) {
   if (!saleId) return;
   const digits = normalizePhoneDigits(phoneRaw);
   const igNorm = normalizeIgHandle(igRaw);
-  if (!digits && !igNorm) return;
+  const targetStage = opts.stage === "cobrando" ? "cobrando" : "venta";
+  const createIfMissing = Boolean(opts.createIfMissing);
+  const clientName = String(opts.clientName || "").trim();
+
   const leads = getPipelineLeads().filter((l) => {
     if (l.convertedSaleId) return false;
     if (digits && normalizePhoneDigits(l.phone) === digits) return true;
     if (igNorm && normalizeIgHandle(l.igHandle) === igNorm) return true;
     return false;
   });
-  if (leads.length === 0) return;
+
+  async function applyStageUpdate(leadIds) {
+    if (!leadIds.length) return;
+    const now = new Date().toISOString();
+    if (useCloud) {
+      try {
+        const userId = await getUserId();
+        for (const id of leadIds) {
+          let { error } = await supabaseClient
+            .from("pipeline_leads")
+            .update({
+              converted_sale_id: saleId,
+              stage: targetStage,
+              updated_at: now,
+            })
+            .eq("id", id)
+            .eq("user_id", userId);
+          if (error && targetStage === "cobrando" && /invalid input value|enum|pipeline_stage/i.test(error.message || "")) {
+            ({ error } = await supabaseClient
+              .from("pipeline_leads")
+              .update({
+                converted_sale_id: saleId,
+                stage: "venta",
+                updated_at: now,
+                notes: "Cuota de la casa (migrá etapa cobrando en Supabase)",
+              })
+              .eq("id", id)
+              .eq("user_id", userId));
+          }
+          if (error) throw error;
+        }
+      } catch (e) {
+        console.warn("No se pudo vincular pipeline con la venta:", e);
+      }
+    } else {
+      const list = readList(KEYS.pipelineLeads);
+      let changed = false;
+      for (const id of leadIds) {
+        const idx = list.findIndex((x) => String(x.id) === String(id));
+        if (idx >= 0) {
+          list[idx].convertedSaleId = saleId;
+          list[idx].stage = targetStage;
+          list[idx].updatedAt = now;
+          changed = true;
+        }
+      }
+      if (changed) writeList(KEYS.pipelineLeads, list);
+    }
+  }
+
+  if (leads.length > 0) {
+    await applyStageUpdate(leads.map((l) => l.id));
+    return;
+  }
+
+  if (!createIfMissing || (!digits && !igNorm && !clientName)) return;
+
+  const now = new Date().toISOString();
+  const notes =
+    targetStage === "cobrando"
+      ? "Seguimiento cuota de la casa (auto)"
+      : "Lead creado al registrar venta";
+
   if (useCloud) {
     try {
       const userId = await getUserId();
-      const now = new Date().toISOString();
-      for (const lead of leads) {
-        const { error } = await supabaseClient
-          .from("pipeline_leads")
-          .update({
-            converted_sale_id: saleId,
-            stage: "venta",
-            updated_at: now,
-          })
-          .eq("id", lead.id)
-          .eq("user_id", userId);
-        if (error) throw error;
+      const payload = {
+        user_id: userId,
+        stage: targetStage,
+        source: "manual",
+        name: clientName || "Cliente",
+        phone: phoneRaw || "",
+        ig_handle: igRaw || "",
+        converted_sale_id: saleId,
+        notes,
+        updated_at: now,
+      };
+      let { error } = await supabaseClient.from("pipeline_leads").insert(payload);
+      if (error && targetStage === "cobrando" && /invalid input value|enum|pipeline_stage/i.test(error.message || "")) {
+        payload.stage = "venta";
+        payload.notes = "Cuota de la casa (migrá etapa cobrando en Supabase)";
+        ({ error } = await supabaseClient.from("pipeline_leads").insert(payload));
       }
+      if (error) throw error;
     } catch (e) {
-      console.warn("No se pudo vincular pipeline con la venta:", e);
+      console.warn("No se pudo crear lead de seguimiento post-venta:", e);
     }
   } else {
     const list = readList(KEYS.pipelineLeads);
-    let changed = false;
-    for (const lead of leads) {
-      const idx = list.findIndex((x) => String(x.id) === String(lead.id));
-      if (idx >= 0) {
-        list[idx].convertedSaleId = saleId;
-        list[idx].stage = "venta";
-        list[idx].updatedAt = new Date().toISOString();
-        changed = true;
-      }
-    }
-    if (changed) writeList(KEYS.pipelineLeads, list);
+    list.unshift({
+      id: crypto.randomUUID(),
+      stage: targetStage,
+      source: "manual",
+      manychatSubscriberId: "",
+      phone: phoneRaw || "",
+      name: clientName || "Cliente",
+      email: "",
+      igHandle: igRaw || "",
+      metadata: {},
+      lastManychatAt: null,
+      assignedTo: "",
+      convertedSaleId: saleId,
+      notes,
+      createdAt: now,
+      updatedAt: now,
+    });
+    writeList(KEYS.pipelineLeads, list);
   }
 }
 
@@ -11135,6 +11442,16 @@ if (saleTradeInValue) {
   saleTradeInValue.addEventListener("input", () => updateSaleCheckoutSummary());
 }
 
+if (saleCasaCuotaEnabled) {
+  saleCasaCuotaEnabled.addEventListener("change", () => {
+    setSaleCasaCuotaFieldsVisible(saleCasaCuotaEnabled.checked);
+  });
+}
+
+[salePayCash, salePayTransfer, salePayCard, salePayOther].forEach((el) => {
+  el?.addEventListener("input", () => syncSaleCasaPendingFromPayments());
+});
+
 if (saleAddCartBtn) {
   saleAddCartBtn.addEventListener("click", () => {
     if (addFilledSaleFormToCart() && saleImei) saleImei.value = "";
@@ -11218,7 +11535,12 @@ saleForm.addEventListener("submit", async (event) => {
   const paymentTransfer = salePayTransfer ? numeric(salePayTransfer.value, 0) : 0;
   const paymentCard = salePayCard ? numeric(salePayCard.value, 0) : 0;
   const paymentOther = salePayOther ? numeric(salePayOther.value, 0) : 0;
-  const paymentNotes = salePayment ? salePayment.value.trim() : "";
+  const casaPlan = readSaleCasaPlan();
+  let paymentNotes = salePayment ? salePayment.value.trim() : "";
+  if (casaPlan && casaPlan.amountPending > 0) {
+    const casaNote = `Cuota de la casa · ${casaPlan.installments} cuota${casaPlan.installments === 1 ? "" : "s"} · pendiente ${currency(casaPlan.amountPending)}`;
+    paymentNotes = paymentNotes ? `${paymentNotes} · ${casaNote}` : casaNote;
+  }
   const selectedSellerRaw = saleSeller?.value?.trim() || "";
   const selectedSellerId = selectedSellerRaw || null;
 
@@ -11226,6 +11548,17 @@ saleForm.addEventListener("submit", async (event) => {
   const payTransferParts = splitProportionalUsd(paymentTransfer, saleTotals);
   const payCardParts = splitProportionalUsd(paymentCard, saleTotals);
   const payOtherParts = splitProportionalUsd(paymentOther, saleTotals);
+
+  if (casaPlan) {
+    if (casaPlan.amountPending <= 0) {
+      alert("Marcaste cuota de la casa: ingresá un monto pendiente mayor a cero (o cargá menos en los pagos de hoy).");
+      return;
+    }
+    if (!casaPlan.firstDue) {
+      alert("Indicá la fecha de la primera cuota / vencimiento.");
+      return;
+    }
+  }
 
   if (window.__businessExtras?.validateSaleBeforeSave) {
     const ok = window.__businessExtras.validateSaleBeforeSave({
@@ -11236,6 +11569,7 @@ saleForm.addEventListener("submit", async (event) => {
       paymentTransfer,
       paymentCard,
       paymentOther,
+      housePending: casaPlan ? casaPlan.amountPending : 0,
       editingSaleId,
     });
     if (!ok) return;
@@ -11646,8 +11980,42 @@ saleForm.addEventListener("submit", async (event) => {
     writeList(KEYS.sales, sales);
   }
 
-  if (firstSaleIdForPipeline && (clientPhoneForPipeline || clientIgForPipeline)) {
-    await linkPipelineLeadsAfterSale(clientPhoneForPipeline, firstSaleIdForPipeline, clientIgForPipeline);
+  if (firstSaleIdForPipeline && (clientPhoneForPipeline || clientIgForPipeline || casaPlan)) {
+    await linkPipelineLeadsAfterSale(clientPhoneForPipeline, firstSaleIdForPipeline, clientIgForPipeline, {
+      stage: casaPlan ? "cobrando" : "venta",
+      createIfMissing: Boolean(casaPlan),
+      clientName: saleClient.value.trim(),
+    });
+  }
+
+  if (casaPlan && firstSaleIdForPipeline) {
+    try {
+      const modelsLabel = lines
+        .map((l) => l.model)
+        .filter(Boolean)
+        .join(", ");
+      const userId = useCloud ? await getUserId() : null;
+      const n = await createHousePlanReceivables({
+        userId,
+        clientName: saleClient.value.trim(),
+        phone: clientPhoneForPipeline,
+        modelsLabel,
+        amountPending: casaPlan.amountPending,
+        installments: casaPlan.installments,
+        firstDue: casaPlan.firstDue,
+        saleId: firstSaleIdForPipeline,
+      });
+      if (n > 0) {
+        console.info(`Cuota de la casa: ${n} pendiente(s) creados en Deudores.`);
+      }
+    } catch (e) {
+      console.error(e);
+      alert(
+        "La venta se guardó, pero no se pudieron crear los pendientes en Deudores.\n" +
+          (e?.message || String(e)) +
+          "\n\nSi falta la columna sale_id, ejecutá CRM/supabase/migration_pending_receivables_sale_id.sql"
+      );
+    }
   }
 
   saleCart = [];
@@ -11659,6 +12027,11 @@ saleForm.addEventListener("submit", async (event) => {
   if (salePayTransfer) salePayTransfer.value = "0";
   if (salePayCard) salePayCard.value = "0";
   if (salePayOther) salePayOther.value = "0";
+  if (saleCasaCuotaEnabled) saleCasaCuotaEnabled.checked = false;
+  setSaleCasaCuotaFieldsVisible(false);
+  if (saleCasaPending) saleCasaPending.value = "";
+  if (saleCasaInstallments) saleCasaInstallments.value = "3";
+  if (saleCasaFirstDue) saleCasaFirstDue.value = "";
   if (saleClientSelect) saleClientSelect.value = "__new__";
   setTodayDefaults();
   renderSaleCart();
@@ -13908,6 +14281,10 @@ if (receivablesBodyEl) {
         }
       }
       await afterDataChange();
+      if (next <= 0) {
+        await promoteCobrandoLeadsIfDebtCleared(row.clientName, "");
+        await afterDataChange();
+      }
     }
   });
 }
@@ -14657,6 +15034,7 @@ window.__crm = {
   writeViewFilters,
   switchConfigSubpanel,
   openSaleModalForEdit,
+  promoteCobrandoLeadsIfDebtCleared,
 };
 
 initApp().catch((err) => {

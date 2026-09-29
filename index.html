@@ -518,7 +518,7 @@
             </p>
             <ul class="intro-list">
               <li>
-                <strong>Ventas</strong>: elegí cliente (o nuevo), <strong>vendedor</strong> si corresponde, armá el <strong>carrito</strong> con uno o más productos, revisá el total con el plan canje y registrá cómo pagó el cliente (efectivo, transferencia, etc.).
+                <strong>Ventas</strong>: elegí cliente (o nuevo), <strong>vendedor</strong> si corresponde, armá el <strong>carrito</strong>, registrá lo que pagó hoy y, si queda saldo a plazos, marcá <strong>Cuota de la casa</strong> — se guarda la venta y el pendiente pasa solo a Deudores (Pipeline → Cobrando).
               </li>
               <li>
                 <strong>Configuraciones</strong>: usá las pestañas superiores para ver solo <strong>Metas del negocio</strong> (reparto Reserva / Restock / Socios) o solo <strong>Vendedores</strong> (comisiones, listado y resultados). El mismo <strong>Período</strong> que en Resumen aplica a las metas.
@@ -539,7 +539,7 @@
                 <strong>Ventas</strong> cuando cerrás la operación.
               </li>
               <li>
-                <strong>Deudores</strong>: pendientes que aún no entraron a caja (cuotas futuras, tarjeta que liquida después, etc.). El KPI «Cuotas por cobrar» en Resumen suma esa lista.
+                <strong>Deudores</strong>: pendientes que aún no entraron a caja. Si en la venta marcás <strong>Cuota de la casa</strong>, el saldo se crea solo acá y el lead queda en Pipeline → <strong>Cobrando</strong> (el seguimiento no se cierra).
               </li>
             </ul>
             <div class="support-box">
@@ -817,7 +817,7 @@
 
               <fieldset class="form-fieldset">
                 <legend>Formas de pago (USD)</legend>
-                <p class="fieldset-hint">Completá lo que corresponda; puede ser varios medios a la vez.</p>
+                <p class="fieldset-hint">Completá lo que pagó hoy; puede ser varios medios a la vez.</p>
                 <div class="grid">
                   <label>
                     Efectivo
@@ -837,8 +837,42 @@
                   </label>
                   <label class="label-span-2">
                     Notas de pago / detalle
-                    <input id="sale-payment" type="text" placeholder="Ej: 3 cuotas sin interés, referencia transferencia…" />
+                    <input id="sale-payment" type="text" placeholder="Ej: referencia transferencia…" />
                   </label>
+                </div>
+
+                <div class="sale-casa-cuota" id="sale-casa-cuota-box">
+                  <label class="sale-casa-cuota__toggle">
+                    <input id="sale-casa-cuota-enabled" type="checkbox" />
+                    <span>
+                      <strong>Cuota de la casa</strong>
+                      <span class="muted"> — el saldo pasa solo a Deudores y el seguimiento sigue en Pipeline</span>
+                    </span>
+                  </label>
+                  <div id="sale-casa-cuota-fields" class="sale-casa-cuota__fields grid" hidden>
+                    <label>
+                      Monto pendiente (USD)
+                      <input id="sale-casa-pending" type="number" min="0.01" step="0.01" placeholder="Se calcula solo" />
+                    </label>
+                    <label>
+                      Cantidad de cuotas
+                      <select id="sale-casa-installments">
+                        <option value="1">1 (saldo único)</option>
+                        <option value="2">2</option>
+                        <option value="3" selected>3</option>
+                        <option value="4">4</option>
+                        <option value="6">6</option>
+                        <option value="12">12</option>
+                      </select>
+                    </label>
+                    <label>
+                      Primera cuota / vencimiento
+                      <input id="sale-casa-first-due" type="date" />
+                    </label>
+                    <p id="sale-casa-hint" class="fieldset-hint muted label-span-2">
+                      Se crean las cuotas en <strong>Deudores</strong>. El lead queda en <strong>Cobrando</strong> (no se cierra el seguimiento).
+                    </p>
+                  </div>
                 </div>
               </fieldset>
 
@@ -990,6 +1024,7 @@
                       <option value="interesado">Interesado</option>
                       <option value="plan_canje">Plan canje</option>
                       <option value="cita">Cita / visita</option>
+                      <option value="cobrando">Cobrando (cuota casa)</option>
                       <option value="venta">Venta</option>
                       <option value="perdido">Perdido</option>
                     </select>
@@ -2887,9 +2922,9 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.47.10/dist/umd/supabase.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
-    <script src="./config.js?v=17"></script>
+    <script src="./config.js?v=16"></script>
     <script src="./creativos-engine.js?v=2"></script>
-    <script src="./app.js?v=118"></script>
+    <script src="./app.js?v=119"></script>
     <script src="./business-extras.js?v=6"></script>
   </body>
 </html>

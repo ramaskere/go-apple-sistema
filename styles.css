@@ -3202,6 +3202,34 @@ code {
   margin: 8px 0 0;
 }
 
+.sale-casa-cuota {
+  margin-top: 1rem;
+  padding: 0.85rem 1rem;
+  border: 1px solid color-mix(in srgb, var(--border, #d0d5dd) 80%, transparent);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--surface-2, #f8fafc) 88%, transparent);
+}
+
+.sale-casa-cuota__toggle {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.65rem;
+  cursor: pointer;
+  font-weight: 500;
+  line-height: 1.35;
+}
+
+.sale-casa-cuota__toggle input {
+  margin-top: 0.2rem;
+  flex-shrink: 0;
+}
+
+.sale-casa-cuota__fields {
+  margin-top: 0.85rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid color-mix(in srgb, var(--border, #d0d5dd) 70%, transparent);
+}
+
 .sale-checkout-summary {
   margin: 0 0 16px;
   padding: 16px 18px;

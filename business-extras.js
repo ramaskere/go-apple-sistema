@@ -782,6 +782,7 @@
       paymentTransfer,
       paymentCard,
       paymentOther,
+      housePending,
       editingSaleId,
     } = ctx;
     const netTotal = Math.max(
@@ -794,9 +795,15 @@
       c.numeric(paymentTransfer, 0) +
       c.numeric(paymentCard, 0) +
       c.numeric(paymentOther, 0);
-    if (netTotal > 0 && Math.abs(paid - netTotal) > 0.02) {
+    const pendingHouse = c.numeric(housePending, 0);
+    const covered = paid + pendingHouse;
+    if (netTotal > 0 && Math.abs(covered - netTotal) > 0.02) {
+      const detail =
+        pendingHouse > 0
+          ? `Pagos de hoy (${c.currency(paid)}) + cuota de la casa (${c.currency(pendingHouse)}) = ${c.currency(covered)}`
+          : `Los pagos (${c.currency(paid)})`;
       const ok = confirm(
-        `Los pagos (${c.currency(paid)}) no coinciden con el total a cobrar (${c.currency(netTotal)}). ¿Guardar igual?`
+        `${detail} no coinciden con el total a cobrar (${c.currency(netTotal)}). ¿Guardar igual?`
       );
       if (!ok) return false;
     }
@@ -1030,12 +1037,43 @@
       .getSales()
       .filter((s) => String(s.client || "").trim() === name)
       .sort((a, b) => String(b.date).localeCompare(String(a.date)));
+    const receivables = (c.getReceivables?.() || [])
+      .filter((r) => String(r.clientName || "").trim() === name && c.numeric(r.amountPending, 0) > 0)
+      .sort((a, b) => String(a.dueDate || "").localeCompare(String(b.dueDate || "")));
+    const debtTotal = receivables.reduce((a, r) => a + c.numeric(r.amountPending, 0), 0);
     const modal = document.getElementById("client-profile-modal");
     const body = document.getElementById("client-profile-body");
     if (!modal || !body) return;
     const total = sales.reduce((a, s) => a + c.numeric(s.saleTotal, 0), 0);
     const phone = sales.find((s) => s.phone)?.phone || "—";
     const ig = sales.find((s) => s.igHandle)?.igHandle || "—";
+    const debtBlock =
+      receivables.length > 0
+        ? `
+      <div class="client-profile-stats" style="margin-top:0.75rem">
+        <article class="client-profile-stat">
+          <span class="client-profile-stat__label">Deuda pendiente</span>
+          <strong class="client-profile-stat__val">${c.currency(debtTotal)}</strong>
+        </article>
+        <article class="client-profile-stat">
+          <span class="client-profile-stat__label">Cuotas abiertas</span>
+          <strong class="client-profile-stat__val">${receivables.length}</strong>
+        </article>
+      </div>
+      <div class="table-wrap client-profile-table">
+        <table>
+          <thead><tr><th>Vence</th><th>Concepto</th><th>Pendiente</th></tr></thead>
+          <tbody>
+            ${receivables
+              .map(
+                (r) =>
+                  `<tr><td>${r.dueDate || "—"}</td><td>${c.escapeHtml(r.concept || "")}</td><td>${c.currency(r.amountPending)}</td></tr>`
+              )
+              .join("")}
+          </tbody>
+        </table>
+      </div>`
+        : `<p class="muted" style="margin:0.75rem 0 0">Sin deuda pendiente en Deudores.</p>`;
     body.innerHTML = `
       <div class="client-profile-hero">
         <div class="client-profile-avatar" aria-hidden="true">${c.escapeHtml(name.charAt(0).toUpperCase())}</div>
@@ -1054,6 +1092,7 @@
           <strong class="client-profile-stat__val">${c.currency(total)}</strong>
         </article>
       </div>
+      ${debtBlock}
       <div class="table-wrap client-profile-table">
         <table>
           <thead><tr><th>Fecha</th><th>Equipo</th><th>Total</th></tr></thead>
@@ -1274,6 +1313,10 @@
       }
       closeRecvPayModal();
       await c.afterDataChange();
+      if (pending.next <= 0) {
+        await c.promoteCobrandoLeadsIfDebtCleared?.(pending.clientName, "");
+        await c.afterDataChange?.();
+      }
     });
   }
 
