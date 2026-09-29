@@ -3196,6 +3196,16 @@ function invDefaultColorStorageForCategory(category, colorRaw, storageRaw) {
   return { color, storage };
 }
 
+/** Precio = costo × (1 + %negocio + %ganancia neta). Ambos % sobre el costo. */
+function computeSalePriceFromPcts(cost, bizPct, netPct) {
+  const c = numeric(cost, 0);
+  if (c <= 0) return null;
+  const biz = Math.max(0, numeric(bizPct, 0));
+  const net = Math.max(0, numeric(netPct, 0));
+  const price = c * (1 + biz / 100 + net / 100);
+  return price > 0 ? Math.round(price * 100) / 100 : null;
+}
+
 /** Precio de venta US$ = costo producto + cuota tienda + ganancia limpia. */
 function computeSalePriceWithOverhead(cost, overheadPerUnit, netGain) {
   const c = numeric(cost, 0);
@@ -3206,7 +3216,7 @@ function computeSalePriceWithOverhead(cost, overheadPerUnit, netGain) {
   return price > 0 ? Math.round(price * 100) / 100 : null;
 }
 
-/** @deprecated kept for any leftover callers; prefer computeSalePriceWithOverhead */
+/** @deprecated kept for any leftover callers; prefer computeSalePriceFromPcts */
 function computeSalePriceFromTarget(cost, mode, target) {
   const c = numeric(cost, 0);
   const t = numeric(target, 0);
@@ -3227,44 +3237,44 @@ function computeSalePriceFromTarget(cost, mode, target) {
   return null;
 }
 
-const PRECIOS_GEN_OH_KEY = "go_apple_precios_gen_oh_unit";
-const PRECIOS_GEN_GAIN_KEY = "go_apple_precios_gen_gain";
+const PRECIOS_GEN_BIZ_PCT_KEY = "go_apple_precios_gen_biz_pct";
+const PRECIOS_GEN_NET_PCT_KEY = "go_apple_precios_gen_net_pct";
 
-function readPreciosGenOverheadUnit() {
-  const el = document.getElementById("precios-gen-overhead-unit");
-  if (el && el.value !== "") return Math.max(0, numeric(el.value, 20));
+function readPreciosGenBizPct() {
+  const el = document.getElementById("precios-gen-biz-pct");
+  if (el && el.value !== "") return Math.max(0, numeric(el.value, 10));
   try {
-    const saved = Number(localStorage.getItem(PRECIOS_GEN_OH_KEY));
+    const saved = Number(localStorage.getItem(PRECIOS_GEN_BIZ_PCT_KEY));
     if (Number.isFinite(saved) && saved >= 0) return saved;
   } catch {
     /* ignore */
   }
-  return 20;
+  return 10;
 }
 
-function savePreciosGenOverheadUnit(n) {
+function savePreciosGenBizPct(n) {
   try {
-    localStorage.setItem(PRECIOS_GEN_OH_KEY, String(Math.max(0, numeric(n, 20))));
+    localStorage.setItem(PRECIOS_GEN_BIZ_PCT_KEY, String(Math.max(0, numeric(n, 10))));
   } catch {
     /* ignore */
   }
 }
 
-function readPreciosGenNetGain() {
-  const el = document.getElementById("precios-gen-target");
-  if (el && el.value !== "") return Math.max(0, numeric(el.value, 30));
+function readPreciosGenNetPct() {
+  const el = document.getElementById("precios-gen-net-pct");
+  if (el && el.value !== "") return Math.max(0, numeric(el.value, 15));
   try {
-    const saved = Number(localStorage.getItem(PRECIOS_GEN_GAIN_KEY));
+    const saved = Number(localStorage.getItem(PRECIOS_GEN_NET_PCT_KEY));
     if (Number.isFinite(saved) && saved >= 0) return saved;
   } catch {
     /* ignore */
   }
-  return 30;
+  return 15;
 }
 
-function savePreciosGenNetGain(n) {
+function savePreciosGenNetPct(n) {
   try {
-    localStorage.setItem(PRECIOS_GEN_GAIN_KEY, String(Math.max(0, numeric(n, 30))));
+    localStorage.setItem(PRECIOS_GEN_NET_PCT_KEY, String(Math.max(0, numeric(n, 15))));
   } catch {
     /* ignore */
   }
@@ -14831,25 +14841,25 @@ function syncPreciosGenTargetLabel() {
 function readPriceGeneratorState() {
   const costEl = document.getElementById("precios-gen-cost");
   const cost = costEl ? numeric(costEl.value, 0) : 0;
-  const overheadPerUnit = readPreciosGenOverheadUnit();
-  const netGain = readPreciosGenNetGain();
+  const bizPct = readPreciosGenBizPct();
+  const netPct = readPreciosGenNetPct();
   const overheadMonth = monthlyStoreCostTotal();
-  const unitsToCover =
-    overheadMonth > 0 && overheadPerUnit > 0
-      ? Math.ceil(overheadMonth / overheadPerUnit)
-      : null;
-  const breakEven = cost > 0 ? Math.round((cost + overheadPerUnit) * 100) / 100 : 0;
-  const price = computeSalePriceWithOverhead(cost, overheadPerUnit, netGain);
+  const bizUsd = cost > 0 ? Math.round(cost * (bizPct / 100) * 100) / 100 : 0;
+  const netUsd = cost > 0 ? Math.round(cost * (netPct / 100) * 100) / 100 : 0;
+  const price = computeSalePriceFromPcts(cost, bizPct, netPct);
   const summary = price != null ? inventoryProfitSummary(cost, price) : null;
   const grossGain = price != null ? Math.round((price - cost) * 100) / 100 : 0;
+  const unitsToCover =
+    overheadMonth > 0 && bizUsd > 0 ? Math.ceil(overheadMonth / bizUsd) : null;
   const ok = cost > 0 && price != null && price > 0;
   return {
     cost,
-    netGain,
+    bizPct,
+    netPct,
+    bizUsd,
+    netUsd,
     overheadMonth,
-    overheadPerUnit,
     unitsToCover,
-    breakEven,
     price,
     summary,
     grossGain,
@@ -14861,15 +14871,15 @@ function renderPriceGenerator() {
   const panel = document.getElementById("tab-generar-precios");
   if (!panel || !panel.classList.contains("active")) return;
 
-  const ohEl = document.getElementById("precios-gen-overhead-unit");
-  if (ohEl && !ohEl.dataset.hydrated) {
-    ohEl.value = String(readPreciosGenOverheadUnit());
-    ohEl.dataset.hydrated = "1";
+  const bizEl = document.getElementById("precios-gen-biz-pct");
+  if (bizEl && !bizEl.dataset.hydrated) {
+    bizEl.value = String(readPreciosGenBizPct());
+    bizEl.dataset.hydrated = "1";
   }
-  const gainEl = document.getElementById("precios-gen-target");
-  if (gainEl && !gainEl.dataset.hydrated) {
-    gainEl.value = String(readPreciosGenNetGain());
-    gainEl.dataset.hydrated = "1";
+  const netEl = document.getElementById("precios-gen-net-pct");
+  if (netEl && !netEl.dataset.hydrated) {
+    netEl.value = String(readPreciosGenNetPct());
+    netEl.dataset.hydrated = "1";
   }
 
   const empty = document.getElementById("precios-gen-empty");
@@ -14884,11 +14894,12 @@ function renderPriceGenerator() {
   const state = readPriceGeneratorState();
   const {
     cost,
-    netGain,
+    bizPct,
+    netPct,
+    bizUsd,
+    netUsd,
     overheadMonth,
-    overheadPerUnit,
     unitsToCover,
-    breakEven,
     price,
     summary,
     grossGain,
@@ -14897,10 +14908,10 @@ function renderPriceGenerator() {
 
   if (overheadLine) {
     if (overheadMonth > 0) {
-      overheadLine.textContent = `Costos fijos del mes (Metas): ${currency(overheadMonth)}. No hace falta predecir ventas: cada unidad aporta lo que vos pongas abajo.`;
+      overheadLine.textContent = `Costos fijos del mes (Metas): ${currency(overheadMonth)}. El % negocio escala con el costo del equipo (un iPhone aporta más que un AirPods).`;
     } else {
       overheadLine.textContent =
-        "Costos fijos del mes: $0 — podés poner aporte 0 o cargarlos en Configuraciones → Metas.";
+        "Costos fijos del mes: $0 — el % negocio igual suma al precio; cargá Metas si querés ver cobertura del mes.";
     }
   }
   if (overheadHint) overheadHint.hidden = overheadMonth > 0;
@@ -14915,25 +14926,26 @@ function renderPriceGenerator() {
       if (el) el.textContent = text;
     };
     setTxt("precios-gen-bd-cost", currency(cost));
-    setTxt("precios-gen-bd-overhead", currency(overheadPerUnit));
-    setTxt("precios-gen-bd-breakeven", currency(breakEven));
-    setTxt("precios-gen-bd-net", currency(netGain));
+    setTxt("precios-gen-bd-overhead", currency(bizUsd));
+    setTxt("precios-gen-bd-biz-note", `(${bizPct.toLocaleString("es-AR")}%)`);
+    setTxt("precios-gen-bd-net", currency(netUsd));
+    setTxt("precios-gen-bd-net-note", `(${netPct.toLocaleString("es-AR")}%)`);
     setTxt("precios-gen-price-usd", currency(price));
 
     const coverLine = document.getElementById("precios-gen-cover-line");
     if (coverLine) {
-      if (overheadMonth > 0 && overheadPerUnit > 0 && unitsToCover != null) {
-        coverLine.textContent = `Con aporte de ${currency(overheadPerUnit)} por venta, con ~${unitsToCover} ventas cubrís los ${currency(overheadMonth)} del mes. Si vendés menos, el aporte no alcanza; si vendés más, sobra.`;
-      } else if (overheadMonth > 0 && overheadPerUnit <= 0) {
-        coverLine.textContent = `Tenés ${currency(overheadMonth)} de costos fijos, pero el aporte a tienda está en 0: cada venta no aporta nada a cubrirlos.`;
+      if (overheadMonth > 0 && bizUsd > 0 && unitsToCover != null) {
+        coverLine.textContent = `Con ${currency(bizUsd)} al negocio por esta venta (${bizPct}% del costo), ~${unitsToCover} ventas iguales cubrirían los ${currency(overheadMonth)} del mes.`;
+      } else if (overheadMonth > 0 && bizUsd <= 0) {
+        coverLine.textContent = `Tenés ${currency(overheadMonth)} de costos fijos, pero el % negocio está en 0.`;
       } else {
-        coverLine.textContent = "Sin costos fijos en Metas: el aporte a tienda es opcional.";
+        coverLine.textContent = "Sin costos fijos en Metas: el % negocio igual se queda en el precio.";
       }
     }
 
     const explain = document.getElementById("precios-gen-explain");
     if (explain) {
-      explain.textContent = `Si vendés a ${currency(price)}, la diferencia bruta es ${currency(grossGain)}: ${currency(overheadPerUnit)} va a tienda y te quedan ${currency(netGain)} limpios.`;
+      explain.textContent = `Precio = costo + ${bizPct}% negocio + ${netPct}% ganancia neta. De ${currency(grossGain)} brutos: ${currency(bizUsd)} negocio y ${currency(netUsd)} limpios.`;
     }
     if (summary) {
       setTxt("precios-gen-markup-pct", `${summary.markupPct.toLocaleString("es-AR")}%`);
@@ -14967,37 +14979,37 @@ function renderPriceGenerator() {
 }
 
 function bindPriceGeneratorControls() {
-  const ids = ["precios-gen-cost", "precios-gen-target", "precios-gen-overhead-unit"];
+  const ids = ["precios-gen-cost", "precios-gen-biz-pct", "precios-gen-net-pct"];
   for (const id of ids) {
     const el = document.getElementById(id);
     if (!el) continue;
     el.addEventListener("input", () => {
-      if (id === "precios-gen-overhead-unit") savePreciosGenOverheadUnit(el.value);
-      if (id === "precios-gen-target") savePreciosGenNetGain(el.value);
+      if (id === "precios-gen-biz-pct") savePreciosGenBizPct(el.value);
+      if (id === "precios-gen-net-pct") savePreciosGenNetPct(el.value);
       renderPriceGenerator();
     });
     el.addEventListener("change", () => {
-      if (id === "precios-gen-overhead-unit") savePreciosGenOverheadUnit(el.value);
-      if (id === "precios-gen-target") savePreciosGenNetGain(el.value);
+      if (id === "precios-gen-biz-pct") savePreciosGenBizPct(el.value);
+      if (id === "precios-gen-net-pct") savePreciosGenNetPct(el.value);
       renderPriceGenerator();
     });
   }
-  document.querySelectorAll("[data-precios-gain]").forEach((btn) => {
+  document.querySelectorAll("[data-precios-biz]").forEach((btn) => {
     btn.addEventListener("click", () => {
-      const targetEl = document.getElementById("precios-gen-target");
-      if (targetEl) {
-        targetEl.value = btn.getAttribute("data-precios-gain") || "30";
-        savePreciosGenNetGain(targetEl.value);
+      const el = document.getElementById("precios-gen-biz-pct");
+      if (el) {
+        el.value = btn.getAttribute("data-precios-biz") || "10";
+        savePreciosGenBizPct(el.value);
       }
       renderPriceGenerator();
     });
   });
-  document.querySelectorAll("[data-precios-oh]").forEach((btn) => {
+  document.querySelectorAll("[data-precios-net]").forEach((btn) => {
     btn.addEventListener("click", () => {
-      const ohEl = document.getElementById("precios-gen-overhead-unit");
-      if (ohEl) {
-        ohEl.value = btn.getAttribute("data-precios-oh") || "20";
-        savePreciosGenOverheadUnit(ohEl.value);
+      const el = document.getElementById("precios-gen-net-pct");
+      if (el) {
+        el.value = btn.getAttribute("data-precios-net") || "15";
+        savePreciosGenNetPct(el.value);
       }
       renderPriceGenerator();
     });
