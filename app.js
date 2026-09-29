@@ -10627,22 +10627,37 @@ function renderGoalsProgress() {
   if (coverEl) {
     coverEl.hidden = !cover;
     if (cover) {
-      const done = cover.pct >= 99.5;
-      const falta = Math.max(0, cover.goal - cover.actual);
+      // Abajo: cuánto llevamos vs la meta de costos.
+      // Arriba "Faltan": solo lo que falta para llegar a esa meta (no sumar el rojo del mes).
+      const carried = Math.max(0, numeric(cover.actual, 0));
+      const goal = Math.max(0, numeric(cover.goal, 0));
+      const falta = Math.max(0, Math.round((goal - carried) * 100) / 100);
+      const done = goal > 0 && carried >= goal - 0.009;
       const status = document.getElementById("app-cover-status");
       const fill = document.getElementById("app-cover-fill");
       const meta = document.getElementById("app-cover-meta");
       const track = document.getElementById("app-cover-track");
-      if (status) status.textContent = done ? "Tienda cubierta" : `Faltan ${currency(falta)}`;
+      const pct = goal > 0 ? Math.min(100, (carried / goal) * 100) : 0;
+      if (status) {
+        status.textContent = done
+          ? "Tienda cubierta"
+          : `Faltan ${currency(falta)}`;
+      }
       if (fill) {
-        fill.style.width = `${Math.max(0, Math.min(100, cover.pct))}%`;
+        fill.style.width = `${Math.max(0, Math.min(100, pct))}%`;
         fill.classList.toggle("is-done", done);
       }
-      if (track) track.setAttribute("aria-valuenow", String(Math.round(cover.pct)));
+      if (track) track.setAttribute("aria-valuenow", String(Math.round(pct)));
       if (meta) {
-        meta.textContent = done
-          ? `${currency(cover.actual)} de ${currency(cover.goal)}. Lo que sobra es ganancia.`
-          : `${currency(Math.max(0, cover.actual))} de ${currency(cover.goal)} este mes.`;
+        if (done) {
+          const surplus = Math.max(0, numeric(cover.actual, 0) - goal);
+          meta.textContent =
+            surplus > 0.009
+              ? `${currency(carried)} de ${currency(goal)}. Sobran ${currency(surplus)} de ganancia.`
+              : `${currency(carried)} de ${currency(goal)}. Meta alcanzada.`;
+        } else {
+          meta.textContent = `${currency(carried)} de ${currency(goal)} este mes.`;
+        }
       }
     }
   }
