@@ -1408,6 +1408,194 @@ async function createHousePlanReceivables({
   return 1;
 }
 
+const HOUSE_PLAN_REPAIR_FLAG = "go_apple_house_plan_repaired_v1";
+
+/**
+ * Repara datos viejos de cuota de la casa:
+ * - une Cuota 1/3 + 2/3 + 3/3 del mismo sale_id en un solo pendiente
+ * - corrige ventas donde el desglose de pago = total pero todavía hay deuda
+ */
+async function repairHousePlanLegacyData() {
+  if (typeof localStorage !== "undefined" && localStorage.getItem(HOUSE_PLAN_REPAIR_FLAG) === "1") {
+    // Igual reparamos ventas mal cargadas si siguen sumando de más (barato).
+  }
+
+  const recv = getReceivables();
+  const bySale = new Map();
+  for (const r of recv) {
+    const sid = r.saleId ? String(r.saleId) : "";
+    if (!sid) continue;
+    if (!/cuota\s+\d+\s*\/\s*\d+/i.test(String(r.concept || "")) && !/cuota de la casa/i.test(String(r.notes || ""))) {
+      continue;
+    }
+    if (!bySale.has(sid)) bySale.set(sid, []);
+    bySale.get(sid).push(r);
+  }
+
+  let recvChanged = false;
+  for (const [saleId, members] of bySale) {
+    if (members.length < 2) continue;
+    const sorted = members.slice().sort((a, b) => String(a.dueDate || "").localeCompare(String(b.dueDate || "")));
+    const keep = sorted[0];
+    const total = members.reduce((a, m) => a + Math.max(0, numeric(m.amountPending, 0)), 0);
+    const n = members.length;
+    const label =
+      String(keep.concept || "")
+        .replace(/^Cuota\s+\d+\s*\/\s*\d+\s*·\s*/i, "")
+        .replace(/\s*·\s*\d+\s*cuotas?$/i, "")
+        .trim() || "equipo";
+    const each = n > 0 ? Math.round((total / n) * 100) / 100 : total;
+    const concept = `Cuota casa · ${label} · ${n} cuotas`;
+    const notes = [
+      "Cuota de la casa",
+      `${n} cuotas de ~${currency(each)}`,
+      `Venta ${String(saleId).slice(0, 8)}`,
+      "Plan consolidado",
+    ].join(" · ");
+
+    if (useCloud && supabaseClient) {
+      const userId = await getUserId();
+      const { error: upErr } = await supabaseClient
+        .from("pending_receivables")
+        .update({
+          concept,
+          amount_pending: total,
+          due_date: keep.dueDate || null,
+          notes,
+          kind: "cuotas",
+        })
+        .eq("id", keep.id)
+        .eq("user_id", userId);
+      if (upErr) throw upErr;
+      for (const m of members) {
+        if (String(m.id) === String(keep.id)) continue;
+        const { error: delErr } = await supabaseClient
+          .from("pending_receivables")
+          .delete()
+          .eq("id", m.id)
+          .eq("user_id", userId);
+        if (delErr) throw delErr;
+      }
+    } else {
+      const list = readList(KEYS.receivables);
+      const drop = new Set(members.map((m) => String(m.id)));
+      drop.delete(String(keep.id));
+      const next = list
+        .filter((r) => !drop.has(String(r.id)))
+        .map((r) => {
+          if (String(r.id) !== String(keep.id)) return r;
+          return {
+            ...r,
+            concept,
+            amountPending: total,
+            dueDate: keep.dueDate || "",
+            notes,
+            kind: "cuotas",
+            saleId,
+          };
+        });
+      writeList(KEYS.receivables, next);
+    }
+    recvChanged = true;
+  }
+
+  if (recvChanged && useCloud) {
+    const { data, error } = await supabaseClient
+      .from("pending_receivables")
+      .select("*")
+      .order("created_at", { ascending: false });
+    if (!error) cacheReceivables = (data || []).map(receivableFromRow);
+  } else if (recvChanged) {
+    cacheReceivables = readList(KEYS.receivables);
+  }
+
+  // Corregir ventas: si hay deuda ligada y el pago cargado = total, bajar el cobrado a total − pendiente.
+  const sales = getSales();
+  let salesFixed = 0;
+  for (const sale of sales) {
+    const pending = pendingAmountForSale(sale.id);
+    if (pending <= 0.02) continue;
+    const total = numeric(sale.saleTotal, 0);
+    const paid =
+      numeric(sale.paymentCash, 0) +
+      numeric(sale.paymentTransfer, 0) +
+      numeric(sale.paymentCard, 0) +
+      numeric(sale.paymentOther, 0);
+    const implied = Math.max(0, Math.round((total - pending) * 100) / 100);
+    const needsPayFix = paid > implied + 0.02;
+    const notes = String(sale.payment || "");
+    const needsNote = !/cuota de la casa/i.test(notes);
+    if (!needsPayFix && !needsNote) continue;
+
+    const newNotes = needsNote
+      ? notes
+        ? `${notes} · Cuota de la casa`
+        : `Cuota de la casa · pendiente ${currency(pending)}`
+      : notes;
+
+    // Dejamos el cobrado real en "otro" (o 0) para no inflar ingresos.
+    const payPatch = needsPayFix
+      ? {
+          paymentCash: 0,
+          paymentTransfer: 0,
+          paymentCard: 0,
+          paymentOther: implied,
+          payment: newNotes,
+        }
+      : { payment: newNotes };
+
+    if (useCloud && supabaseClient) {
+      const userId = await getUserId();
+      const payload = needsPayFix
+        ? {
+            payment_cash: 0,
+            payment_transfer: 0,
+            payment_card: 0,
+            payment_other: implied,
+            payment: newNotes,
+          }
+        : { payment: newNotes };
+      const { error } = await supabaseClient
+        .from("sales")
+        .update(payload)
+        .eq("id", sale.id)
+        .eq("user_id", userId);
+      if (error) {
+        console.warn("No se pudo corregir venta", sale.id, error);
+        continue;
+      }
+      const cached = cacheSales.find((s) => String(s.id) === String(sale.id));
+      if (cached) Object.assign(cached, payPatch);
+      salesFixed += 1;
+    } else {
+      const list = readList(KEYS.sales);
+      const idx = list.findIndex((s) => String(s.id) === String(sale.id));
+      if (idx >= 0) {
+        list[idx] = { ...list[idx], ...payPatch };
+        writeList(KEYS.sales, list);
+        salesFixed += 1;
+      }
+    }
+  }
+
+  if (salesFixed && useCloud) {
+    /* cache ya parcheado arriba */
+  }
+
+  try {
+    localStorage.setItem(HOUSE_PLAN_REPAIR_FLAG, "1");
+  } catch {
+    /* — */
+  }
+
+  if (recvChanged || salesFixed) {
+    console.info(
+      `Cuota de la casa: reparados ${recvChanged ? "planes agrupados" : "—"}, ${salesFixed} venta(s) de pago.`
+    );
+    mirrorCloudCachesToLocal();
+  }
+}
+
 /**
  * Tras cobrar el último pendiente de un cliente, pasa leads «cobrando» → «venta».
  */
@@ -1603,8 +1791,20 @@ function normalizeSale(s) {
 }
 
 /**
- * Dinero que realmente entró al cobrar la venta (efectivo/transf/tarjeta/otro).
- * El saldo de cuota de la casa NO cuenta acá: vive en Deudores hasta el cobro.
+ * Saldo aún por cobrar ligado a una venta (cuota de la casa).
+ */
+function pendingAmountForSale(saleId) {
+  if (!saleId) return 0;
+  const sid = String(saleId);
+  return getReceivables().reduce((a, r) => {
+    if (String(r.saleId || "") !== sid) return a;
+    return a + Math.max(0, numeric(r.amountPending, 0));
+  }, 0);
+}
+
+/**
+ * Dinero que realmente entró al cobrar la venta.
+ * Si hay pendientes ligados a la venta, ese saldo NO cuenta como ingreso/caja.
  */
 function saleCollectedAmount(sale) {
   if (!sale) return 0;
@@ -1615,20 +1815,34 @@ function saleCollectedAmount(sale) {
     numeric(sale.paymentOther, 0);
   const total = numeric(sale.saleTotal, 0);
   const notes = String(sale.payment || "");
-  const isHousePlan = /cuota de la casa/i.test(notes);
+  const pending = pendingAmountForSale(sale.id);
+  const isHousePlan = pending > 0.009 || /cuota de la casa/i.test(notes);
+
+  if (pending > 0.009) {
+    const impliedCollected = Math.max(0, Math.round((total - pending) * 100) / 100);
+    // Si cargaron mal el desglose (= total) pero hay deuda, usamos total − pendiente.
+    if (paid > 0.009 && Math.abs(paid - total) <= 0.02 && impliedCollected < paid - 0.02) {
+      return impliedCollected;
+    }
+    if (paid > 0.009 && paid <= impliedCollected + 0.05) {
+      return Math.min(paid, total > 0 ? total : paid);
+    }
+    return impliedCollected;
+  }
+
   if (paid > 0.009) {
     return total > 0 ? Math.min(paid, total) : paid;
   }
   if (isHousePlan) return 0;
-  // Ventas viejas sin desglose de pago: se asume cobrado el total.
+  // Ventas viejas sin desglose ni deudores: se asume cobrado el total.
   return total;
 }
 
 function saleHasPendingHouseBalance(sale) {
   if (!sale) return false;
+  if (pendingAmountForSale(sale.id) > 0.02) return true;
   if (/cuota de la casa/i.test(String(sale.payment || ""))) {
-    const collected = saleCollectedAmount(sale);
-    return numeric(sale.saleTotal, 0) - collected > 0.02;
+    return numeric(sale.saleTotal, 0) - saleCollectedAmount(sale) > 0.02;
   }
   return false;
 }
@@ -3400,6 +3614,12 @@ async function refreshCloud() {
     }
   } else {
     cachePipelineLeads = (pipeRes.data || []).map(pipelineLeadFromRow);
+  }
+
+  try {
+    await repairHousePlanLegacyData();
+  } catch (e) {
+    console.warn("Reparación cuota de la casa:", e);
   }
 }
 
