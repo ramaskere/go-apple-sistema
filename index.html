@@ -539,7 +539,7 @@
                 <strong>Ventas</strong> cuando cerrás la operación.
               </li>
               <li>
-                <strong>Deudores</strong>: pendientes que aún no entraron a caja. Si en la venta marcás <strong>Cuota de la casa</strong>, el saldo se crea solo acá y el lead queda en Pipeline → <strong>Cobrando</strong> (el seguimiento no se cierra).
+                <strong>Deudores</strong>: pendientes que aún no entraron a caja. Si en la venta marcás <strong>Cuota de la casa</strong>, se crea un pendiente agrupado acá; el lead queda en Pipeline → <strong>Cobrando</strong>. Ese saldo <strong>no</strong> suma a Ingresos ni a Caja hasta que lo cobres.
               </li>
             </ul>
             <div class="support-box">
@@ -870,7 +870,9 @@
                       <input id="sale-casa-first-due" type="date" />
                     </label>
                     <p id="sale-casa-hint" class="fieldset-hint muted label-span-2">
-                      Se crean las cuotas en <strong>Deudores</strong>. El lead queda en <strong>Cobrando</strong> (no se cierra el seguimiento).
+                      Se crea <strong>un pendiente agrupado</strong> en Deudores (no una fila por cuota).
+                      Solo lo que pagó hoy entra a caja / ingresos; el resto queda por cobrar.
+                      El lead queda en Pipeline → <strong>Cobrando</strong>.
                     </p>
                   </div>
                 </div>

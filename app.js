@@ -1325,8 +1325,8 @@ function splitAmountIntoInstallments(total, n) {
 }
 
 /**
- * Crea pendientes en Deudores a partir de un plan de cuota de la casa.
- * @returns {number} cantidad de filas creadas
+ * Crea un pendiente agrupado en Deudores (un plan = una fila, no N cuotas sueltas).
+ * @returns {number} cantidad de filas creadas (0 o 1)
  */
 async function createHousePlanReceivables({
   userId,
@@ -1338,76 +1338,74 @@ async function createHousePlanReceivables({
   firstDue,
   saleId,
 }) {
-  const parts = splitAmountIntoInstallments(amountPending, installments);
-  if (parts.length === 0 || parts.every((p) => p <= 0)) return 0;
-  const n = parts.length;
+  const amt = Math.round(Math.max(0, numeric(amountPending, 0)) * 100) / 100;
+  if (amt <= 0) return 0;
+  const n = Math.max(1, Math.min(24, Math.floor(numeric(installments, 1)) || 1));
   const label = String(modelsLabel || "equipo").trim() || "equipo";
-  const created = [];
+  const each = n > 1 ? Math.round((amt / n) * 100) / 100 : amt;
+  const concept =
+    n === 1 ? `Cuota casa · ${label}` : `Cuota casa · ${label} · ${n} cuotas`;
+  const notes = [
+    "Cuota de la casa",
+    n > 1 ? `${n} cuotas de ~${currency(each)}` : "",
+    phone ? `Tel: ${phone}` : "",
+    saleId ? `Venta ${String(saleId).slice(0, 8)}` : "",
+  ]
+    .filter(Boolean)
+    .join(" · ");
+  const dueDate = firstDue || "";
 
-  for (let i = 0; i < n; i++) {
-    const amt = parts[i];
-    if (amt <= 0) continue;
-    const concept =
-      n === 1 ? `Cuota casa · ${label}` : `Cuota ${i + 1}/${n} · ${label}`;
-    const dueDate = firstDue ? addMonthsToYmd(firstDue, i) : "";
-    const notes = [
-      "Cuota de la casa",
-      phone ? `Tel: ${phone}` : "",
-      saleId ? `Venta ${String(saleId).slice(0, 8)}` : "",
-    ]
-      .filter(Boolean)
-      .join(" · ");
-
-    if (useCloud && supabaseClient) {
-      const payload = {
-        user_id: userId,
-        client_name: clientName,
-        concept,
-        amount_pending: amt,
-        due_date: dueDate || null,
-        kind: "cuotas",
-        notes,
-        sale_id: saleId || null,
-      };
-      let { data, error } = await supabaseClient
+  let created = null;
+  if (useCloud && supabaseClient) {
+    const payload = {
+      user_id: userId,
+      client_name: clientName,
+      concept,
+      amount_pending: amt,
+      due_date: dueDate || null,
+      kind: "cuotas",
+      notes,
+      sale_id: saleId || null,
+    };
+    let { data, error } = await supabaseClient
+      .from("pending_receivables")
+      .insert(payload)
+      .select("*")
+      .single();
+    if (error && /sale_id|schema cache|could not find/i.test(error.message || "")) {
+      delete payload.sale_id;
+      ({ data, error } = await supabaseClient
         .from("pending_receivables")
         .insert(payload)
         .select("*")
-        .single();
-      if (error && /sale_id|schema cache|could not find/i.test(error.message || "")) {
-        delete payload.sale_id;
-        ({ data, error } = await supabaseClient
-          .from("pending_receivables")
-          .insert(payload)
-          .select("*")
-          .single());
-      }
-      if (error) throw error;
-      if (data) created.push(receivableFromRow(data));
-    } else {
-      const row = {
-        id: crypto.randomUUID(),
-        clientName,
-        concept,
-        amountPending: amt,
-        dueDate,
-        kind: "cuotas",
-        notes,
-        saleId: saleId || null,
-        createdAt: new Date().toISOString(),
-      };
-      created.push(row);
+        .single());
     }
+    if (error) throw error;
+    if (data) created = receivableFromRow(data);
+  } else {
+    created = {
+      id: crypto.randomUUID(),
+      clientName,
+      concept,
+      amountPending: amt,
+      dueDate,
+      kind: "cuotas",
+      notes,
+      saleId: saleId || null,
+      createdAt: new Date().toISOString(),
+    };
   }
 
-  if (!useCloud && created.length) {
+  if (!created) return 0;
+
+  if (!useCloud) {
     const list = readList(KEYS.receivables);
-    writeList(KEYS.receivables, [...created, ...list]);
-  } else if (useCloud && created.length) {
-    cacheReceivables = [...created, ...cacheReceivables];
+    writeList(KEYS.receivables, [created, ...list]);
+  } else {
+    cacheReceivables = [created, ...cacheReceivables];
     mirrorCloudCachesToLocal();
   }
-  return created.length;
+  return 1;
 }
 
 /**
@@ -1602,6 +1600,37 @@ function normalizeSale(s) {
     commissionPaid: Boolean(s.commissionPaid ?? s.commission_paid),
     commissionPaidAt: s.commissionPaidAt ?? s.commission_paid_at ?? null,
   };
+}
+
+/**
+ * Dinero que realmente entró al cobrar la venta (efectivo/transf/tarjeta/otro).
+ * El saldo de cuota de la casa NO cuenta acá: vive en Deudores hasta el cobro.
+ */
+function saleCollectedAmount(sale) {
+  if (!sale) return 0;
+  const paid =
+    numeric(sale.paymentCash, 0) +
+    numeric(sale.paymentTransfer, 0) +
+    numeric(sale.paymentCard, 0) +
+    numeric(sale.paymentOther, 0);
+  const total = numeric(sale.saleTotal, 0);
+  const notes = String(sale.payment || "");
+  const isHousePlan = /cuota de la casa/i.test(notes);
+  if (paid > 0.009) {
+    return total > 0 ? Math.min(paid, total) : paid;
+  }
+  if (isHousePlan) return 0;
+  // Ventas viejas sin desglose de pago: se asume cobrado el total.
+  return total;
+}
+
+function saleHasPendingHouseBalance(sale) {
+  if (!sale) return false;
+  if (/cuota de la casa/i.test(String(sale.payment || ""))) {
+    const collected = saleCollectedAmount(sale);
+    return numeric(sale.saleTotal, 0) - collected > 0.02;
+  }
+  return false;
 }
 
 function normalizeSeller(s) {
@@ -3098,6 +3127,65 @@ function sortedReceivablesList() {
     });
 }
 
+/**
+ * Agrupa cuotas del mismo plan (mismo sale_id) en una sola fila de vista.
+ * Cobrar/Editar apuntan a la cuota más próxima; Eliminar borra todo el plan.
+ */
+function groupReceivablesForDisplay(list) {
+  const singles = [];
+  const bySale = new Map();
+  for (const r of list) {
+    const sid = r.saleId ? String(r.saleId) : "";
+    if (!sid) {
+      singles.push({ ...r, memberIds: [r.id], isGroup: false });
+      continue;
+    }
+    if (!bySale.has(sid)) bySale.set(sid, []);
+    bySale.get(sid).push(r);
+  }
+  const groups = [];
+  for (const [, members] of bySale) {
+    if (members.length === 1) {
+      const r = members[0];
+      groups.push({ ...r, memberIds: [r.id], isGroup: false });
+      continue;
+    }
+    const sorted = members.slice().sort((a, b) => {
+      const da = a.dueDate || "9999";
+      const db = b.dueDate || "9999";
+      return da.localeCompare(db);
+    });
+    const next = sorted.find((m) => numeric(m.amountPending, 0) > 0) || sorted[0];
+    const total = members.reduce((a, m) => a + Math.max(0, numeric(m.amountPending, 0)), 0);
+    const labelMatch = String(next.concept || "").match(/·\s*(.+)$/);
+    const equip =
+      labelMatch?.[1]?.replace(/\s*\d+\/\d+\s*$/, "").replace(/^Cuota\s+\d+\/\d+\s*·\s*/i, "").trim() ||
+      String(next.concept || "")
+        .replace(/^Cuota\s+\d+\/\d+\s*·\s*/i, "")
+        .trim() ||
+      "equipo";
+    const cleanEquip = equip.replace(/\s*·\s*\d+\s*cuotas?$/i, "").trim() || equip;
+    groups.push({
+      ...next,
+      id: next.id,
+      concept: `Cuota casa · ${cleanEquip} · ${members.length} cuotas`,
+      amountPending: total,
+      dueDate: next.dueDate || "",
+      notes: `Plan agrupado (${members.length} cuotas) · ${next.notes || ""}`.trim(),
+      memberIds: members.map((m) => m.id),
+      isGroup: true,
+    });
+  }
+  return [...singles, ...groups].sort((a, b) => {
+    const da = a.dueDate || "";
+    const db = b.dueDate || "";
+    if (da && db) return da.localeCompare(db);
+    if (da) return -1;
+    if (db) return 1;
+    return 0;
+  });
+}
+
 const RECEIVABLE_KIND_LABEL = {
   cuotas: "Cuotas / plan",
   tarjeta: "Tarjeta (demora)",
@@ -4276,15 +4364,25 @@ function renderCash() {
   const sales = getSales();
   cashBody.innerHTML = "";
 
-  let saleRows = sales.map((s) => ({
-    date: s.date || "",
-    type: "ingreso",
-    concept: `Venta · ${s.client || "—"} · ${s.model || "Equipo"}`,
-    amount: numeric(s.saleTotal, 0),
-    isSale: true,
-    saleId: s.id,
-    repartoDest: "reparto",
-  }));
+  let saleRows = sales
+    .map((s) => {
+      const collected = saleCollectedAmount(s);
+      const pending = saleHasPendingHouseBalance(s);
+      const base = `Venta · ${s.client || "—"} · ${s.model || "Equipo"}`;
+      return {
+        date: s.date || "",
+        type: "ingreso",
+        concept: pending
+          ? `${base} · cobrado ${currency(collected)} (resto en Deudores)`
+          : base,
+        amount: collected,
+        isSale: true,
+        saleId: s.id,
+        repartoDest: "reparto",
+      };
+    })
+    // Solo lo que realmente entró. Venta 100% a crédito → Deudores, no caja.
+    .filter((r) => numeric(r.amount, 0) > 0.009);
   if (viewLimitsToActiveMonth("cash")) {
     const mk = getDashboardMonthKey();
     saleRows = saleRows.filter((r) => recordInMonth(r.date, mk));
@@ -9753,7 +9851,8 @@ function renderSectionKpis() {
   const monthCash = cash.filter((c) => c.date && String(c.date).slice(0, 7) === mk);
   const cajaCashIn = monthCash.filter((c) => c.type === "ingreso").reduce((a, c) => a + numeric(c.amount, 0), 0);
   const cajaOut = monthCash.filter((c) => c.type === "egreso").reduce((a, c) => a + numeric(c.amount, 0), 0);
-  const cajaTotalIn = ventasRevenue + cajaCashIn;
+  const ventasCollected = monthSales.reduce((a, s) => a + saleCollectedAmount(s), 0);
+  const cajaTotalIn = ventasCollected + cajaCashIn;
   if (el("caja-kpi-ingresos")) el("caja-kpi-ingresos").textContent = currency(cajaTotalIn);
   if (el("caja-kpi-egresos")) el("caja-kpi-egresos").textContent = currency(cajaOut);
   if (el("caja-kpi-count")) el("caja-kpi-count").textContent = `${ventasCount} + ${monthCash.length}`;
@@ -10184,15 +10283,16 @@ function syncCashEgresoKindUi() {
  * Ingresos/egresos con destino fijo van directo al bucket correspondiente.
  */
 function monthProfitForSplit(sales, cash, keyYYYYMM) {
-  const salesTotal = salesForMonthKey(sales, keyYYYYMM).reduce((a, s) => a + numeric(s.saleTotal, 0), 0);
+  const salesCollected = salesForMonthKey(sales, keyYYYYMM).reduce((a, s) => a + saleCollectedAmount(s), 0);
   const repartoCashIn = sumCashIngresosByDestMonth(cash, keyYYYYMM, "reparto");
   const commissions = sumSellerCommissionsForMonth(sales, keyYYYYMM);
-  return Math.max(0, salesTotal + repartoCashIn - commissions);
+  return Math.max(0, salesCollected + repartoCashIn - commissions);
 }
 
-/** Facturación ventas + ingresos de caja del mes. */
+/** Facturación cobrada: dinero que entró de ventas + ingresos de caja del mes.
+ *  No incluye saldo a cobrar (Deudores / cuota de la casa). */
 function totalMoneyInForMonth(sales, cash, keyYYYYMM) {
-  const sv = salesForMonthKey(sales, keyYYYYMM).reduce((a, s) => a + numeric(s.saleTotal, 0), 0);
+  const sv = salesForMonthKey(sales, keyYYYYMM).reduce((a, s) => a + saleCollectedAmount(s), 0);
   return sv + sumCashIngresosMonth(cash, keyYYYYMM);
 }
 
@@ -10715,7 +10815,7 @@ function renderStatsVisual() {
   chartSales.forEach((s) => {
     const day = Number(String(s.date).slice(8, 10));
     if (day >= 1 && day <= dim) {
-      byDay[day] = (byDay[day] || 0) + numeric(s.saleTotal, 0);
+      byDay[day] = (byDay[day] || 0) + saleCollectedAmount(s);
     }
   });
   chartCashIn.forEach((c) => {
@@ -10870,6 +10970,7 @@ function renderReceivables() {
   if (q) {
     list = list.filter((r) => textIncludesQuery([r.clientName, r.concept, r.notes].filter(Boolean).join(" "), q));
   }
+  list = groupReceivablesForDisplay(list);
   body.innerHTML = "";
   if (list.length === 0) {
     renderViewFilterEmptyRow(body, 7, "receivables", "pendientes por cobrar");
@@ -10878,10 +10979,19 @@ function renderReceivables() {
   list.forEach((r) => {
     const tr = document.createElement("tr");
     tr.dataset.recvId = String(r.id);
+    if (r.isGroup && r.memberIds?.length) {
+      tr.dataset.recvGroupIds = r.memberIds.map(String).join(",");
+    }
     const today = new Date().toISOString().slice(0, 10);
     const isOverdue = r.dueDate && r.dueDate < today && numeric(r.amountPending, 0) > 0;
     if (isOverdue) tr.classList.add("alert-row--overdue");
     if (pendingAlertNav?.highlightRecvId && String(r.id) === String(pendingAlertNav.highlightRecvId)) {
+      tr.classList.add("alert-row--match");
+    }
+    if (
+      r.isGroup &&
+      r.memberIds?.some((id) => pendingAlertNav?.highlightRecvId && String(id) === String(pendingAlertNav.highlightRecvId))
+    ) {
       tr.classList.add("alert-row--match");
     }
     const kindLab = RECEIVABLE_KIND_LABEL[r.kind] || r.kind;
@@ -10897,7 +11007,9 @@ function renderReceivables() {
       <td>
         <button type="button" class="secondary recv-edit-btn" data-id="${escapeHtml(String(r.id))}">Editar</button>
         <button type="button" class="secondary recv-pay-btn" data-id="${escapeHtml(String(r.id))}">Cobrar</button>
-        <button type="button" class="danger recv-del-btn" data-id="${escapeHtml(String(r.id))}">Eliminar</button>
+        <button type="button" class="danger recv-del-btn" data-id="${escapeHtml(String(r.id))}"${
+          r.isGroup ? ` data-group-ids="${escapeHtml((r.memberIds || []).map(String).join(","))}"` : ""
+        }>Eliminar</button>
       </td>
     `;
     body.appendChild(tr);
@@ -14216,24 +14328,38 @@ if (receivablesBodyEl) {
     }
 
     if (t.classList.contains("recv-del-btn")) {
-      if (!confirm("¿Eliminar este pendiente de la lista?")) return;
+      const groupRaw = t.dataset.groupIds || "";
+      const groupIds = groupRaw
+        ? groupRaw
+            .split(",")
+            .map((x) => x.trim())
+            .filter(Boolean)
+        : [id];
+      const msg =
+        groupIds.length > 1
+          ? `¿Eliminar este plan completo (${groupIds.length} cuotas) de la lista?`
+          : "¿Eliminar este pendiente de la lista?";
+      if (!confirm(msg)) return;
       if (useCloud) {
         try {
           const userId = await getUserId();
-          const { error } = await supabaseClient
-            .from("pending_receivables")
-            .delete()
-            .eq("id", id)
-            .eq("user_id", userId);
-          if (error) throw error;
+          for (const gid of groupIds) {
+            const { error } = await supabaseClient
+              .from("pending_receivables")
+              .delete()
+              .eq("id", gid)
+              .eq("user_id", userId);
+            if (error) throw error;
+          }
         } catch (err) {
           alert(err instanceof Error ? err.message : String(err));
           return;
         }
       } else {
+        const drop = new Set(groupIds.map(String));
         writeList(
           KEYS.receivables,
-          readList(KEYS.receivables).filter((r) => String(r.id) !== id)
+          readList(KEYS.receivables).filter((r) => !drop.has(String(r.id)))
         );
       }
       await afterDataChange();
