@@ -7121,7 +7121,7 @@ function buildInventoryUnitCardHtml(item, rate) {
       : `<span class="inv-tile__ars inv-tile__ars--empty muted">Sin precio ARS</span>`;
   const listaBlock =
     arsLista && arsLista !== "—"
-      ? `<span class="inv-tile__ars inv-tile__ars--lista">${escapeHtml(arsLista)}</span><span class="inv-tile__ars-lbl">Lista +10%</span>`
+      ? `<span class="inv-tile__ars inv-tile__ars--lista">${escapeHtml(arsLista)}</span><span class="inv-tile__ars-lbl">Lista (=18x)</span>`
       : "";
   const selected = invWaSelectMode && invWaSelectedIds.has(String(item.id));
   const selectClass = invWaSelectMode ? " inv-unit--wa-selectable" : "";
