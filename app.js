@@ -495,13 +495,13 @@ function formatArsCompact(value) {
   return String(n);
 }
 
-/** Cuota mensual ref.: (precio BASE tarjeta ARS × coef. financiación) ÷ cuotas. */
-const INV_CUOTA3_ARS_MULT = 1.1518;
-const INV_CUOTA6_ARS_MULT = 1.2815;
-/** Ref. POS tasa 83%: $999.999,99 → total $1.583.752,78 / 12 cuotas. */
-const INV_CUOTA12_ARS_MULT = 1.5837528;
-/** Ref. POS tasa 83%: $999.999,99 → total $1.933.938,40 / 18 cuotas. */
-const INV_CUOTA18_ARS_MULT = 1.9339384;
+/** Cuotas POS reales (base = contado +10%).
+ *  Tasa POS 50% en 3 y 6; 55% en 12 y 18.
+ *  Coef. = total_POS / 886600 (captura terminal 2026-10-05). */
+const INV_CUOTA3_ARS_MULT = 1.100853387; // 3x · tasa 50% · total $976.016,61
+const INV_CUOTA6_ARS_MULT = 1.185308595; // 6x · tasa 50% · total $1.050.894,94
+const INV_CUOTA12_ARS_MULT = 1.415144519; // 12x · tasa 55% · total $1.254.667,24
+const INV_CUOTA18_ARS_MULT = 1.658729675; // 18x · tasa 55% · total $1.470.629,73
 /** Base tarjeta = contado ARS × este factor (+10%). 3/6/12/18 se calculan sobre esta base. */
 const INV_LISTA_MARKUP = 1.1;
 
