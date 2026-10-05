@@ -500,8 +500,8 @@ const INV_CUOTA3_ARS_MULT = 1.1518;
 const INV_CUOTA6_ARS_MULT = 1.2815;
 /** Ref. POS tasa 83%: $999.999,99 → total $1.583.752,78 / 12 cuotas. */
 const INV_CUOTA12_ARS_MULT = 1.5837528;
-/** Ref. POS tasa 83%: $999.999,99 → total $1.933.938,40 / 18 cuotas. */
-const INV_CUOTA18_ARS_MULT = 1.9339384;
+/** 18 cuotas: total = precio lista (sin interés extra). Cuota mensual = lista ÷ 18. */
+const INV_CUOTA18_ARS_MULT = 1;
 /** Precio lista / tarjeta = contado ARS × este factor (+10%). Las cuotas salen de lista. */
 const INV_LISTA_MARKUP = 1.1;
 
