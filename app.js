@@ -513,8 +513,8 @@ function tarjetaBaseFromContado(contadoArs) {
 }
 
 /**
- * Precio de LISTA = total de las 18 cuotas (financiación real).
- * No es solo contado+10%: es lo que suma pagar en 18x.
+ * Lista para inventario / WhatsApp = total de las 18 cuotas (financiación real).
+ * El simulador de cuotas NO usa esto: ahí "lista" sigue siendo contado+10%.
  */
 function listaArsFromContado(contadoArs) {
   const base = tarjetaBaseFromContado(contadoArs);
@@ -15056,16 +15056,16 @@ function renderCuotasSimulator() {
   if (!input || !empty || !grid) return;
 
   const contadoArs = parseArsInput(input.value);
-  const baseArs = tarjetaBaseFromContado(contadoArs);
-  const listaArs = listaArsFromContado(contadoArs);
-  const plans = computeCuotaSimPlans(baseArs);
+  // Simulador clásico: "lista" = contado +10%; 3/6/12/18 con sus % sobre esa base.
+  const listaSimArs = tarjetaBaseFromContado(contadoArs);
+  const plans = computeCuotaSimPlans(listaSimArs);
   const hasAmount = contadoArs > 0;
 
   empty.hidden = hasAmount;
   grid.hidden = !hasAmount;
   if (listaBox) listaBox.hidden = !hasAmount;
   if (contadoVal) contadoVal.textContent = hasAmount ? currencyArs(contadoArs) : "—";
-  if (listaVal) listaVal.textContent = hasAmount ? currencyArs(listaArs) : "—";
+  if (listaVal) listaVal.textContent = hasAmount ? currencyArs(listaSimArs) : "—";
 
   for (const plan of plans) {
     const monthlyEl = document.getElementById(`cuotas-sim-${plan.n}-monthly`);

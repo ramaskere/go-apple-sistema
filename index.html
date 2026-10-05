@@ -1920,9 +1920,8 @@
           <section class="card">
             <h2>Simulador de cuotas</h2>
             <p class="section-hint">
-              Ingresá el <strong>contado en ARS</strong>. Se aplica <strong>+10%</strong> como base de financiación
-              y se calculan <strong>3, 6, 12 y 18 cuotas</strong>. El <strong>precio de lista</strong> es el
-              <strong>total de las 18 cuotas</strong> (lo que realmente suman).
+              Ingresá el <strong>contado en ARS</strong>. El simulador le suma <strong>+10% (lista / tarjeta)</strong>
+              y recién ahí calcula <strong>3, 6, 12 y 18 cuotas</strong> con sus respectivos %.
             </p>
             <p class="section-hint">
               ¿Partís del costo en dólares?
@@ -1950,15 +1949,15 @@
             <p id="cuotas-sim-empty" class="section-hint muted">Ingresá un monto mayor a cero para ver las cuotas.</p>
             <div id="cuotas-sim-lista-box" class="cuotas-sim-lista-box" hidden>
               <p class="cuotas-sim-lista-box__title">Quedaría así</p>
-              <div class="cuotas-sim-formula" role="img" aria-label="Lista igual al total de 18 cuotas">
+              <div class="cuotas-sim-formula" role="img" aria-label="Contado más 10 por ciento igual lista">
                 <div class="cuotas-sim-formula__part">
                   <span class="cuotas-sim-formula__k">Contado</span>
                   <strong id="cuotas-sim-contado-val" class="cuotas-sim-formula__v">—</strong>
                 </div>
-                <span class="cuotas-sim-formula__op" aria-hidden="true">→</span>
+                <span class="cuotas-sim-formula__op" aria-hidden="true">+</span>
                 <div class="cuotas-sim-formula__part">
-                  <span class="cuotas-sim-formula__k">18 cuotas</span>
-                  <strong class="cuotas-sim-formula__v">total</strong>
+                  <span class="cuotas-sim-formula__k">10%</span>
+                  <strong class="cuotas-sim-formula__v">tarjeta</strong>
                 </div>
                 <span class="cuotas-sim-formula__op" aria-hidden="true">=</span>
                 <div class="cuotas-sim-formula__part cuotas-sim-formula__part--lista">
@@ -1966,7 +1965,7 @@
                   <strong id="cuotas-sim-lista-val" class="cuotas-sim-formula__v">—</strong>
                 </div>
               </div>
-              <p class="cuotas-sim-lista-box__hint muted">Lista = lo que suman las 18 cuotas. 3/6/12 usan la misma base (contado +10%).</p>
+              <p class="cuotas-sim-lista-box__hint muted">Las cuotas de abajo se calculan sobre la lista (contado +10%).</p>
             </div>
             <div id="cuotas-sim-results" class="cuotas-sim-grid" hidden>
               <article class="cuotas-sim-card" data-plan="3">
@@ -1987,7 +1986,7 @@
               <article class="cuotas-sim-card" data-plan="18">
                 <span class="cuotas-sim-badge">18x</span>
                 <p class="cuotas-sim-monthly" id="cuotas-sim-18-monthly">—</p>
-                <p class="cuotas-sim-meta muted">Total <span id="cuotas-sim-18-total">—</span> · = lista</p>
+                <p class="cuotas-sim-meta muted">Total <span id="cuotas-sim-18-total">—</span> · Tasa ref. 83%</p>
               </article>
             </div>
           </section>
@@ -3113,7 +3112,7 @@
     <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
     <script src="./config.js?v=16"></script>
     <script src="./creativos-engine.js?v=2"></script>
-    <script src="./app.js?v=132"></script>
+    <script src="./app.js?v=133"></script>
     <script src="./business-extras.js?v=6"></script>
   </body>
 </html>
