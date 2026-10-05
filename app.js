@@ -495,20 +495,31 @@ function formatArsCompact(value) {
   return String(n);
 }
 
-/** Cuota mensual ref.: (precio LISTA ARS × coef. financiación) ÷ cuotas. Ver inventario. */
+/** Cuota mensual ref.: (precio BASE tarjeta ARS × coef. financiación) ÷ cuotas. */
 const INV_CUOTA3_ARS_MULT = 1.1518;
 const INV_CUOTA6_ARS_MULT = 1.2815;
 /** Ref. POS tasa 83%: $999.999,99 → total $1.583.752,78 / 12 cuotas. */
 const INV_CUOTA12_ARS_MULT = 1.5837528;
-/** 18 cuotas: total = precio lista (sin interés). Cuota = lista ÷ 18. */
-const INV_CUOTA18_ARS_MULT = 1;
-/** Precio lista / tarjeta = contado ARS × este factor (+10%). Las cuotas salen de lista. */
+/** Ref. POS tasa 83%: $999.999,99 → total $1.933.938,40 / 18 cuotas. */
+const INV_CUOTA18_ARS_MULT = 1.9339384;
+/** Base tarjeta = contado ARS × este factor (+10%). 3/6/12/18 se calculan sobre esta base. */
 const INV_LISTA_MARKUP = 1.1;
 
-function listaArsFromContado(contadoArs) {
+/** Contado +10% (base sobre la que se financian las cuotas). */
+function tarjetaBaseFromContado(contadoArs) {
   const p = Math.round(numeric(contadoArs, 0));
   if (p <= 0) return 0;
   return Math.round(p * INV_LISTA_MARKUP);
+}
+
+/**
+ * Precio de LISTA = total de las 18 cuotas (financiación real).
+ * No es solo contado+10%: es lo que suma pagar en 18x.
+ */
+function listaArsFromContado(contadoArs) {
+  const base = tarjetaBaseFromContado(contadoArs);
+  if (base <= 0) return 0;
+  return Math.round(base * INV_CUOTA18_ARS_MULT);
 }
 
 const CUOTA_SIM_PLANS = [
@@ -518,19 +529,16 @@ const CUOTA_SIM_PLANS = [
   { n: 18, mult: INV_CUOTA18_ARS_MULT },
 ];
 
+/** @param priceArs base tarjeta (contado+10%), no el precio lista/total 18. */
 function cuotaMonthlyFromPriceArs(priceArs, n, mult) {
   const p = Math.round(numeric(priceArs, 0));
   if (p <= 0 || n <= 0) return 0;
-  // 18 cuotas: total = lista exacta → cuota = lista / 18 (mult forzado a 1).
-  if (n === 18) return Math.round(p / 18);
   return Math.round((p * mult) / n);
 }
 
 function cuotaTotalFromPriceArs(priceArs, n, mult) {
   const p = Math.round(numeric(priceArs, 0));
   if (p <= 0) return 0;
-  // 18 cuotas: el total es el precio de lista (no monthly×18 por redondeo).
-  if (n === 18) return p;
   const m = mult == null ? 1 : mult;
   return Math.round(p * m);
 }
@@ -550,8 +558,9 @@ function parseArsInput(raw) {
   return numeric(s, 0);
 }
 
-function computeCuotaSimPlans(priceArs) {
-  const p = Math.round(numeric(priceArs, 0));
+/** Plans from tarjeta base (contado+10%). Lista display = total del plan 18. */
+function computeCuotaSimPlans(tarjetaBaseArs) {
+  const p = Math.round(numeric(tarjetaBaseArs, 0));
   return CUOTA_SIM_PLANS.map(({ n, mult }) => ({
     n,
     monthly: cuotaMonthlyFromPriceArs(p, n, mult),
@@ -560,7 +569,8 @@ function computeCuotaSimPlans(priceArs) {
 }
 
 /** Valores persistidos en Supabase / localStorage (claves snake para upsert a la API).
- *  price_ars = contado; cuotas se calculan sobre lista (contado + 10%). */
+ *  price_ars = contado; cuotas sobre base tarjeta (contado+10%);
+ *  la LISTA mostrada es el total de 18 cuotas. */
 function computeInventoryArsFields(unitPriceUsd) {
   const rate = getDolarBlueArsPerUsd();
   if (!rate || rate <= 0) {
@@ -574,13 +584,13 @@ function computeInventoryArsFields(unitPriceUsd) {
   }
   const p = numeric(unitPriceUsd, 0);
   const priceArs = Math.round(p * rate);
-  const listaArs = listaArsFromContado(priceArs);
+  const base = tarjetaBaseFromContado(priceArs);
   return {
     price_ars: priceArs,
-    cuota_3_ars: cuotaMonthlyFromPriceArs(listaArs, 3, INV_CUOTA3_ARS_MULT),
-    cuota_6_ars: cuotaMonthlyFromPriceArs(listaArs, 6, INV_CUOTA6_ARS_MULT),
-    cuota_12_ars: cuotaMonthlyFromPriceArs(listaArs, 12, INV_CUOTA12_ARS_MULT),
-    cuota_18_ars: cuotaMonthlyFromPriceArs(listaArs, 18, INV_CUOTA18_ARS_MULT),
+    cuota_3_ars: cuotaMonthlyFromPriceArs(base, 3, INV_CUOTA3_ARS_MULT),
+    cuota_6_ars: cuotaMonthlyFromPriceArs(base, 6, INV_CUOTA6_ARS_MULT),
+    cuota_12_ars: cuotaMonthlyFromPriceArs(base, 12, INV_CUOTA12_ARS_MULT),
+    cuota_18_ars: cuotaMonthlyFromPriceArs(base, 18, INV_CUOTA18_ARS_MULT),
   };
 }
 
@@ -6211,27 +6221,28 @@ function computeInventoryRowDisplay(item, rate) {
       : rate > 0
         ? Math.round(numeric(itemPrice, 0) * rate)
         : null;
+  const baseNum = pa != null && pa > 0 ? tarjetaBaseFromContado(pa) : null;
   const listaNum = pa != null && pa > 0 ? listaArsFromContado(pa) : null;
   const unitArs = pa != null && pa > 0 ? currencyArs(pa) : "—";
   const listaArs = listaNum != null && listaNum > 0 ? currencyArs(listaNum) : "—";
   const stockValArs = pa != null && pa > 0 ? currencyArs(item.stock * pa) : "—";
 
-  /* Cuotas siempre sobre LISTA (contado + 10%), no sobre contado. */
+  /* Cuotas sobre base tarjeta (contado+10%). Lista mostrada = total 18 cuotas. */
   const c3 =
-    listaNum != null && listaNum > 0
-      ? cuotaMonthlyFromPriceArs(listaNum, 3, INV_CUOTA3_ARS_MULT)
+    baseNum != null && baseNum > 0
+      ? cuotaMonthlyFromPriceArs(baseNum, 3, INV_CUOTA3_ARS_MULT)
       : null;
   const c6 =
-    listaNum != null && listaNum > 0
-      ? cuotaMonthlyFromPriceArs(listaNum, 6, INV_CUOTA6_ARS_MULT)
+    baseNum != null && baseNum > 0
+      ? cuotaMonthlyFromPriceArs(baseNum, 6, INV_CUOTA6_ARS_MULT)
       : null;
   const c12 =
-    listaNum != null && listaNum > 0
-      ? cuotaMonthlyFromPriceArs(listaNum, 12, INV_CUOTA12_ARS_MULT)
+    baseNum != null && baseNum > 0
+      ? cuotaMonthlyFromPriceArs(baseNum, 12, INV_CUOTA12_ARS_MULT)
       : null;
   const c18n =
-    listaNum != null && listaNum > 0
-      ? cuotaMonthlyFromPriceArs(listaNum, 18, INV_CUOTA18_ARS_MULT)
+    baseNum != null && baseNum > 0
+      ? cuotaMonthlyFromPriceArs(baseNum, 18, INV_CUOTA18_ARS_MULT)
       : null;
 
   return {
@@ -6853,7 +6864,7 @@ function buildInvModalPricesHtml(item, d, rate) {
       <div class="inv-modal-prices__block inv-modal-prices__block--lista">
         <span class="inv-modal-prices__lbl">Lista</span>
         <span class="inv-modal-prices__val">${escapeHtml(listaLine)}</span>
-        <span class="inv-modal-prices__sub">total 18 cuotas · contado +10%</span>
+        <span class="inv-modal-prices__sub">= total 18 cuotas</span>
       </div>
     </div>
     ${cost > 0 ? `<p class="inv-modal-prices__cost">Costo ${escapeHtml(costLine)} US$</p>` : ""}
@@ -6892,8 +6903,8 @@ function buildInvModalPlansHtml(d) {
     })
     .join("");
   return `<section class="inv-modal-section inv-modal-card">
-    <h3 class="inv-modal-section__title">Cuotas mensuales · sobre lista (tarjeta)</h3>
-    <p class="inv-modal-plans-hint muted">3/6/12 con financiación · 18x sin interés (total = ${escapeHtml(d.listaArs)} lista).</p>
+    <h3 class="inv-modal-section__title">Cuotas mensuales</h3>
+    <p class="inv-modal-plans-hint muted">3/6/12/18 sobre contado+10%. La <strong>lista</strong> es el total de las 18 cuotas (${escapeHtml(d.listaArs)}).</p>
     <div class="inv-modal-plans" role="list">${cells}</div>
   </section>`;
 }
@@ -8589,7 +8600,7 @@ function buildInventoryContext(matches) {
     const listaPrice = arsPrice > 0 ? listaArsFromContado(arsPrice) : 0;
     if (arsPrice > 0) {
       parts.push("CONTADO: $" + arsPrice.toLocaleString("es-AR"));
-      parts.push("LISTA/TARJETA: $" + listaPrice.toLocaleString("es-AR") + " (contado +10%)");
+      parts.push("LISTA: $" + listaPrice.toLocaleString("es-AR") + " (= total 18 cuotas)");
     } else if (item.price && Number(item.price) > 0) {
       parts.push("PRECIO USD: $" + Number(item.price));
     }
@@ -14963,12 +14974,13 @@ function renderPriceGenerator() {
 
   if (showArs && price != null) {
     const contadoArs = Math.round(price * rate);
+    const baseArs = tarjetaBaseFromContado(contadoArs);
     const listaArs = listaArsFromContado(contadoArs);
     const contadoEl = document.getElementById("precios-gen-contado-ars");
     const listaEl = document.getElementById("precios-gen-lista-ars");
     if (contadoEl) contadoEl.textContent = currencyArs(contadoArs);
     if (listaEl) listaEl.textContent = currencyArs(listaArs);
-    const plans = computeCuotaSimPlans(listaArs);
+    const plans = computeCuotaSimPlans(baseArs);
     for (const plan of plans) {
       const monthlyEl = document.getElementById(`precios-gen-${plan.n}-monthly`);
       const totalEl = document.getElementById(`precios-gen-${plan.n}-total`);
@@ -15044,8 +15056,9 @@ function renderCuotasSimulator() {
   if (!input || !empty || !grid) return;
 
   const contadoArs = parseArsInput(input.value);
+  const baseArs = tarjetaBaseFromContado(contadoArs);
   const listaArs = listaArsFromContado(contadoArs);
-  const plans = computeCuotaSimPlans(listaArs);
+  const plans = computeCuotaSimPlans(baseArs);
   const hasAmount = contadoArs > 0;
 
   empty.hidden = hasAmount;
