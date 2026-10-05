@@ -500,7 +500,7 @@ const INV_CUOTA3_ARS_MULT = 1.1518;
 const INV_CUOTA6_ARS_MULT = 1.2815;
 /** Ref. POS tasa 83%: $999.999,99 → total $1.583.752,78 / 12 cuotas. */
 const INV_CUOTA12_ARS_MULT = 1.5837528;
-/** 18 cuotas: total = precio lista (sin interés extra). Cuota mensual = lista ÷ 18. */
+/** 18 cuotas: total = precio lista (sin interés). Cuota = lista ÷ 18. */
 const INV_CUOTA18_ARS_MULT = 1;
 /** Precio lista / tarjeta = contado ARS × este factor (+10%). Las cuotas salen de lista. */
 const INV_LISTA_MARKUP = 1.1;
@@ -521,13 +521,18 @@ const CUOTA_SIM_PLANS = [
 function cuotaMonthlyFromPriceArs(priceArs, n, mult) {
   const p = Math.round(numeric(priceArs, 0));
   if (p <= 0 || n <= 0) return 0;
+  // 18 cuotas: total = lista exacta → cuota = lista / 18 (mult forzado a 1).
+  if (n === 18) return Math.round(p / 18);
   return Math.round((p * mult) / n);
 }
 
-function cuotaTotalFromPriceArs(priceArs, mult) {
+function cuotaTotalFromPriceArs(priceArs, n, mult) {
   const p = Math.round(numeric(priceArs, 0));
   if (p <= 0) return 0;
-  return Math.round(p * mult);
+  // 18 cuotas: el total es el precio de lista (no monthly×18 por redondeo).
+  if (n === 18) return p;
+  const m = mult == null ? 1 : mult;
+  return Math.round(p * m);
 }
 
 /** Parsea monto ARS: "999999", "999.999,99" o "999999.99". */
@@ -550,7 +555,7 @@ function computeCuotaSimPlans(priceArs) {
   return CUOTA_SIM_PLANS.map(({ n, mult }) => ({
     n,
     monthly: cuotaMonthlyFromPriceArs(p, n, mult),
-    total: cuotaTotalFromPriceArs(p, mult),
+    total: cuotaTotalFromPriceArs(p, n, mult),
   }));
 }
 
@@ -6298,7 +6303,9 @@ function buildClientOfferMessage(item, rate) {
   lines.push("✅ Disponible ahora");
   lines.push("");
   if (d.paNum > 0) lines.push(`💵 Contado: ${d.unitArs}`);
-  if (d.listaNum > 0) lines.push(`💳 Lista (tarjeta): ${d.listaArs}`);
+  if (d.listaNum > 0) {
+    lines.push(`💳 Lista: ${d.listaArs} (= total 18 cuotas)`);
+  }
   if (d.itemPrice > 0) lines.push(`🇺🇸 USD: ${currency(d.itemPrice)}`);
 
   const plans = [
@@ -6312,7 +6319,11 @@ function buildClientOfferMessage(item, rate) {
     lines.push("");
     lines.push("💳 *Cuotas:*");
     for (const p of plans) {
-      lines.push(`• ${p.n}x de ${currencyArs(p.num)}`);
+      if (p.n === 18 && d.listaNum > 0) {
+        lines.push(`• 18x de ${currencyArs(p.num)} → total ${currencyArs(d.listaNum)} (lista)`);
+      } else {
+        lines.push(`• ${p.n}x de ${currencyArs(p.num)}`);
+      }
     }
   }
 
@@ -6334,7 +6345,7 @@ function buildInvOfferMessageCardHtml(item, rate) {
         Copiar para WhatsApp
       </button>
     </div>
-    <p class="inv-offer-hint muted">Un toque y queda listo para pegar en el chat. Incluye contado, lista (+10%) y cuotas.</p>
+    <p class="inv-offer-hint muted">Un toque y queda listo para pegar en el chat. Incluye contado, lista (+10%) y cuotas (18x = total lista).</p>
     <pre class="inv-offer-preview" aria-label="Vista previa del mensaje">${escapeHtml(msg)}</pre>
   </section>`;
 }
@@ -6463,7 +6474,13 @@ function buildInvWaListLine(item, fields, rate) {
       [12, d.cuota12Num],
       [18, d.cuota18Num],
     ].filter(([, n]) => n != null && n > 0);
-    for (const [n, monthly] of plans) parts.push(`📅 ${n}x ${currencyArs(monthly)}`);
+    for (const [n, monthly] of plans) {
+      if (n === 18 && d.listaNum > 0) {
+        parts.push(`📅 18x ${currencyArs(monthly)} (total lista)`);
+      } else {
+        parts.push(`📅 ${n}x ${currencyArs(monthly)}`);
+      }
+    }
   } else if (fields.cuotas12 && d.cuota12Num > 0) {
     parts.push(`📅 12x ${currencyArs(d.cuota12Num)}`);
   }
@@ -6567,7 +6584,11 @@ function buildReadyInvWhatsAppList(itemIds, rate, fields = getInvWaFields()) {
           : [[12, d.cuota12Num]];
         const planText = plans
           .filter(([, n]) => n != null && n > 0)
-          .map(([n, monthly]) => `${n}x ${currencyArs(monthly)}`);
+          .map(([n, monthly]) =>
+            n === 18 && d.listaNum > 0
+              ? `18x ${currencyArs(monthly)} (total lista ${d.listaArs})`
+              : `${n}x ${currencyArs(monthly)}`
+          );
         if (planText.length) lines.push(`📅 ${planText.join(" · ")}`);
       }
     }
@@ -6832,7 +6853,7 @@ function buildInvModalPricesHtml(item, d, rate) {
       <div class="inv-modal-prices__block inv-modal-prices__block--lista">
         <span class="inv-modal-prices__lbl">Lista</span>
         <span class="inv-modal-prices__val">${escapeHtml(listaLine)}</span>
-        <span class="inv-modal-prices__sub">tarjeta · contado +10%</span>
+        <span class="inv-modal-prices__sub">total 18 cuotas · contado +10%</span>
       </div>
     </div>
     ${cost > 0 ? `<p class="inv-modal-prices__cost">Costo ${escapeHtml(costLine)} US$</p>` : ""}
@@ -6854,19 +6875,25 @@ function buildInvModalPlansHtml(d) {
     .map((p) => {
       const monthly = p.num != null && p.num > 0 ? Number(p.num) : 0;
       const full = monthly > 0 ? currencyArs(monthly) : "—";
-      const totalNum = monthly > 0 ? monthly * p.n : 0;
+      const totalNum =
+        monthly > 0
+          ? p.n === 18 && d.listaNum > 0
+            ? Number(d.listaNum)
+            : monthly * p.n
+          : 0;
       const totalLine = totalNum > 0 ? currencyArs(totalNum) : "—";
       const feat = p.featured ? " inv-modal-plan--feat" : "";
+      const totalNote = p.n === 18 ? " = lista" : "";
       return `<div class="inv-modal-plan${feat}" role="listitem">
         <span class="inv-modal-plan__n">${invCuotaCountLabel(p.n)}</span>
         <span class="inv-modal-plan__ars">${escapeHtml(full)}<span class="inv-modal-plan__per">/mes</span></span>
-        <span class="inv-modal-plan__total">Total ${escapeHtml(totalLine)}</span>
+        <span class="inv-modal-plan__total">Total ${escapeHtml(totalLine)}${totalNote}</span>
       </div>`;
     })
     .join("");
   return `<section class="inv-modal-section inv-modal-card">
     <h3 class="inv-modal-section__title">Cuotas mensuales · sobre lista (tarjeta)</h3>
-    <p class="inv-modal-plans-hint muted">Calculadas sobre ${escapeHtml(d.listaArs)} (contado +10%).</p>
+    <p class="inv-modal-plans-hint muted">3/6/12 con financiación · 18x sin interés (total = ${escapeHtml(d.listaArs)} lista).</p>
     <div class="inv-modal-plans" role="list">${cells}</div>
   </section>`;
 }
