@@ -6315,7 +6315,7 @@ function buildClientOfferMessage(item, rate) {
   lines.push("");
   if (d.paNum > 0) lines.push(`💵 Contado: ${d.unitArs}`);
   if (d.listaNum > 0) {
-    lines.push(`💳 Lista: ${d.listaArs} (= total 18 cuotas)`);
+    lines.push(`💳 Lista: ${d.listaArs}`);
   }
   if (d.itemPrice > 0) lines.push(`🇺🇸 USD: ${currency(d.itemPrice)}`);
 
@@ -6330,11 +6330,7 @@ function buildClientOfferMessage(item, rate) {
     lines.push("");
     lines.push("💳 *Cuotas:*");
     for (const p of plans) {
-      if (p.n === 18 && d.listaNum > 0) {
-        lines.push(`• 18x de ${currencyArs(p.num)} → total ${currencyArs(d.listaNum)} (lista)`);
-      } else {
-        lines.push(`• ${p.n}x de ${currencyArs(p.num)}`);
-      }
+      lines.push(`• ${p.n}x de ${currencyArs(p.num)}`);
     }
   }
 
@@ -6486,11 +6482,7 @@ function buildInvWaListLine(item, fields, rate) {
       [18, d.cuota18Num],
     ].filter(([, n]) => n != null && n > 0);
     for (const [n, monthly] of plans) {
-      if (n === 18 && d.listaNum > 0) {
-        parts.push(`📅 18x ${currencyArs(monthly)} (total lista)`);
-      } else {
-        parts.push(`📅 ${n}x ${currencyArs(monthly)}`);
-      }
+      parts.push(`📅 ${n}x ${currencyArs(monthly)}`);
     }
   } else if (fields.cuotas12 && d.cuota12Num > 0) {
     parts.push(`📅 12x ${currencyArs(d.cuota12Num)}`);
@@ -6595,11 +6587,7 @@ function buildReadyInvWhatsAppList(itemIds, rate, fields = getInvWaFields()) {
           : [[12, d.cuota12Num]];
         const planText = plans
           .filter(([, n]) => n != null && n > 0)
-          .map(([n, monthly]) =>
-            n === 18 && d.listaNum > 0
-              ? `18x ${currencyArs(monthly)} (total lista ${d.listaArs})`
-              : `${n}x ${currencyArs(monthly)}`
-          );
+          .map(([n, monthly]) => `${n}x ${currencyArs(monthly)}`);
         if (planText.length) lines.push(`📅 ${planText.join(" · ")}`);
       }
     }
