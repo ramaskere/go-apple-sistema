@@ -522,6 +522,7 @@ html[data-theme^="app"] .app-more-title {
 }
 
 html[data-theme^="app"] .app-more button,
+html[data-theme^="app"] .app-more a,
 html[data-theme^="app"] .app-add button {
   min-height: 44px;
   text-align: center;
@@ -531,6 +532,13 @@ html[data-theme^="app"] .app-add button {
   color: #111827;
   font-weight: 700;
   font-size: 14px;
+}
+
+html[data-theme^="app"] .app-more a {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
 }
 
 @media (min-width: 901px) {
@@ -881,6 +889,7 @@ html[data-theme="app-oscuro"] .app-dock-add.is-on {
 
 html[data-theme="app-oscuro"] .app-shortcuts button,
 html[data-theme="app-oscuro"] .app-more button,
+html[data-theme="app-oscuro"] .app-more a,
 html[data-theme="app-oscuro"] .app-add button,
 html[data-theme="app-oscuro"] .header-toolbar-icons .header-icon-btn,
 html[data-theme="app-oscuro"] .secondary,
