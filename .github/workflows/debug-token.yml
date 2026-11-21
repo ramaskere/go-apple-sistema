@@ -1,0 +1,14 @@
+name: Debug token
+on:
+  workflow_dispatch:
+jobs:
+  debug:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: node scripts/debug-token.mjs
+        env:
+          META_TOKEN: ${{ secrets.TOKEN_ORG_ADS }}
