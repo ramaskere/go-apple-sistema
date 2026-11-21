@@ -6,13 +6,15 @@ Esto es la versión standalone, solo para GO APPLE, del sistema de Instagram que
 
 En `Settings → Secrets and variables → Actions` de este repo (`ramaskere/go-apple-sistema`):
 
+**Lo único imprescindible es el secret del token.** El resto (variables, IDs) es opcional: el código ya resuelve la cuenta buscando `goapple.sj` entre las páginas visibles para el token, sin necesitar su ID numérico — así es como funciona el panel compartido, que no tiene ninguna variable cargada.
+
 **Secrets** (Settings → Secrets and variables → Actions → Secrets):
-- `TOKEN_ORG_ADS`: el mismo token de Meta que ya usa el otro sistema (tiene acceso a las dos cuentas vía el Business Manager). Se puede cargar el mismo valor acá.
+- `TOKEN_ORG_ADS`: el mismo token de Meta que ya usa el otro sistema. Tiene que ser un token que efectivamente vea las páginas en `me/accounts` (probado con el workflow "Verificar cuentas") — si no ve ninguna cuenta, nada de esto va a andar, estén o no las variables de abajo.
 - `DATA_PASS`: una contraseña nueva, elegida por Rama, para cifrar los datos de este repo (leads, recursos, posts, campañas). No tiene que ser la misma que la del otro sistema.
 
-**Variables** (Settings → Secrets and variables → Actions → Variables):
+**Variables opcionales** (Settings → Secrets and variables → Actions → Variables) — no son necesarias, el código ya tiene `goapple.sj` como default, pero sirven de respaldo explícito:
 - `IG_USERNAME`: `goapple.sj`
-- `IG_USER_ID`: el ID numérico de la cuenta de Instagram de GO APPLE (se puede obtener corriendo el workflow "Verificar cuentas" con `cuentas: goapple.sj`, o desde Meta Business Suite).
+- `IG_USER_ID`: el ID numérico de la cuenta (atajo opcional para saltarse la búsqueda por nombre de usuario).
 - `AD_ACCOUNT_ID`: solo si en algún momento se conecta una cuenta publicitaria para GO APPLE (hoy no hay, así que el workflow "Sincronizar Meta" solo va a traer datos orgánicos).
 
 ## Qué automatizaciones quedaron activas (cron, cada repo es independiente del otro)
