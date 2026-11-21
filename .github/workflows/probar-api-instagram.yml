@@ -1,0 +1,14 @@
+name: Probar API de Instagram
+on:
+  workflow_dispatch:
+jobs:
+  probar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: node scripts/test-ig-login.mjs
+        env:
+          IG_LOGIN_TOKEN: ${{ secrets.IG_LOGIN_TOKEN }}

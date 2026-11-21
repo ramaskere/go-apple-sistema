@@ -1,0 +1,24 @@
+name: Gestionar datos
+on:
+  workflow_dispatch:
+    inputs:
+      ops:
+        description: 'Operaciones en JSON (sin links privados ni datos de personas)'
+        required: true
+permissions:
+  contents: write
+concurrency:
+  group: datos
+jobs:
+  aplicar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: node scripts/data-op.mjs
+        env:
+          DATA_PASS: ${{ secrets.DATA_PASS }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          OPS: ${{ inputs.ops }}

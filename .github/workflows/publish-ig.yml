@@ -1,0 +1,42 @@
+name: Publicar en Instagram
+on:
+  workflow_dispatch:
+    inputs:
+      tipo:
+        description: 'Dónde publicar'
+        required: true
+        default: 'feed'
+        type: choice
+        options:
+          - feed
+          - historia
+      image_urls:
+        description: 'URLs https de las imágenes, una por línea (feed: 1 = post, 2 a 10 = carrusel; historia: una sola)'
+        required: true
+      caption:
+        description: 'Texto del post (las historias no llevan texto, se ignora)'
+        required: false
+      cuenta:
+        description: 'Usuario de Instagram donde publicar (sin @)'
+        required: true
+        default: 'goapple.sj'
+      confirmar:
+        description: 'Escribe PUBLICAR para confirmar'
+        required: true
+jobs:
+  publish:
+    if: ${{ inputs.confirmar == 'PUBLICAR' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: node scripts/publish-ig.mjs
+        env:
+          META_TOKEN: ${{ secrets.TOKEN_ORG_ADS }}
+          IMAGE_URLS: ${{ inputs.image_urls }}
+          CUENTA: ${{ inputs.cuenta }}
+          CAPTION: ${{ inputs.caption }}
+          TIPO: ${{ inputs.tipo }}
+          IG_USER_ID: ${{ vars.IG_USER_ID }}

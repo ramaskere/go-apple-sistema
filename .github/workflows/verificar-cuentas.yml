@@ -1,0 +1,19 @@
+name: Verificar cuentas
+on:
+  workflow_dispatch:
+    inputs:
+      cuentas:
+        description: 'Usuarios de Instagram separados por coma'
+        required: true
+jobs:
+  verificar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: node scripts/verificar-cuentas.mjs
+        env:
+          META_TOKEN: ${{ secrets.TOKEN_ORG_ADS }}
+          CUENTAS: ${{ inputs.cuentas }}

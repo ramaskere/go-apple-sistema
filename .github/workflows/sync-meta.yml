@@ -1,0 +1,24 @@
+name: Sincronizar Meta
+on:
+  schedule:
+    - cron: '13 */6 * * *'
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: sync-meta
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: node scripts/sync-meta.mjs
+        env:
+          META_TOKEN: ${{ secrets.TOKEN_ORG_ADS }}
+          DATA_PASS: ${{ secrets.DATA_PASS }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          IG_USER_ID: ${{ vars.IG_USER_ID }}
+          AD_ACCOUNT_ID: ${{ vars.AD_ACCOUNT_ID }}

@@ -1,0 +1,32 @@
+name: Probar mensaje privado
+on:
+  workflow_dispatch:
+    inputs:
+      palabra:
+        description: 'Palabra única que escribiste en el comentario de prueba'
+        required: true
+      texto:
+        description: 'Mensaje de prueba a enviar'
+        required: true
+      modo:
+        description: 'leer (no envía nada) o enviar'
+        required: true
+        default: 'leer'
+      confirmar:
+        description: 'Escribe ENVIAR para confirmar'
+        required: true
+jobs:
+  probar:
+    if: ${{ inputs.confirmar == 'ENVIAR' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: node scripts/test-dm.mjs
+        env:
+          META_TOKEN: ${{ secrets.TOKEN_ORG_ADS }}
+          PALABRA: ${{ inputs.palabra }}
+          TEXTO: ${{ inputs.texto }}
+          MODO: ${{ inputs.modo }}
