@@ -156,7 +156,7 @@ select.stage { background: var(--raise); border: 1px solid var(--line); border-r
   <header>
     <div class="bar">
       <div class="brand">GO APPLE <span>Instagram</span></div>
-      <div class="tools"><select id="cuenta-sel" aria-label="Cuenta de Instagram" hidden></select><span id="sync" role="status"></span><button class="ghost" id="cfg-btn" type="button">Conexión</button><button class="primary" id="add-btn" type="button">+ Nuevo lead</button></div>
+      <div class="tools"><select id="cuenta-sel" aria-label="Cuenta de Instagram" hidden></select><span id="sync" role="status"></span><button class="ghost" id="cfg-btn" type="button">Conexión</button></div>
     </div>
     <nav role="tablist" id="tabs"></nav>
   </header>
@@ -270,7 +270,7 @@ function viewLeads() {
   const chips = [['todos', `Todos ${S.leads.length}`], ...STAGES.map(([k, v]) => [k, `${v} ${counts[k]}`])].map(([k, v]) => `<button class="chip" data-filter="${k}" aria-pressed="${leadFilter === k}">${v}</button>`).join('');
   const rows = list.map(l => `<tr class="click" data-edit="leads:${l.id}"><td class="dim">${dateLabel(l.fecha)}</td><td>${esc(l.nombre || 'Sin nombre')}<div class="sub">${esc(l.usuario || '')}</div></td><td class="title">${esc(originName(l.origen))}<div class="sub">${originKind(l.origen)}</div></td><td>${stageSelect(l)}</td><td class="r">${l.etapa === 'venta' || n0(l.monto) ? money(l.monto) : '—'}</td><td class="title dim">${esc(l.notas || '')}</td></tr>`);
   if (!S.leads.length) return `<div class="empty"><h3>Sin leads todavía</h3><p>Carga cada persona que te escribe o agenda, con el contenido o la campaña que la trajo. Así se conecta todo.</p><button class="primary" data-new="leads">+ Nuevo lead</button></div>`;
-  return `<section class="sec"><div class="sec-head"><h2>Leads</h2></div><div class="chips">${chips}</div>${table([['Fecha'], ['Lead'], ['Origen'], ['Etapa'], ['Monto', 'r'], ['Notas']], rows, 'No hay leads en esta etapa.')}</section>`;
+  return `<section class="sec"><div class="sec-head"><h2>Leads</h2><button class="ghost" data-new="leads">+ Nuevo lead</button></div><div class="chips">${chips}</div>${table([['Fecha'], ['Lead'], ['Origen'], ['Etapa'], ['Monto', 'r'], ['Notas']], rows, 'No hay leads en esta etapa.')}</section>`;
 }
 const stageSelect = l => `<select class="stage" data-stage="${l.id}" aria-label="Etapa de ${esc(l.nombre)}">${STAGES.map(([k, v]) => `<option value="${k}" ${l.etapa === k ? 'selected' : ''}>${v}</option>`).join('')}</select>`;
 
@@ -281,7 +281,7 @@ function viewOrganico() {
     return `<tr class="click" data-edit="posts:${p.id}"><td class="dim">${dateLabel(p.fecha)}</td><td class="title">${esc(p.titulo || 'Sin título')}<div class="sub">${esc(p.formato || '')}</div></td><td class="r">${int(p.alcance)}</td><td class="r">${int(inter)}<div class="sub">${pct(ratio(inter, n0(p.alcance)))}</div></td><td class="r"><b>${s.leads}</b></td><td class="r">${s.agendas}</td><td class="r">${s.ventas}</td><td class="r">${money(s.ingresos)}</td></tr>`;
   });
   const tot = stats(S.leads.filter(l => (l.origen || '').startsWith('post:')));
-  return `<section class="sec"><div class="sec-head"><h2>Contenido orgánico</h2><span class="hint">${S.posts.length} piezas · ${tot.leads} leads · ${tot.ventas} ventas · ${money(tot.ingresos)}</span></div>${table([['Fecha'], ['Contenido'], ['Alcance', 'r'], ['Interacción', 'r'], ['Leads', 'r'], ['Agendas', 'r'], ['Ventas', 'r'], ['Ingresos', 'r']], rows)}</section>`;
+  return `<section class="sec"><div class="sec-head"><h2>Contenido orgánico</h2><button class="ghost" data-new="posts">+ Nuevo contenido</button><span class="hint">${S.posts.length} piezas · ${tot.leads} leads · ${tot.ventas} ventas · ${money(tot.ingresos)}</span></div>${table([['Fecha'], ['Contenido'], ['Alcance', 'r'], ['Interacción', 'r'], ['Leads', 'r'], ['Agendas', 'r'], ['Ventas', 'r'], ['Ingresos', 'r']], rows)}</section>`;
 }
 
 function viewCampanas() {
@@ -291,7 +291,7 @@ function viewCampanas() {
     return `<tr class="click" data-edit="camps:${c.id}"><td class="title">${esc(c.nombre || 'Sin nombre')}<div class="sub">${esc(c.objetivo || '')} · desde ${dateLabel(c.inicio)}</div></td><td><span class="pill ${esc(c.estado)}">${esc(c.estado || '—')}</span></td><td class="r">${money(c.gasto)}</td><td class="r">${int(c.impresiones)}</td><td class="r">${int(c.clics)}<div class="sub">${pct(ratio(n0(c.clics), n0(c.impresiones)))} CTR</div></td><td class="r"><b>${s.leads}</b><div class="sub">${moneyOr(ratio(n0(c.gasto), s.leads))} c/u</div></td><td class="r">${s.agendas}</td><td class="r">${s.ventas}</td><td class="r">${money(s.ingresos)}</td><td class="r">${n0(c.gasto) && s.ingresos ? (s.ingresos / n0(c.gasto)).toLocaleString('es', { maximumFractionDigits: 2 }) + 'x' : '—'}</td></tr>`;
   });
   const gasto = S.camps.reduce((s, c) => s + n0(c.gasto), 0);
-  return `<section class="sec"><div class="sec-head"><h2>Campañas</h2><span class="hint">${S.camps.length} campañas · ${money(gasto)} invertidos</span></div>${table([['Campaña'], ['Estado'], ['Gasto', 'r'], ['Impresiones', 'r'], ['Clics', 'r'], ['Leads', 'r'], ['Agendas', 'r'], ['Ventas', 'r'], ['Ingresos', 'r'], ['ROAS', 'r']], rows)}</section>`;
+  return `<section class="sec"><div class="sec-head"><h2>Campañas</h2><button class="ghost" data-new="camps">+ Nueva campaña</button><span class="hint">${S.camps.length} campañas · ${money(gasto)} invertidos</span></div>${table([['Campaña'], ['Estado'], ['Gasto', 'r'], ['Impresiones', 'r'], ['Clics', 'r'], ['Leads', 'r'], ['Agendas', 'r'], ['Ventas', 'r'], ['Ingresos', 'r'], ['ROAS', 'r']], rows)}</section>`;
 }
 
 let cola = [], rotaciones = {}, calMonth = (() => { const d = new Date(); return new Date(d.getFullYear(), d.getMonth(), 1); })(), calList = [];
@@ -383,7 +383,7 @@ const autoOn = () => {
 function viewRecursos() {
   const puedeToggle = !LISTA.length || LISTA.length === 1 || cuentaSel !== 'todas';
   const etiqueta = autoPorCuenta() ? ` de @${esc(cuentaSel)}` : '';
-  const head = `<div class="sec-head"><h2>Recursos</h2><button class="ghost" id="toggle-auto" aria-pressed="${autoOn()}" ${puedeToggle ? '' : 'disabled'}>Respuestas automáticas${etiqueta}: ${autoOn() ? 'encendidas' : 'apagadas'}</button>${puedeToggle ? '' : '<span class="hint">Elegí una cuenta para activarlas o apagarlas</span>'}</div>`;
+  const head = `<div class="sec-head"><h2>Recursos</h2><button class="ghost" data-new="recursos">+ Nuevo recurso</button><button class="ghost" id="toggle-auto" aria-pressed="${autoOn()}" ${puedeToggle ? '' : 'disabled'}>Respuestas automáticas${etiqueta}: ${autoOn() ? 'encendidas' : 'apagadas'}</button>${puedeToggle ? '' : '<span class="hint">Elegí una cuenta para activarlas o apagarlas</span>'}</div>`;
   if (!S.recursos.length) return `<section class="sec">${head}<div class="empty"><h3>Todavía no hay recursos</h3><p>Un recurso es lo que recibe una persona cuando comenta una palabra clave en tu contenido. Por ejemplo, "impulsé" entrega las 3 razones por las que su anuncio no vendió. Crea el primero y queda guardado, cifrado con tu contraseña.</p><div class="quick-actions"><button class="primary" data-new="recursos">+ Nuevo recurso</button><button class="ghost" id="seed-lm">Cargar mis 3 lead magnets (borrador)</button></div></div></section>`;
   const rows = S.recursos.map(r => {
     const post = r.post ? S.posts.find(p => 'post:' + p.id === r.post) : null, st = byOrigin('rec:' + r.id);
@@ -395,13 +395,10 @@ const VIEWS = { calendario: viewCalendario, recursos: viewRecursos, resumen: vie
 
 function render() {
   $('#tabs').innerHTML = TABS.map(([k, v]) => `<button role="tab" data-tab="${k}" aria-selected="${tab === k}">${v}</button>`).join('');
-  const cur = TABS.find(t => t[0] === tab);
-  $('#add-btn').textContent = cur[2]; $('#add-btn').dataset.new = cur[3];
   const cs = $('#cuenta-sel');
   cs.hidden = needSetup || LISTA.length < 2;
   cs.innerHTML = '<option value="todas">Todas las cuentas</option>' + LISTA.map(u => `<option value="${esc(u)}">@${esc(u)}</option>`).join('');
   cs.value = cuentaSel;
-  $('#add-btn').hidden = needSetup;
   if (needSetup) { $('#view').innerHTML = setupHtml(); return; }
   $('#view').innerHTML = (dbError ? `<div class="empty"><h3>No se pudo sincronizar</h3><p>${esc(dbError)}</p>${db ? '' : '<button class="primary" id="retry">Reintentar</button>'}</div>` : '') + VIEWS[tab]();
 }
