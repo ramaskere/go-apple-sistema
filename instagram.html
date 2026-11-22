@@ -45,8 +45,8 @@ button, input, select, textarea { font: inherit; color: inherit; }
 
 header { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--bg); border-bottom: 1px solid var(--line); margin-inline: -16px; padding: 12px 16px 0; }
 .bar { max-width: 1120px; margin: 0 auto; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; justify-content: space-between; }
-.brand { font-weight: 800; font-size: 16px; letter-spacing: -.01em; }
-.brand span { color: var(--accent); }
+.brand { font-weight: 800; font-size: clamp(1.35rem, 2.5vw, 1.65rem); letter-spacing: -.03em; color: var(--fg); }
+.brand span { color: var(--fg); font-weight: 600; opacity: .55; }
 nav { display: flex; gap: 6px; overflow-x: auto; max-width: 1120px; margin: 10px auto 0; padding-bottom: 10px; }
 nav button { background: none; border: 1px solid transparent; border-radius: 999px; padding: 8px 16px; color: var(--muted); font-weight: 700; cursor: pointer; white-space: nowrap; }
 nav button[aria-selected="true"] { background: linear-gradient(180deg, var(--accent-top) 0%, var(--accent-bot) 100%); color: var(--accent-ink); }
@@ -66,10 +66,10 @@ main { padding-top: 24px; display: flex; flex-direction: column; gap: 28px; }
 .hint { color: var(--muted); font-size: 13px; }
 
 .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
-.kpi { background: var(--surface); border: 1px solid var(--line); border-left: 3px solid var(--accent); border-radius: 16px; padding: 14px 16px; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-.kpi b { font-size: 24px; font-weight: 800; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+.kpi { background: var(--surface); border: 1px solid var(--line); border-left: 3px solid var(--kpi-accent, var(--accent)); border-radius: 16px; padding: 18px 20px; display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.kpi .eyebrow { font-size: 13px; font-weight: 600; letter-spacing: 0; text-transform: none; color: var(--muted); }
+.kpi b { font-size: 30px; font-weight: 800; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
 .kpi small { color: var(--muted); font-size: 12px; }
-.kpi .eyebrow { font-size: 10.5px; }
 
 .funnel { display: flex; flex-direction: column; gap: 8px; background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 16px; }
 .frow { display: grid; grid-template-columns: 84px 1fr 120px; gap: 12px; align-items: center; }
@@ -102,9 +102,10 @@ select.stage { background: var(--raise); border: 1px solid var(--line); border-r
 .chip { background: var(--surface); border: 1px solid var(--line); border-radius: 999px; padding: 6px 14px; font-size: 13px; font-weight: 700; color: var(--muted); cursor: pointer; }
 .chip[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
 
-.empty { border: 1px dashed var(--line); border-radius: 16px; padding: 28px 20px; display: flex; flex-direction: column; gap: 10px; align-items: flex-start; }
+.empty { border: 1px dashed var(--line); border-radius: 16px; padding: 28px 20px; display: flex; flex-direction: column; gap: 10px; align-items: stretch; }
 .empty p { margin: 0; color: var(--muted); max-width: 52ch; }
 .empty h3 { font-size: 16px; }
+.empty > button.primary { align-self: stretch; }
 .two { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 24px; }
 
 .overlay { position: fixed; inset: 0; background: rgba(0,0,0,.6); display: flex; align-items: flex-start; justify-content: center; padding: 24px 16px; overflow-y: auto; z-index: 20; }
@@ -118,6 +119,8 @@ select.stage { background: var(--raise); border: 1px solid var(--line); border-r
 .field.check { flex-direction: row; align-items: center; gap: 8px; }
 .field.check input { width: auto; }
 .actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.quick-actions { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px; }
+.quick-actions button { width: 100%; }
 .actions .sp { flex: 1; }
 .err { color: var(--bad); font-size: 13px; min-height: 1em; }
 /* calendario */
@@ -210,14 +213,14 @@ function originName(key) {
 const originKind = key => !key || key === 'directo' ? 'Directo' : key.startsWith('post:') ? 'Orgánico' : key.startsWith('rec:') ? 'Lead magnet' : 'Campaña';
 
 /* ---------- vistas ---------- */
-function kpi(label, value, sub) { return `<div class="kpi"><span class="eyebrow">${label}</span><b>${value}</b><small>${sub || '&nbsp;'}</small></div>`; }
+function kpi(label, value, sub, accent) { return `<div class="kpi" style="${accent ? `--kpi-accent:${accent}` : ''}"><span class="eyebrow">${label}</span><b>${value}</b><small>${sub || '&nbsp;'}</small></div>`; }
 function table(heads, rows, emptyMsg) {
   return `<div class="tablebox"><table><thead><tr>${heads.map(h => `<th class="${h[1] || ''}">${h[0]}</th>`).join('')}</tr></thead><tbody>${rows.join('') || `<tr><td colspan="${heads.length}" class="dim">${emptyMsg}</td></tr>`}</tbody></table></div>`;
 }
 
 function viewResumen() {
   const hasAny = S.leads.length || S.posts.length || S.camps.length;
-  if (!hasAny) return `<div class="empty"><h3>Todavía no hay datos</h3><p>Empieza cargando un contenido orgánico o una campaña, y después tus leads con su origen. El resumen se arma solo a partir de eso.</p><div class="actions"><button class="primary" data-new="posts">+ Contenido</button><button class="ghost" data-new="camps">+ Campaña</button><button class="ghost" data-new="leads">+ Lead</button><button class="ghost" id="seed">Ver con datos de ejemplo</button></div></div>`;
+  if (!hasAny) return `<div class="empty"><h3>Todavía no hay datos</h3><p>Empieza cargando un contenido orgánico o una campaña, y después tus leads con su origen. El resumen se arma solo a partir de eso.</p><div class="quick-actions"><button class="primary" data-new="posts">+ Contenido</button><button class="ghost" data-new="camps">+ Campaña</button><button class="ghost" data-new="leads">+ Lead</button><button class="ghost" id="seed">Ver con datos de ejemplo</button></div></div>`;
   const t = stats(S.leads);
   const gasto = S.camps.reduce((s, c) => s + n0(c.gasto), 0);
   const campLeads = S.leads.filter(l => (l.origen || '').startsWith('camp:'));
@@ -240,16 +243,16 @@ function viewResumen() {
   return `
   <section class="sec"><div class="sec-head"><h2>Negocio</h2>${hasEj ? '<button class="ghost danger" id="unseed">Borrar datos de ejemplo</button>' : ''}</div>
     <div class="kpis">
-      ${kpi('Leads', int(t.leads), `${pct(ratio(t.agendas, t.leads))} agendan`)}
-      ${kpi('Agendas', int(t.agendas), `${pct(ratio(t.ventas, t.agendas))} cierran`)}
-      ${kpi('Ventas', int(t.ventas), `${pct(ratio(t.ventas, t.leads))} de los leads`)}
-      ${kpi('Ingresos', money(t.ingresos), t.ventas ? `Ticket ${money(t.ingresos / t.ventas)}` : '')}
+      ${kpi('Leads', int(t.leads), `${pct(ratio(t.agendas, t.leads))} agendan`, 'var(--accent)')}
+      ${kpi('Agendas', int(t.agendas), `${pct(ratio(t.ventas, t.agendas))} cierran`, 'var(--warn)')}
+      ${kpi('Ventas', int(t.ventas), `${pct(ratio(t.ventas, t.leads))} de los leads`, 'var(--good)')}
+      ${kpi('Ingresos', money(t.ingresos), t.ventas ? `Ticket ${money(t.ingresos / t.ventas)}` : '', 'var(--good)')}
     </div>
     <div class="kpis">
-      ${kpi('Inversión en ads', money(gasto), `${S.camps.length} campañas`)}
-      ${kpi('Costo por lead', moneyOr(ratio(gasto, cs.leads)), `${cs.leads} leads de campañas`)}
-      ${kpi('Costo por venta', moneyOr(ratio(gasto, cs.ventas)), `${cs.ventas} ventas de campañas`)}
-      ${kpi('ROAS', cs.ingresos && gasto ? (cs.ingresos / gasto).toLocaleString('es', { maximumFractionDigits: 2 }) + 'x' : '—', `${money(cs.ingresos)} facturado`)}
+      ${kpi('Inversión en ads', money(gasto), `${S.camps.length} campañas`, 'var(--muted)')}
+      ${kpi('Costo por lead', moneyOr(ratio(gasto, cs.leads)), `${cs.leads} leads de campañas`, 'var(--muted)')}
+      ${kpi('Costo por venta', moneyOr(ratio(gasto, cs.ventas)), `${cs.ventas} ventas de campañas`, 'var(--muted)')}
+      ${kpi('ROAS', cs.ingresos && gasto ? (cs.ingresos / gasto).toLocaleString('es', { maximumFractionDigits: 2 }) + 'x' : '—', `${money(cs.ingresos)} facturado`, 'var(--good)')}
     </div></section>
   <section class="sec"><div class="sec-head"><h2>Embudo</h2><span class="hint">Todos los leads cargados</span></div>
     <div class="funnel">${f('Leads', t.leads, int(t.leads))}${f('Agendas', t.agendas, `${t.agendas} · ${pct(ratio(t.agendas, t.leads))}`)}${f('Ventas', t.ventas, `${t.ventas} · ${pct(ratio(t.ventas, t.leads))}`)}</div></section>
@@ -381,7 +384,7 @@ function viewRecursos() {
   const puedeToggle = !LISTA.length || LISTA.length === 1 || cuentaSel !== 'todas';
   const etiqueta = autoPorCuenta() ? ` de @${esc(cuentaSel)}` : '';
   const head = `<div class="sec-head"><h2>Recursos</h2><button class="ghost" id="toggle-auto" aria-pressed="${autoOn()}" ${puedeToggle ? '' : 'disabled'}>Respuestas automáticas${etiqueta}: ${autoOn() ? 'encendidas' : 'apagadas'}</button>${puedeToggle ? '' : '<span class="hint">Elegí una cuenta para activarlas o apagarlas</span>'}</div>`;
-  if (!S.recursos.length) return `<section class="sec">${head}<div class="empty"><h3>Todavía no hay recursos</h3><p>Un recurso es lo que recibe una persona cuando comenta una palabra clave en tu contenido. Por ejemplo, "impulsé" entrega las 3 razones por las que su anuncio no vendió. Crea el primero y queda guardado, cifrado con tu contraseña.</p><div class="actions"><button class="primary" data-new="recursos">+ Nuevo recurso</button><button class="ghost" id="seed-lm">Cargar mis 3 lead magnets (borrador)</button></div></div></section>`;
+  if (!S.recursos.length) return `<section class="sec">${head}<div class="empty"><h3>Todavía no hay recursos</h3><p>Un recurso es lo que recibe una persona cuando comenta una palabra clave en tu contenido. Por ejemplo, "impulsé" entrega las 3 razones por las que su anuncio no vendió. Crea el primero y queda guardado, cifrado con tu contraseña.</p><div class="quick-actions"><button class="primary" data-new="recursos">+ Nuevo recurso</button><button class="ghost" id="seed-lm">Cargar mis 3 lead magnets (borrador)</button></div></div></section>`;
   const rows = S.recursos.map(r => {
     const post = r.post ? S.posts.find(p => 'post:' + p.id === r.post) : null, st = byOrigin('rec:' + r.id);
     return `<tr class="click" data-edit="recursos:${r.id}"><td class="title">${esc(r.nombre || 'Sin nombre')}<div class="sub">Palabra: <b>${esc(r.palabra || '')}</b>${r.pregunta ? ' · con pregunta' : ''}</div></td><td class="title dim">${r.post ? esc(post ? (post.titulo || 'Sin título') : 'Post eliminado') : 'Cualquier post'}</td><td><span class="pill ${esc(r.estado)}">${esc(r.estado || '—')}</span></td><td class="r"><b>${st.leads}</b></td><td class="r">${st.agendas}</td><td class="r">${st.ventas}</td><td class="r">${money(st.ingresos)}</td></tr>`;
