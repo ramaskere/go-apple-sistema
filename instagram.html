@@ -6,6 +6,8 @@
 <meta name="robots" content="noindex">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.47.10/dist/umd/supabase.js"></script>
+<script src="config.js"></script>
 <style>
 /* Layout: barra superior con pestañas, contenido en una columna ancha; tablas con scroll propio.
    Misma paleta y tipografía del sistema de ventas (tema "app" de GO APPLE): fondo claro,
@@ -175,7 +177,7 @@ try { cuentaSel = localStorage.getItem('go-apple-ig-cuenta') || 'todas'; } catch
 const cuentaDe = x => String((x && x.cuenta) || LISTA[0] || '').toLowerCase();
 const okCuenta = x => cuentaSel === 'todas' || !LISTA.length || cuentaDe(x) === cuentaSel;
 const cuentaField = () => LISTA.length > 1 ? [['cuenta', 'Cuenta', 'select', { full: 1, opts: LISTA.map(u => [u, '@' + u]), def: cuentaSel !== 'todas' ? cuentaSel : LISTA[0] }]] : [];
-let db = null, tab = 'resumen', leadFilter = 'todos', dbError = '', needSetup = false;
+let db = null, tab = 'resumen', leadFilter = 'todos', dbError = '', needSetup = false, leadsError = '';
 const CFG_KEY = 'go-apple-ig-conexion';
 const cfg = { repo: 'ramaskere/go-apple-sistema', file: 'datos.enc.json', pass: '', token: '' };
 try { Object.assign(cfg, JSON.parse(localStorage.getItem(CFG_KEY) || '{}')); } catch (e) {}
@@ -269,8 +271,9 @@ function viewLeads() {
   const list = S.leads.filter(l => leadFilter === 'todos' || l.etapa === leadFilter).sort((a, b) => (b.fecha || '').localeCompare(a.fecha || ''));
   const chips = [['todos', `Todos ${S.leads.length}`], ...STAGES.map(([k, v]) => [k, `${v} ${counts[k]}`])].map(([k, v]) => `<button class="chip" data-filter="${k}" aria-pressed="${leadFilter === k}">${v}</button>`).join('');
   const rows = list.map(l => `<tr class="click" data-edit="leads:${l.id}"><td class="dim">${dateLabel(l.fecha)}</td><td>${esc(l.nombre || 'Sin nombre')}<div class="sub">${esc(l.usuario || '')}</div></td><td class="title">${esc(originName(l.origen))}<div class="sub">${originKind(l.origen)}</div></td><td>${stageSelect(l)}</td><td class="r">${l.etapa === 'venta' || n0(l.monto) ? money(l.monto) : '—'}</td><td class="title dim">${esc(l.notas || '')}</td></tr>`);
-  if (!S.leads.length) return `<div class="empty"><h3>Sin leads todavía</h3><p>Carga cada persona que te escribe o agenda, con el contenido o la campaña que la trajo. Así se conecta todo.</p><button class="primary" data-new="leads">+ Nuevo lead</button></div>`;
-  return `<section class="sec"><div class="sec-head"><h2>Leads</h2><button class="ghost" data-new="leads">+ Nuevo lead</button></div><div class="chips">${chips}</div>${table([['Fecha'], ['Lead'], ['Origen'], ['Etapa'], ['Monto', 'r'], ['Notas']], rows, 'No hay leads en esta etapa.')}</section>`;
+  const aviso = leadsError ? `<div class="hint" style="color:var(--bad)">${esc(leadsError)}</div>` : '<span class="hint">Se ven y se cargan junto con el Pipeline del sistema de ventas.</span>';
+  if (!S.leads.length) return `<div class="empty"><h3>Sin leads todavía</h3><p>Carga cada persona que te escribe o agenda, con el contenido o la campaña que la trajo. Así se conecta todo, y aparece en el Pipeline del sistema de ventas.</p><button class="primary" data-new="leads">+ Nuevo lead</button>${leadsError ? `<p class="hint" style="color:var(--bad)">${esc(leadsError)}</p>` : ''}</div>`;
+  return `<section class="sec"><div class="sec-head"><h2>Leads</h2><button class="ghost" data-new="leads">+ Nuevo lead</button>${aviso}</div><div class="chips">${chips}</div>${table([['Fecha'], ['Lead'], ['Origen'], ['Etapa'], ['Monto', 'r'], ['Notas']], rows, 'No hay leads en esta etapa.')}</section>`;
 }
 const stageSelect = l => `<select class="stage" data-stage="${l.id}" aria-label="Etapa de ${esc(l.nombre)}">${STAGES.map(([k, v]) => `<option value="${k}" ${l.etapa === k ? 'selected' : ''}>${v}</option>`).join('')}</select>`;
 
@@ -467,11 +470,15 @@ function openForm(kind, id) {
   $('#overlay').addEventListener('mousedown', e => { if (e.target.id === 'overlay') close(); });
   if (id) $('#del').onclick = async function () {
     if (!this.dataset.armed) { this.dataset.armed = 1; this.textContent = 'Confirmar eliminación'; return; }
-    try { await db.collection(COLL[kind]).doc(id).delete(); close(); } catch (e) { $('#err').textContent = 'No se pudo eliminar: ' + (e.message || e.code); }
+    try {
+      if (kind === 'leads') await deleteLeadSupa(id); else await db.collection(COLL[kind]).doc(id).delete();
+      if (kind === 'leads') await refreshLeadsFromSupa();
+      close();
+    } catch (e) { $('#err').textContent = 'No se pudo eliminar: ' + (e.message || e.code); }
   };
   $('#form').onsubmit = async e => {
     e.preventDefault();
-    if (!db) { $('#err').textContent = 'La base de datos no está disponible en esta vista.'; return; }
+    if (kind !== 'leads' && !db) { $('#err').textContent = 'La base de datos no está disponible en esta vista.'; return; }
     const data = { ...doc }; delete data.id;
     form.fields().forEach(([key, , type]) => {
       const el = $('#form [name="' + key + '"]');
@@ -480,8 +487,11 @@ function openForm(kind, id) {
     if (kind === 'recursos' && (!data.palabra || !data.dm)) { $('#err').textContent = 'Falta la palabra clave o el mensaje directo.'; return; }
     if (kind === 'leads' && (data.etapa === 'agendado' || data.etapa === 'venta')) data.agendado = true;
     if (!id) data.creado = Date.now();
-    try { await db.collection(COLL[kind]).doc(id || undefined).set(data); close(); }
-    catch (err) { $('#err').textContent = 'No se pudo guardar: ' + (err.message || err.code); }
+    try {
+      if (kind === 'leads') { await saveLeadSupa(id, data); await refreshLeadsFromSupa(); }
+      else await db.collection(COLL[kind]).doc(id || undefined).set(data);
+      close();
+    } catch (err) { $('#err').textContent = 'No se pudo guardar: ' + (err.message || err.code); }
   };
 }
 
@@ -537,10 +547,9 @@ document.addEventListener('change', e => {
   publish(); render();
 });
 document.addEventListener('change', async e => {
-  const s = e.target.closest('select.stage'); if (!s || !db) return;
+  const s = e.target.closest('select.stage'); if (!s) return;
   const etapa = s.value, l = S.leads.find(x => x.id === s.dataset.stage); if (!l) return;
-  const patch = { etapa }; if (etapa === 'agendado' || etapa === 'venta') patch.agendado = true;
-  try { await db.collection('leads').doc(l.id).update(patch); } catch (err) { dbError = err.message || err.code; render(); }
+  try { await updateLeadStageSupa(l.id, etapa); await refreshLeadsFromSupa(); } catch (err) { leadsError = err.message; render(); }
 });
 document.addEventListener('keydown', e => { if (e.key === 'Escape') $('#modal-root').innerHTML = ''; });
 
@@ -584,10 +593,11 @@ function publish() {
   LISTA = ((remote.data.config || {}).cuentas || {}).lista || [];
   LISTA = LISTA.map(x => String(x).toLowerCase());
   if (cuentaSel !== 'todas' && !LISTA.includes(cuentaSel)) cuentaSel = 'todas';
-  for (const c of ['posts', 'camps', 'leads', 'recursos', 'config']) {
+  for (const c of ['posts', 'camps', 'recursos', 'config']) {
     const todos = Object.entries(remote.data[c] || {}).map(([id, v]) => ({ id, ...v }));
     S[c] = c === 'config' ? todos : todos.filter(okCuenta);
   }
+  // S.leads NO se toca acá: vive en Supabase (pipeline_leads), la carga/actualiza refreshLeadsFromSupa().
 }
 const applyOp = (d, o) => { d[o.c] ||= {}; if (o.t === 'set') d[o.c][o.id] = o.d; else delete d[o.c][o.id]; };
 function mutate(o) {
@@ -621,11 +631,101 @@ const dbShim = { collection: c => ({ doc: id => { id = id || newId(); return {
   update: async p => mutate({ t: 'set', c, id, d: { ...remote.data[c][id], ...p } }),
   delete: async () => mutate({ t: 'del', c, id }) }; } }) };
 
+/* ---------- leads: viven en Supabase (tabla pipeline_leads), compartida con el Pipeline del CRM ----------
+   Al cargar un lead acá queda visible en la pestaña Pipeline del sistema de ventas, y si más tarde se
+   registra una venta con el mismo Instagram/teléfono, el CRM ya lo vincula solo (linkPipelineLeadsAfterSale). */
+let sbClient = null, sbReady = null;
+function initSupabase() {
+  if (sbReady) return sbReady;
+  sbReady = (async () => {
+    if (!window.APP_SUPABASE_URL || !window.APP_SUPABASE_ANON_KEY || typeof window.supabase?.createClient !== 'function') return false;
+    try {
+      sbClient = window.supabase.createClient(window.APP_SUPABASE_URL, window.APP_SUPABASE_ANON_KEY, {
+        auth: { persistSession: true, storageKey: 'go-apple-ig-supabase-auth', autoRefreshToken: true, detectSessionInUrl: false },
+      });
+      const { data: { session } } = await sbClient.auth.getSession();
+      if (!session) {
+        const email = (window.APP_SUPABASE_EMAIL || '').trim();
+        const pass = window.APP_SUPABASE_PASSWORD || window.APP_SUPABASE_PASSW0RD || '';
+        if (!email || !pass) return false;
+        const { error } = await sbClient.auth.signInWithPassword({ email, password: pass });
+        if (error) return false;
+      }
+      return true;
+    } catch (e) { return false; }
+  })();
+  return sbReady;
+}
+const normPhone = v => String(v || '').replace(/\D/g, '');
+const normIg = v => String(v || '').trim().replace(/^@+/, '').toLowerCase();
+const STAGE_TO_SUPA = { nuevo: 'nuevo', contactado: 'contactado', agendado: 'cita', venta: 'venta', perdido: 'perdido' };
+const STAGE_FROM_SUPA = { nuevo: 'nuevo', contactado: 'contactado', interesado: 'contactado', plan_canje: 'contactado', cita: 'agendado', cobrando: 'venta', venta: 'venta', perdido: 'perdido' };
+async function loadLeadsSupa() {
+  const ok = await initSupabase();
+  if (!ok || !sbClient) return { leads: [], error: !window.APP_SUPABASE_URL ? '' : 'No se pudo conectar con el CRM para leer los leads.' };
+  const { data, error } = await sbClient.from('pipeline_leads').select('*').order('created_at', { ascending: false });
+  if (error) return { leads: [], error: 'Pipeline (CRM): ' + error.message };
+  const leads = (data || []).map(r => ({
+    id: r.id, nombre: r.name || '', usuario: r.ig_handle || r.phone || '',
+    fecha: (r.created_at || '').slice(0, 10), origen: (r.metadata && r.metadata.origen) || 'directo',
+    etapa: STAGE_FROM_SUPA[r.stage] || 'nuevo', monto: Number((r.metadata && r.metadata.monto_manual) || 0),
+    agendado: ['cita', 'cobrando', 'venta'].includes(r.stage), notas: r.notes || '',
+    convertedSaleId: r.converted_sale_id || null, creado: r.created_at ? Date.parse(r.created_at) : 0,
+  }));
+  const ids = [...new Set(leads.map(l => l.convertedSaleId).filter(Boolean))];
+  if (ids.length) {
+    const { data: ventas } = await sbClient.from('sales').select('id,sale_total').in('id', ids);
+    const byId = Object.fromEntries((ventas || []).map(v => [v.id, Number(v.sale_total) || 0]));
+    leads.forEach(l => { if (l.convertedSaleId && byId[l.convertedSaleId] != null) l.monto = byId[l.convertedSaleId]; });
+  }
+  return { leads, error: '' };
+}
+async function saveLeadSupa(id, data) {
+  const ok = await initSupabase();
+  if (!ok || !sbClient) throw new Error('No se pudo conectar con el CRM (Supabase) para guardar el lead.');
+  const usuario = String(data.usuario || '').trim();
+  const esTelefono = /^\+?[\d \-().]{5,}$/.test(usuario);
+  const payload = {
+    name: data.nombre || '', ig_handle: esTelefono ? '' : normIg(usuario), phone: esTelefono ? usuario : normPhone(usuario) ? usuario : '',
+    stage: STAGE_TO_SUPA[data.etapa] || 'nuevo', source: 'organic', notes: data.notas || '',
+    metadata: { origen: data.origen || 'directo', monto_manual: n0(data.monto) }, updated_at: new Date().toISOString(),
+  };
+  if (id) {
+    const { error } = await sbClient.from('pipeline_leads').update(payload).eq('id', id);
+    if (error) throw new Error(error.message);
+  } else {
+    const { data: ud } = await sbClient.auth.getUser();
+    if (!ud?.user?.id) throw new Error('No hay sesión activa en el CRM.');
+    payload.user_id = ud.user.id;
+    const { error } = await sbClient.from('pipeline_leads').insert(payload);
+    if (error) throw new Error(error.message);
+  }
+}
+async function deleteLeadSupa(id) {
+  const ok = await initSupabase();
+  if (!ok || !sbClient) throw new Error('No se pudo conectar con el CRM (Supabase) para eliminar el lead.');
+  const { error } = await sbClient.from('pipeline_leads').delete().eq('id', id);
+  if (error) throw new Error(error.message);
+}
+async function updateLeadStageSupa(id, etapa) {
+  const ok = await initSupabase();
+  if (!ok || !sbClient) throw new Error('No se pudo conectar con el CRM (Supabase).');
+  const { error } = await sbClient.from('pipeline_leads').update({ stage: STAGE_TO_SUPA[etapa] || 'nuevo', updated_at: new Date().toISOString() }).eq('id', id);
+  if (error) throw new Error(error.message);
+}
+
 /* ---------- arranque ---------- */
+async function refreshLeadsFromSupa() {
+  const { leads, error } = await loadLeadsSupa();
+  S.leads = leads;
+  leadsError = error;
+  if (tab === 'leads' || tab === 'resumen' || tab === 'calendario') render();
+}
 async function init() {
   if (!cfg.pass) { needSetup = true; render(); return; }
   needSetup = false; dbError = ''; setSync('Cargando…'); loadCola().then(() => { if (tab === 'calendario') render(); });
   loadRotaciones().then(() => { if (tab === 'calendario') render(); });
+  refreshLeadsFromSupa();
   try { await load(); publish(); db = dbShim; setSync(cfg.token ? 'Sincronizado' : 'Solo lectura'); }
   catch (e) { needSetup = !!e.auth; dbError = e.message; setSync(e.auth ? '' : 'Sin conexión con GitHub', !e.auth); }
   render();
