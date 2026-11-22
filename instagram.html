@@ -202,7 +202,11 @@ const dateLabel = f => f ? new Date(f + 'T12:00:00').toLocaleDateString('es', { 
 const isAgenda = l => !!l.agendado || l.etapa === 'agendado' || l.etapa === 'venta';
 function stats(list) {
   const ventas = list.filter(l => l.etapa === 'venta');
-  return { leads: list.length, agendas: list.filter(isAgenda).length, ventas: ventas.length, ingresos: ventas.reduce((s, l) => s + n0(l.monto), 0) };
+  const reales = ventas.filter(l => l.ventaReal);
+  return {
+    leads: list.length, agendas: list.filter(isAgenda).length, ventas: ventas.length, ingresos: ventas.reduce((s, l) => s + n0(l.monto), 0),
+    ventasReales: reales.length, ingresosReales: reales.reduce((s, l) => s + n0(l.monto), 0),
+  };
 }
 const byOrigin = key => stats(S.leads.filter(l => (l.origen || 'directo') === key));
 function originName(key) {
@@ -235,7 +239,7 @@ function viewResumen() {
   const origins = [...S.posts.map(p => ['post:' + p.id, 'Orgánico']), ...S.camps.map(c => ['camp:' + c.id, 'Campaña']), ...S.recursos.map(r => ['rec:' + r.id, 'Lead magnet'])]
     .map(([k, kind]) => ({ k, kind, ...byOrigin(k) })).filter(o => o.leads > 0)
     .sort((a, b) => b.ingresos - a.ingresos || b.leads - a.leads).slice(0, 6);
-  const oRows = origins.map(o => `<tr><td class="title">${esc(originName(o.k))}<div class="sub">${o.kind}</div></td><td class="r">${o.leads}</td><td class="r">${o.agendas}</td><td class="r">${o.ventas}</td><td class="r">${money(o.ingresos)}</td></tr>`);
+  const oRows = origins.map(o => `<tr><td class="title">${esc(originName(o.k))}<div class="sub">${o.kind}</div></td><td class="r">${o.leads}</td><td class="r">${o.agendas}</td><td class="r">${o.ventas}</td><td class="r">${money(o.ingresos)}${o.ventasReales ? `<div class="sub">${money(o.ingresosReales)} reales</div>` : ''}</td></tr>`);
 
   const months = {};
   S.leads.forEach(l => { const m = (l.fecha || '').slice(0, 7) || 'sin fecha'; (months[m] ||= []).push(l); });
@@ -247,8 +251,8 @@ function viewResumen() {
     <div class="kpis">
       ${kpi('Leads', int(t.leads), `${pct(ratio(t.agendas, t.leads))} agendan`, 'var(--accent)')}
       ${kpi('Agendas', int(t.agendas), `${pct(ratio(t.ventas, t.agendas))} cierran`, 'var(--warn)')}
-      ${kpi('Ventas', int(t.ventas), `${pct(ratio(t.ventas, t.leads))} de los leads`, 'var(--good)')}
-      ${kpi('Ingresos', money(t.ingresos), t.ventas ? `Ticket ${money(t.ingresos / t.ventas)}` : '', 'var(--good)')}
+      ${kpi('Ventas', int(t.ventas), t.ventasReales ? `${t.ventasReales} reales (vinculadas)` : `${pct(ratio(t.ventas, t.leads))} de los leads`, 'var(--good)')}
+      ${kpi('Ingresos', money(t.ingresos), t.ventasReales ? `${money(t.ingresosReales)} reales` : (t.ventas ? `Ticket ${money(t.ingresos / t.ventas)}` : ''), 'var(--good)')}
     </div>
     <div class="kpis">
       ${kpi('Inversión en ads', money(gasto), `${S.camps.length} campañas`, 'var(--muted)')}
@@ -270,7 +274,7 @@ function viewLeads() {
   const counts = Object.fromEntries(STAGES.map(([k]) => [k, S.leads.filter(l => l.etapa === k).length]));
   const list = S.leads.filter(l => leadFilter === 'todos' || l.etapa === leadFilter).sort((a, b) => (b.fecha || '').localeCompare(a.fecha || ''));
   const chips = [['todos', `Todos ${S.leads.length}`], ...STAGES.map(([k, v]) => [k, `${v} ${counts[k]}`])].map(([k, v]) => `<button class="chip" data-filter="${k}" aria-pressed="${leadFilter === k}">${v}</button>`).join('');
-  const rows = list.map(l => `<tr class="click" data-edit="leads:${l.id}"><td class="dim">${dateLabel(l.fecha)}</td><td>${esc(l.nombre || 'Sin nombre')}<div class="sub">${esc(l.usuario || '')}</div></td><td class="title">${esc(originName(l.origen))}<div class="sub">${originKind(l.origen)}</div></td><td>${stageSelect(l)}</td><td class="r">${l.etapa === 'venta' || n0(l.monto) ? money(l.monto) : '—'}</td><td class="title dim">${esc(l.notas || '')}</td></tr>`);
+  const rows = list.map(l => `<tr class="click" data-edit="leads:${l.id}"><td class="dim">${dateLabel(l.fecha)}</td><td>${esc(l.nombre || 'Sin nombre')}<div class="sub">${esc(l.usuario || '')}</div></td><td class="title">${esc(originName(l.origen))}<div class="sub">${originKind(l.origen)}</div></td><td>${stageSelect(l)}</td><td class="r">${l.etapa === 'venta' || n0(l.monto) ? money(l.monto) : '—'}${l.ventaReal ? '<div class="sub" style="color:var(--good)">venta real vinculada</div>' : ''}</td><td class="title dim">${esc(l.notas || '')}</td></tr>`);
   const aviso = leadsError ? `<div class="hint" style="color:var(--bad)">${esc(leadsError)}</div>` : '<span class="hint">Se ven y se cargan junto con el Pipeline del sistema de ventas.</span>';
   if (!S.leads.length) return `<div class="empty"><h3>Sin leads todavía</h3><p>Carga cada persona que te escribe o agenda, con el contenido o la campaña que la trajo. Así se conecta todo, y aparece en el Pipeline del sistema de ventas.</p><button class="primary" data-new="leads">+ Nuevo lead</button>${leadsError ? `<p class="hint" style="color:var(--bad)">${esc(leadsError)}</p>` : ''}</div>`;
   return `<section class="sec"><div class="sec-head"><h2>Leads</h2><button class="ghost" data-new="leads">+ Nuevo lead</button>${aviso}</div><div class="chips">${chips}</div>${table([['Fecha'], ['Lead'], ['Origen'], ['Etapa'], ['Monto', 'r'], ['Notas']], rows, 'No hay leads en esta etapa.')}</section>`;
@@ -281,10 +285,10 @@ function viewOrganico() {
   if (!S.posts.length) return `<div class="empty"><h3>Sin contenido cargado</h3><p>Registra cada Reel, Story, carrusel o post con sus números. Al crear un lead puedes elegir de cuál vino y aquí verás cuántos leads, agendas y ventas generó.</p><button class="primary" data-new="posts">+ Nuevo contenido</button></div>`;
   const rows = [...S.posts].sort((a, b) => (b.fecha || '').localeCompare(a.fecha || '')).map(p => {
     const s = byOrigin('post:' + p.id), inter = n0(p.likes) + n0(p.comentarios) + n0(p.guardados) + n0(p.compartidos);
-    return `<tr class="click" data-edit="posts:${p.id}"><td class="dim">${dateLabel(p.fecha)}</td><td class="title">${esc(p.titulo || 'Sin título')}<div class="sub">${esc(p.formato || '')}</div></td><td class="r">${int(p.alcance)}</td><td class="r">${int(inter)}<div class="sub">${pct(ratio(inter, n0(p.alcance)))}</div></td><td class="r"><b>${s.leads}</b></td><td class="r">${s.agendas}</td><td class="r">${s.ventas}</td><td class="r">${money(s.ingresos)}</td></tr>`;
+    return `<tr class="click" data-edit="posts:${p.id}"><td class="dim">${dateLabel(p.fecha)}</td><td class="title">${esc(p.titulo || 'Sin título')}<div class="sub">${esc(p.formato || '')}</div></td><td class="r">${int(p.alcance)}</td><td class="r">${int(inter)}<div class="sub">${pct(ratio(inter, n0(p.alcance)))}</div></td><td class="r"><b>${s.leads}</b></td><td class="r">${s.agendas}</td><td class="r">${s.ventas}${s.ventasReales ? `<div class="sub">${s.ventasReales} reales</div>` : ''}</td><td class="r">${money(s.ingresos)}${s.ventasReales ? `<div class="sub">${money(s.ingresosReales)} reales</div>` : ''}</td></tr>`;
   });
   const tot = stats(S.leads.filter(l => (l.origen || '').startsWith('post:')));
-  return `<section class="sec"><div class="sec-head"><h2>Contenido orgánico</h2><button class="ghost" data-new="posts">+ Nuevo contenido</button><span class="hint">${S.posts.length} piezas · ${tot.leads} leads · ${tot.ventas} ventas · ${money(tot.ingresos)}</span></div>${table([['Fecha'], ['Contenido'], ['Alcance', 'r'], ['Interacción', 'r'], ['Leads', 'r'], ['Agendas', 'r'], ['Ventas', 'r'], ['Ingresos', 'r']], rows)}</section>`;
+  return `<section class="sec"><div class="sec-head"><h2>Contenido orgánico</h2><button class="ghost" data-new="posts">+ Nuevo contenido</button><span class="hint">${S.posts.length} piezas · ${tot.leads} leads · ${tot.ventas} ventas · ${money(tot.ingresos)}${tot.ventasReales ? ` (${tot.ventasReales} reales, ${money(tot.ingresosReales)})` : ''}</span></div>${table([['Fecha'], ['Contenido'], ['Alcance', 'r'], ['Interacción', 'r'], ['Leads', 'r'], ['Agendas', 'r'], ['Ventas', 'r'], ['Ingresos', 'r']], rows)}<p class="hint">"Reales" son ventas que coincidieron con una venta cargada en el sistema de ventas (teléfono o Instagram); el resto es lo que se marcó a mano como vendido.</p></section>`;
 }
 
 function viewCampanas() {
@@ -670,13 +674,13 @@ async function loadLeadsSupa() {
     fecha: (r.created_at || '').slice(0, 10), origen: (r.metadata && r.metadata.origen) || 'directo',
     etapa: STAGE_FROM_SUPA[r.stage] || 'nuevo', monto: Number((r.metadata && r.metadata.monto_manual) || 0),
     agendado: ['cita', 'cobrando', 'venta'].includes(r.stage), notas: r.notes || '',
-    convertedSaleId: r.converted_sale_id || null, creado: r.created_at ? Date.parse(r.created_at) : 0,
+    convertedSaleId: r.converted_sale_id || null, creado: r.created_at ? Date.parse(r.created_at) : 0, ventaReal: false,
   }));
   const ids = [...new Set(leads.map(l => l.convertedSaleId).filter(Boolean))];
   if (ids.length) {
     const { data: ventas } = await sbClient.from('sales').select('id,sale_total').in('id', ids);
     const byId = Object.fromEntries((ventas || []).map(v => [v.id, Number(v.sale_total) || 0]));
-    leads.forEach(l => { if (l.convertedSaleId && byId[l.convertedSaleId] != null) l.monto = byId[l.convertedSaleId]; });
+    leads.forEach(l => { if (l.convertedSaleId && byId[l.convertedSaleId] != null) { l.monto = byId[l.convertedSaleId]; l.ventaReal = true; } });
   }
   return { leads, error: '' };
 }
